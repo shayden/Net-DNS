@@ -12,7 +12,7 @@ use Net::DNS;
 use Net::DNS::Question;
 use Net::DNS::RR;
 
-# $Id: Packet.pm,v 1.5 1997/06/13 03:37:51 mfuhr Exp $
+# $Id: Packet.pm,v 1.6 1997/07/06 16:35:18 mfuhr Exp $
 $VERSION = $Net::DNS::VERSION;
 
 =head1 NAME
@@ -369,6 +369,11 @@ sub string {
 	my ($qr, $rr, $section);
 	my $retval = "";
 
+	if (exists $self->{"answerfrom"}) {
+		$retval .= ";; Answer received from $self->{answerfrom} " .
+			   "($self->{answersize} bytes)\n;;\n";
+	}
+
 	$retval .= ";; HEADER SECTION\n";
 	$retval .= $self->header->string;
 
@@ -410,6 +415,45 @@ sub string {
 	return $retval;
 }
 
+=head2 answerfrom
+
+    print "packet received from ", $packet->answerfrom, "\n";
+
+Returns the IP address from which we received this packet.  User-created
+packets will return undef for this method.
+
+=cut
+
+sub answerfrom {
+	my $self = shift;
+
+	$self->{"answerfrom"} = shift if @_;
+
+	return exists $self->{"answerfrom"}
+	       ? $self->{"answerfrom"}
+	       : undef;
+}
+
+=head2 answersize
+
+    print "packet size: ", $packet->answersize, " bytes\n";
+
+Returns the size of the packet in bytes as it was received from a
+nameserver.  User-created packets will return undef for this method
+(use C<length $packet>->C<data> instead).
+
+=cut
+
+sub answersize {
+	my $self = shift;
+
+	$self->{"answersize"} = shift if @_;
+
+	return exists $self->{"answersize"}
+	       ? $self->{"answersize"}
+	       : undef;
+}
+
 =head2 push
 
     $packet->push("pre", $rr);
@@ -426,11 +470,24 @@ Adds RRs to the specified section of the packet.
 sub push {
 	my $self = shift;
 	my ($section, @rr) = @_;
+	my $rr;
 
-	$section = lc($section);
+	$section = lc $section;
+	if (($section eq "prerequisite") || ($section eq "prereq")) {
+		$section = "pre";
+	}
 
-	if ($section eq "answer" || $section eq "pre" ||
-	    $section eq "prerequisite") {
+	if (($self->{"header"}->opcode eq "UPDATE")
+	 && (($section eq "pre") || ($section eq "update")) ) {
+		my $zone_class = ($self->zone)[0]->zclass;
+		foreach $rr (@rr) {
+			unless ($rr->class eq "NONE" || $rr->class eq "ANY") {
+				$rr->class($zone_class);
+			}
+		}
+	}
+
+	if ($section eq "answer" || $section eq "pre") {
 		push(@{$self->{"answer"}}, @rr);
 		my $ancount = $self->{"header"}->ancount;
 		$self->{"header"}->ancount($ancount + @rr);

@@ -1,6 +1,6 @@
 package Net::DNS::RR::TXT;
 
-# $Id: TXT.pm,v 1.4 1997/06/13 03:33:54 mfuhr Exp $
+# $Id: TXT.pm,v 1.5 1997/07/06 16:31:54 mfuhr Exp $
 
 use strict;
 use vars qw(@ISA);
@@ -19,6 +19,16 @@ sub new {
 		$offset += $len;
 
 		$self->{"txtdata"} = $txtdata;
+	}
+
+	return bless $self, $class;
+}
+
+sub new_from_string {
+	my ($class, $self, $string) = @_;
+
+	if ($string && $string =~ /^\s*["']?(.*?)["']?\s*$/) {
+		$self->{"txtdata"} = $1;
 	}
 
 	return bless $self, $class;

@@ -1,6 +1,6 @@
 package Net::DNS::RR::MINFO;
 
-# $Id: MINFO.pm,v 1.3 1997/06/13 03:33:54 mfuhr Exp $
+# $Id: MINFO.pm,v 1.4 1997/07/06 16:31:54 mfuhr Exp $
 
 use strict;
 use vars qw(@ISA);
@@ -18,6 +18,19 @@ sub new {
 		($emailbx, $offset) = Net::DNS::Packet::dn_expand($data, $offset);
 		$self->{"rmailbx"} = $rmailbx;
 		$self->{"emailbx"} = $emailbx;
+	}
+
+	return bless $self, $class;
+}
+
+sub new_from_string {
+	my ($class, $self, $string) = @_;
+
+	if ($string && ($string =~ /^(\S+)\s+(\S+)$/)) {
+		$self->{"rmailbx"} = $1;
+		$self->{"emailbx"} = $2;
+		$self->{"rmailbx"} =~ s/\.+$//;
+		$self->{"emailbx"} =~ s/\.+$//;
 	}
 
 	return bless $self, $class;

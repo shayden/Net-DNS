@@ -3,6 +3,9 @@ MANIFEST
 Makefile.PL
 README
 TODO
+contrib/README
+contrib/loc2earth.cgi
+contrib/loclist.pl
 demo/README
 demo/axfr
 demo/check_soa
@@ -47,3 +50,4 @@ t/02-header.t
 t/03-question.t
 t/04-packet.t
 t/05-rr.t
+t/06-update.t

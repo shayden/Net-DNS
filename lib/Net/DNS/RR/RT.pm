@@ -1,6 +1,6 @@
 package Net::DNS::RR::RT;
 
-# $Id: RT.pm,v 1.3 1997/06/13 03:33:54 mfuhr Exp $
+# $Id: RT.pm,v 1.4 1997/07/06 16:31:54 mfuhr Exp $
 
 use strict;
 use vars qw(@ISA);
@@ -19,6 +19,18 @@ sub new {
 		my ($intermediate) = Net::DNS::Packet::dn_expand($data, $offset);
 		$self->{"preference"} = $preference;
 		$self->{"intermediate"} = $intermediate;
+	}
+
+	return bless $self, $class;
+}
+
+sub new_from_string {
+	my ($class, $self, $string) = @_;
+
+	if ($string && ($string =~ /^(\d+)\s+(\S+)$/)) {
+		$self->{"preference"}   = $1;
+		$self->{"intermediate"} = $2;
+		$self->{"intermediate"} =~ s/\.+$//;
 	}
 
 	return bless $self, $class;

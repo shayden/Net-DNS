@@ -33,8 +33,8 @@ As of version 0.02, Net::DNS is written entirely in Perl.  Version
 Perl version runs quite a bit slower, but considering that the
 network can be a serious bottleneck when making DNS queries, the
 speed difference may not really matter in most cases.  However,
-future versions may contain some C for those who wish to link
-against libresolv or libbind.
+future versions may contain some C to increase speed or for those
+who wish to link against libresolv or libbind.
 
 The author invites feedback on the module, particularly at this
 early stage of its development.  If there's something you'd like
@@ -65,8 +65,8 @@ hasn't tested this.  The latest versions can be obtained from CPAN:
 
     http://www.perl.org/CPAN/
 
-Some of the demonstration scripts may require additional modules;
-see demo/README for details.
+Some of the demonstration and contributed scripts may require
+additional modules -- see demo/README and contrib/README for details.
 
 
 4. INSTALLATION
@@ -88,10 +88,16 @@ To build this module, run the following commands:
 5. RUNNING TESTS
 ----------------
 
-There aren't many tests in this version, although there are more
-than in previous versions.  Part of the problem is creating a test
-suite to work on systems both with and without Internet connectivity.
-Future versions of this module may have more tests but will probably
+If any of the tests fail, please contact the author with the output
+from the following command:
+
+    make test TEST_VERBOSE=1
+
+If you examine the test scripts (in the t/ directory), you'll notice
+that there aren't many tests for the resolver itself (i.e., the
+network code).  Part of the problem is creating a test suite to
+work on systems both with and without Internet connectivity.  Future
+versions of this module may have more tests but will probably
 require some site-specific configuration before running them.
 
 The author does run additional tests against customized zone data
@@ -102,8 +108,9 @@ distribution.
 6. DEMONSTRATION SCRIPTS
 ------------------------
 
-There are a few demonstration scripts in the demo/ directory.  See
-demo/README for more information.
+There are a few demonstration scripts in the demo/ directory -- see
+demo/README for more information.  Contributed scripts are in the
+contrib/ directory -- see contrib/README.
 
 The author would be happy to include any contributed scripts in
 future versions of this module.  All I ask is that they be documented
@@ -127,16 +134,12 @@ time, I recommend that you don't use Net::DNS to maintain a production
 nameserver via dynamic updates.
 
 Please note that there are some bugs in the BIND 8.1-REL nameserver
-that can cause it to dump core when receiving dynamic updates, so
-if you have problems using Net::DNS, that might be the cause.  I've
-reported these bugs to bind-bugs@isc.org and they've said they'll
-fix them in a future version of BIND.
+that can cause it to dump core when receiving certain dynamic
+updates, so if you have problems using Net::DNS that might be the
+cause.  I recommend using BIND 8.1.1 or later.
 
-A future version of Net::DNS will simplify the creation of update
-packets, but now you'll have to create RRs yourself and push them
-into the prerequisite and update sections of the packet.  For your
-convenience, here's a summary of the update semantics (see RFC 2136
-for details):
+Here's a summary of the update semantics for those interested (see
+RFC 2136 for details):
 
     PREREQUISITE SECTION
                    # RRs   NAME   TTL   CLASS   TYPE   RDLENGTH   RDATA
@@ -204,4 +207,4 @@ mfuhr@dimensional.com
 http://www.dimensional.com/~mfuhr/
 
 ----
-$Id: README,v 1.7 1997/06/13 03:48:07 mfuhr Exp $
+$Id: README,v 1.8 1997/07/06 16:42:47 mfuhr Exp $

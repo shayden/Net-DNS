@@ -1,6 +1,6 @@
 package Net::DNS::RR::NS;
 
-# $Id: NS.pm,v 1.3 1997/06/13 03:33:54 mfuhr Exp $
+# $Id: NS.pm,v 1.4 1997/07/06 16:31:54 mfuhr Exp $
 
 use strict;
 use vars qw(@ISA);
@@ -15,6 +15,17 @@ sub new {
 	if ($self->{"rdlength"} > 0) {
 		my($nsdname) = Net::DNS::Packet::dn_expand($data, $offset);
 		$self->{"nsdname"} = $nsdname;
+	}
+
+	return bless $self, $class;
+}
+
+sub new_from_string {
+	my ($class, $self, $string) = @_;
+
+	if ($string) {
+		$string =~ s/\.+$//;
+		$self->{"nsdname"} = $string;
 	}
 
 	return bless $self, $class;

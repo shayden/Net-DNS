@@ -1,6 +1,6 @@
 package Net::DNS::RR::PX;
 
-# $Id: PX.pm,v 1.2 1997/06/13 03:33:54 mfuhr Exp $
+# $Id: PX.pm,v 1.3 1997/07/06 16:31:54 mfuhr Exp $
 
 use strict;
 use vars qw(@ISA);
@@ -25,6 +25,20 @@ sub new {
 		$self->{"preference"} = $preference;
 		$self->{"map822"}     = $map822;
 		$self->{"mapx400"}    = $mapx400;
+	}
+
+	return bless $self, $class;
+}
+
+sub new_from_string {
+	my ($class, $self, $string) = @_;
+
+	if ($string && ($string =~ /^(\d+)\s+(\S+)\s+(\S+)$/)) {
+		$self->{"preference"} = $1;
+		$self->{"map822"}     = $2;
+		$self->{"mapx400"}    = $3;
+		$self->{"map822"}     =~ s/\.+$//;;
+		$self->{"mapx400"}    =~ s/\.+$//;;
 	}
 
 	return bless $self, $class;

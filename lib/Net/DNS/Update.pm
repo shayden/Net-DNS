@@ -6,7 +6,7 @@ use vars qw($VERSION);
 use Net::DNS;
 # use Net::DNS::Packet;
 
-# $Id: Update.pm,v 1.1 1997/06/13 03:42:40 mfuhr Exp $
+# $Id: Update.pm,v 1.2 1997/07/06 16:35:47 mfuhr Exp $
 $VERSION = $Net::DNS::VERSION;
 
 =head1 NAME
@@ -66,43 +66,68 @@ sub new {
 	return $packet;
 }
 
-=head1 EXAMPLE
+=head1 EXAMPLES
+
+The first example below shows a complete program; subsequent examples
+show only the creation of the update packet.
+
+=head2 Add a new host
 
     #!/usr/local/bin/perl -w
     
     use Net::DNS;
     
+    # Create the update packet.
     $update = new Net::DNS::Update("bar.com");
     
-    # NXRRSET - Prerequisite is that no A records exist for the name.
-    $update->push("pre", new Net::DNS::RR(
-        Name  => "foo.bar.com",
-        Class => "NONE",
-        Type  => "A"));
+    # Prerequisite is that no A records exist for the name.
+    $update->push("pre", nxrrset("foo.bar.com. A"));
     
     # Add two A records for the name.
-    $update->push("update", new Net::DNS::RR(
-        Name    => "foo.bar.com",
-        Ttl     => 86400,
-        Type    => "A",
-        Address => "192.168.1.1"));
+    $update->push("update", rr_add("foo.bar.com. 86400 A 192.168.1.2"));
+    $update->push("update", rr_add("foo.bar.com. 86400 A 172.16.3.4"));
     
-    $update->push("update", new Net::DNS::RR(
-        Name    => "foo.bar.com",
-        Ttl     => 86400,
-        Type    => "A",
-        Address => "192.168.1.2"));
-    
+    # Send the update to the zone's primary master.
     $res = new Net::DNS::Resolver;
     $res->nameservers("primary-master.bar.com");
-    $ans = $res->send($update);
+    $reply = $res->send($update);
     
-    if (defined $ans) {
-        print $ans->header->rcode, "\n";
+    # Did it work?
+    if (defined $reply) {
+	if ($reply->header->rcode eq "NOERROR") {
+	    print "Update succeeded\n";
+	}
+	else {
+            print "Update failed: ", $reply->header->rcode, "\n";
+	}
     }
     else {
-        print $res->errorstring, "\n";
+        print "Update failed: ", $res->errorstring, "\n";
     }
+
+=head2 Add an MX record for a name that already exists
+
+    $update = new Net::DNS::Update("foo.com");
+    $update->push("pre", yxdomain("foo.com"));
+    $update->push("update", rr_add("foo.com MX 10 mailhost.foo.com"));
+
+=head2 Add a TXT record for a name that doesn't exist
+
+    $update = new Net::DNS::Update("foo.com");
+    $update->push("pre", nxdomain("info.foo.com"));
+    $update->push("update", rr_add("info.foo.com TXT 'yabba dabba doo'"));
+
+=head2 Delete all A records for a name
+
+    $update = new Net::DNS::Update("bar.com");
+    $update->push("pre", yxrrset("foo.bar.com A"));
+    $update->push("update", rr_del("foo.bar.com A"));
+
+=head2 Delete all RRs for a name
+
+    $update = new Net::DNS::Update("foo.com");
+    $update->push("pre", yxdomain("byebye.foo.com"));
+    $update->push("update", rr_del("byebye.foo.com"));
 
 =head1 BUGS
 

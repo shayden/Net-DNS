@@ -1,6 +1,6 @@
 package Net::DNS::RR::HINFO;
 
-# $Id: HINFO.pm,v 1.4 1997/06/13 03:33:54 mfuhr Exp $
+# $Id: HINFO.pm,v 1.5 1997/07/06 16:31:54 mfuhr Exp $
 
 use strict;
 use vars qw(@ISA);
@@ -27,6 +27,17 @@ sub new {
 
 		$self->{"cpu"} = $cpu;
 		$self->{"os"}  = $os;
+	}
+
+	return bless $self, $class;
+}
+
+sub new_from_string {
+	my ($class, $self, $string) = @_;
+
+	if ($string && $string =~ /^["'](.*?)["']\s+["'](.*?)["']$/) {
+		$self->{"cpu"} = $1;
+		$self->{"os"}  = $2;
 	}
 
 	return bless $self, $class;

@@ -1,6 +1,6 @@
 package Net::DNS::RR::AAAA;
 
-# $Id: AAAA.pm,v 1.3 1997/06/13 03:33:54 mfuhr Exp $
+# $Id: AAAA.pm,v 1.4 1997/07/06 16:31:54 mfuhr Exp $
 
 use strict;
 use vars qw(@ISA);
@@ -16,6 +16,43 @@ sub new {
 		my @addr = unpack("\@$offset n8", $$data);
 		$self->{"address"} = sprintf("%x:%x:%x:%x:%x:%x:%x:%x", @addr);
 	}
+	return bless $self, $class;
+}
+
+sub new_from_string {
+	my ($class, $self, $string) = @_;
+
+	if ($string) {
+		my @addr;
+
+		# I think this is correct, per RFC 1884 Sections 2.2 & 2.4.4.
+		if ($string =~ /^(.*):(\d+)\.(\d+)\.(\d+)\.(\d+)$/) {
+			my ($front, $a, $b, $c, $d) = ($1, $2, $3, $4, $5);
+			$string = $front . sprintf(":%x:%x",
+						   ($a << 8 | $b),
+						   ($c << 8 | $d));
+		}
+			
+		if ($string =~ /^(.*)::(.*)$/) {
+			my ($front, $back) = ($1, $2);
+			my @front = split(/:/, $front);
+			my @back  = split(/:/, $back);
+			my $fill = 8 - (@front ? $#front + 1 : 0)
+				     - (@back  ? $#back  + 1 : 0);
+			my @middle = (0) x $fill;
+			@addr = (@front, @middle, @back);
+		}
+		else {
+			@addr = split(/:/, $string);
+			if (@addr < 8) {
+				@addr = ((0) x (8 - @addr), @addr);
+			}
+		}
+
+		$self->{"address"} = sprintf("%x:%x:%x:%x:%x:%x:%x:%x",
+					     map { hex $_ } @addr);
+	}
+
 	return bless $self, $class;
 }
 
@@ -64,8 +101,9 @@ Returns the RR's address field.
 
 =head1 BUGS
 
-Only the preferred method of address representation ("x:x:x:x:x:x:x:x",
-documented in RFC 1884, Section 2.2, Para 1) is supported.
+The C<string> method returns only the preferred method of address
+representation ("x:x:x:x:x:x:x:x", as documented in RFC 1884,
+Section 2.2, Para 1).
 
 =head1 COPYRIGHT
 
@@ -77,6 +115,6 @@ Perl itself.
 
 L<perl(1)>, L<Net::DNS>, L<Net::DNS::Resolver>, L<Net::DNS::Packet>,
 L<Net::DNS::Header>, L<Net::DNS::Question>, L<Net::DNS::RR>,
-RFC 1886 Section 2, RFC 1884 Section 2.2
+RFC 1886 Section 2, RFC 1884 Sections 2.2 & 2.4.4
 
 =cut

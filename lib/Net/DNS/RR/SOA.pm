@@ -1,6 +1,6 @@
 package Net::DNS::RR::SOA;
 
-# $Id: SOA.pm,v 1.3 1997/06/13 03:33:54 mfuhr Exp $
+# $Id: SOA.pm,v 1.4 1997/07/06 16:31:54 mfuhr Exp $
 
 use strict;
 use vars qw(@ISA);
@@ -20,6 +20,31 @@ sub new {
 		my ($serial, $refresh, $retry, $expire, $minimum)
 			= unpack("\@$offset N5", $$data);
 	
+		$self->{"mname"}   = $mname;
+		$self->{"rname"}   = $rname;
+		$self->{"serial"}  = $serial;
+		$self->{"refresh"} = $refresh;
+		$self->{"retry"}   = $retry;
+		$self->{"expire"}  = $expire;
+		$self->{"minimum"} = $minimum;
+	}
+
+	return bless $self, $class;
+}
+
+sub new_from_string {
+	my ($class, $self, $string) = @_;
+
+	if ($string) {
+		$string =~ tr/()//d;
+		$string =~ s/;.*$//mg;
+
+		my ($mname, $rname, $serial,
+		    $refresh, $retry, $expire, $minimum) = $string =~ /(\S+)/g;
+
+		$mname =~ s/\.+$//;
+		$rname =~ s/\.+$//;
+
 		$self->{"mname"}   = $mname;
 		$self->{"rname"}   = $rname;
 		$self->{"serial"}  = $serial;

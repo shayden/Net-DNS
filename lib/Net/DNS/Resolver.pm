@@ -66,7 +66,7 @@ use IO::Socket;
 use Net::DNS;
 use Net::DNS::Packet;
 
-# $Id: Resolver.pm,v 1.10 1997/06/13 03:41:16 mfuhr Exp $
+# $Id: Resolver.pm,v 1.11 1997/07/06 16:36:08 mfuhr Exp $
 $VERSION = $Net::DNS::VERSION;
 
 #------------------------------------------------------------------------------
@@ -94,6 +94,8 @@ push(@confpath, ".");
 	"dnsrch"	=> 1,
 	"debug"		=> 0,
 	"errorstring"	=> "unknown error or no error",
+	"answerfrom"    => "",
+	"answersize"    => 0,
 );
 
 %global = (
@@ -539,6 +541,8 @@ sub send {
 				if (vec($rout, $ns2->fileno, 1) == 1) {
 					my $buf = "";
 					if ($ns2->recv($buf, &Net::DNS::PACKETSZ)) {
+						$self->answerfrom($ns2->peerhost);
+						$self->answersize(length $buf);
 						print ";; answer from ",
 						      $ns2->peerhost, ":",
 						      $ns2->peerport, " : ",
@@ -549,6 +553,8 @@ sub send {
 							next unless $ans->header->qr == 1;
 							next unless $ans->header->id == $packet->header->id;
 							$self->errorstring($ans->header->rcode);
+							$ans->answerfrom($self->answerfrom);
+							$ans->answersize($self->answersize);
 						}
 						elsif (defined $err) {
 							$self->errorstring($err);
@@ -732,6 +738,9 @@ The record class can be omitted; it defaults to IN.
 Returns a list of C<Net::DNS::RR> objects, or C<undef> if the zone
 transfer failed.
 
+The redundant SOA record that terminates the zone transfer is not
+returned to the caller.
+
 =cut
 
 sub axfr {
@@ -805,9 +814,14 @@ sub axfr {
 		}
 
 		foreach ($ans->answer) {
-			push @zone, $_;
 			# $_->print if $self->{"debug"};
-			++$soa_count if $_->type eq "SOA";
+			if ($_->type eq "SOA") {
+				++$soa_count;
+				push @zone, $_ unless $soa_count >= 2;
+			}
+			else {
+				push @zone, $_;
+			}
 		}
 
 		last if $soa_count >= 2;
@@ -904,6 +918,20 @@ be retried using TCP.  The default is false.
 
 Returns a string containing the status of the most recent query.
 
+=head2 answerfrom
+
+    print "last answer was from: ", $res->answerfrom, "\n";
+
+Returns the IP address from which we received the last answer in
+response to a query.
+
+=head2 answersize
+
+    print "size of last answer: ", $res->answersize, "\n";
+
+Returns the size in bytes of the last answer we received in
+response to a query.
+
 =cut
 
 sub AUTOLOAD {
@@ -982,7 +1010,7 @@ Perl itself.
 
 L<perl(1)>, L<Net::DNS>, L<Net::DNS::Packet>, L<Net::DNS::Update>,
 L<Net::DNS::Header>, L<Net::DNS::Question>, L<Net::DNS::RR>,
-L<resolver(5)>, RFC 1035
+L<resolver(5)>, RFC 1035, RFC 1034 Section 4.3.5
 
 =cut
 

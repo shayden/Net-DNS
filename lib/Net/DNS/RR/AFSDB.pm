@@ -1,6 +1,6 @@
 package Net::DNS::RR::AFSDB;
 
-# $Id: AFSDB.pm,v 1.3 1997/06/13 03:33:54 mfuhr Exp $
+# $Id: AFSDB.pm,v 1.4 1997/07/06 16:31:54 mfuhr Exp $
 
 use strict;
 use vars qw(@ISA);
@@ -19,6 +19,18 @@ sub new {
 		my($hostname) = Net::DNS::Packet::dn_expand($data, $offset);
 		$self->{"subtype"} = $subtype;
 		$self->{"hostname"} = $hostname;
+	}
+
+	return bless $self, $class;
+}
+
+sub new_from_string {
+	my ($class, $self, $string) = @_;
+
+	if ($string && ($string =~ /^(\d+)\s+(\S+)$/)) {
+		$self->{"subtype"}  = $1;
+		$self->{"hostname"} = $2;
+		$self->{"hostname"} =~ s/\.+$//;;
 	}
 
 	return bless $self, $class;

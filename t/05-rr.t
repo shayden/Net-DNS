@@ -1,6 +1,6 @@
-# $Id: 05-rr.t,v 1.1 1997/06/08 06:43:40 mfuhr Exp $
+# $Id: 05-rr.t,v 1.2 1997/07/06 16:41:37 mfuhr Exp $
 
-BEGIN { $| = 1; print "1..167\n"; }
+BEGIN { $| = 1; print "1..202\n"; }
 END {print "not ok 1\n" unless $loaded;}
 
 use Net::DNS;
@@ -8,36 +8,62 @@ use Net::DNS;
 $loaded = 1;
 print "ok 1\n";
 
-$name  = "foo.bar.com";
-$class = "IN";
-$ttl   = 43200;
+#------------------------------------------------------------------------------
+# Canned data.
+#------------------------------------------------------------------------------
+
+$name			= "foo.bar.com";
+$class			= "IN";
+$ttl			= 43200;
 
 $a_address		= "10.0.0.1";
+
 $aaaa_address		= "102:304:506:708:90a:b0c:d0e:ff10";
+
 $afsdb_subtype		= 1;
 $afsdb_hostname		= "afsdb-hostname.bar.com";
+
 $cname_cname		= "cname-cname.bar.com";
+
 # EID
+
 $hinfo_cpu		= "test-cpu";
 $hinfo_os		= "test-os";
+
 $isdn_address		= "987654321";
 $isdn_sa		= "001";
-# LOC
+
+$loc_version		= 0;
+$loc_size		= 3000;
+$loc_horiz_pre		= 500000;
+$loc_vert_pre		= 500;
+$loc_latitude		= 2001683648;
+$loc_longitude		= 1856783648;
+$loc_altitude		= 9997600;
+
 $mb_madname		= "mb-madname.bar.com";
+
 $mg_mgmname		= "mg-mgmname.bar.com";
+
 $minfo_rmailbx		= "minfo-rmailbx.bar.com";
 $minfo_emailbx		= "minfo-emailbx.bar.com";
+
 $mr_newname		= "mr-newname.bar.com";
+
 $mx_preference		= 10;
 $mx_exchange		= "mx-exchange.bar.com";
+
 $naptr_order		= 100;
 $naptr_preference	= 10;
 $naptr_flags		= "naptr-flags";
 $naptr_service		= "naptr-service";
 $naptr_regexp		= "naptr-regexp";
 $naptr_replacement	= "naptr-replacement.bar.com";
+
 # NIMLOC
+
 $ns_nsdname		= "ns-nsdname.bar.com";
+
 $nsap_afi		= "47";
 $nsap_idi		= "0005";
 $nsap_dfi		= "80";
@@ -46,15 +72,21 @@ $nsap_rd		= "1000";
 $nsap_area		= "0020";
 $nsap_id		= "00800a123456";
 $nsap_sel		= "00";
+
 # NULL
+
 $ptr_ptrdname		= "ptr-ptrdname.bar.com";
+
 $px_preference		= 10;
 $px_map822		= "px-map822.bar.com";
 $px_mapx400		= "px-mapx400.bar.com";
+
 $rp_mbox		= "rp-mbox.bar.com";
 $rp_txtdname		= "rp-txtdname.bar.com";
+
 $rt_preference		= 10;
 $rt_intermediate	= "rt-intermediate.bar.com";
+
 $soa_mname		= "soa-mname.bar.com";
 $soa_rname		= "soa-rname.bar.com";
 $soa_serial		= 12345;
@@ -62,11 +94,14 @@ $soa_refresh		= 7200;
 $soa_retry		= 3600;
 $soa_expire		= 2592000;
 $soa_minimum		= 86400;
+
 $srv_priority		= 1;
 $srv_weight		= 2;
 $srv_port		= 3;
 $srv_target		= "srv-target.bar.com";
+
 $txt_txtdata		= "txt-txtdata";
+
 $x25_psdn		= 123456789;
 
 #------------------------------------------------------------------------------
@@ -261,6 +296,19 @@ $packet->push("answer", new Net::DNS::RR(
 	TTL	=> $ttl,
 	PSDN	=> $x25_psdn));
 
+# answer[22]
+$packet->push("answer", new Net::DNS::RR(
+	Name      => $name,
+	Type      => "LOC",
+	TTL       => $ttl,
+	Version   => $loc_version,
+	Size      => $loc_size,
+	Horiz_Pre => $loc_horiz_pre,
+	Vert_Pre  => $loc_vert_pre,
+	Latitude  => $loc_latitude,
+	Longitude => $loc_longitude,
+	Altitude  => $loc_altitude));
+
 #------------------------------------------------------------------------------
 # Re-create the packet from data.
 #------------------------------------------------------------------------------
@@ -301,28 +349,36 @@ print "ok 10\n";
 print "not " unless $rr->address eq $a_address;
 print "ok 11\n";
 
+$rr2 = new Net::DNS::RR($rr->string);
+print "not " unless $rr2->string eq $rr->string;
+print "ok 12\n";
+
 #------------------------------------------------------------------------------
 # AAAA record
 #------------------------------------------------------------------------------
 
 $rr = $answer[1];
 print "not " unless defined $rr;
-print "ok 12\n";
-
-print "not " unless $rr->name eq $name;
 print "ok 13\n";
 
-print "not " unless $rr->class eq $class;
+print "not " unless $rr->name eq $name;
 print "ok 14\n";
 
-print "not " unless $rr->type eq "AAAA";
+print "not " unless $rr->class eq $class;
 print "ok 15\n";
 
-print "not " unless $rr->ttl == $ttl;
+print "not " unless $rr->type eq "AAAA";
 print "ok 16\n";
 
-print "not " unless $rr->address eq $aaaa_address;
+print "not " unless $rr->ttl == $ttl;
 print "ok 17\n";
+
+print "not " unless $rr->address eq $aaaa_address;
+print "ok 18\n";
+
+$rr2 = new Net::DNS::RR($rr->string);
+print "not " unless $rr2->string eq $rr->string;
+print "ok 19\n";
 
 #------------------------------------------------------------------------------
 # AFSDB record
@@ -330,25 +386,29 @@ print "ok 17\n";
 
 $rr = $answer[2];
 print "not " unless defined $rr;
-print "ok 18\n";
-
-print "not " unless $rr->name eq $name;
-print "ok 19\n";
-
-print "not " unless $rr->class eq $class;
 print "ok 20\n";
 
-print "not " unless $rr->type eq "AFSDB";
+print "not " unless $rr->name eq $name;
 print "ok 21\n";
 
-print "not " unless $rr->ttl == $ttl;
+print "not " unless $rr->class eq $class;
 print "ok 22\n";
 
-print "not " unless $rr->subtype == $afsdb_subtype;
+print "not " unless $rr->type eq "AFSDB";
 print "ok 23\n";
 
-print "not " unless $rr->hostname eq $afsdb_hostname;
+print "not " unless $rr->ttl == $ttl;
 print "ok 24\n";
+
+print "not " unless $rr->subtype == $afsdb_subtype;
+print "ok 25\n";
+
+print "not " unless $rr->hostname eq $afsdb_hostname;
+print "ok 26\n";
+
+$rr2 = new Net::DNS::RR($rr->string);
+print "not " unless $rr2->string eq $rr->string;
+print "ok 27\n";
 
 #------------------------------------------------------------------------------
 # CNAME record
@@ -356,22 +416,26 @@ print "ok 24\n";
 
 $rr = $answer[3];
 print "not " unless defined $rr;
-print "ok 25\n";
-
-print "not " unless $rr->name eq $name;
-print "ok 26\n";
-
-print "not " unless $rr->class eq $class;
-print "ok 27\n";
-
-print "not " unless $rr->type eq "CNAME";
 print "ok 28\n";
 
-print "not " unless $rr->ttl == $ttl;
+print "not " unless $rr->name eq $name;
 print "ok 29\n";
 
-print "not " unless $rr->cname eq $cname_cname;
+print "not " unless $rr->class eq $class;
 print "ok 30\n";
+
+print "not " unless $rr->type eq "CNAME";
+print "ok 31\n";
+
+print "not " unless $rr->ttl == $ttl;
+print "ok 32\n";
+
+print "not " unless $rr->cname eq $cname_cname;
+print "ok 33\n";
+
+$rr2 = new Net::DNS::RR($rr->string);
+print "not " unless $rr2->string eq $rr->string;
+print "ok 34\n";
 
 #------------------------------------------------------------------------------
 # HINFO record
@@ -379,25 +443,29 @@ print "ok 30\n";
 
 $rr = $answer[4];
 print "not " unless defined $rr;
-print "ok 31\n";
-
-print "not " unless $rr->name eq $name;
-print "ok 32\n";
-
-print "not " unless $rr->class eq $class;
-print "ok 33\n";
-
-print "not " unless $rr->type eq "HINFO";
-print "ok 34\n";
-
-print "not " unless $rr->ttl == $ttl;
 print "ok 35\n";
 
-print "not " unless $rr->cpu eq $hinfo_cpu;
+print "not " unless $rr->name eq $name;
 print "ok 36\n";
 
-print "not " unless $rr->os eq $hinfo_os;
+print "not " unless $rr->class eq $class;
 print "ok 37\n";
+
+print "not " unless $rr->type eq "HINFO";
+print "ok 38\n";
+
+print "not " unless $rr->ttl == $ttl;
+print "ok 39\n";
+
+print "not " unless $rr->cpu eq $hinfo_cpu;
+print "ok 40\n";
+
+print "not " unless $rr->os eq $hinfo_os;
+print "ok 41\n";
+
+$rr2 = new Net::DNS::RR($rr->string);
+print "not " unless $rr2->string eq $rr->string;
+print "ok 42\n";
 
 #------------------------------------------------------------------------------
 # ISDN record
@@ -405,54 +473,35 @@ print "ok 37\n";
 
 $rr = $answer[5];
 print "not " unless defined $rr;
-print "ok 38\n";
-
-print "not " unless $rr->name eq $name;
-print "ok 39\n";
-
-print "not " unless $rr->class eq $class;
-print "ok 40\n";
-
-print "not " unless $rr->type eq "ISDN";
-print "ok 41\n";
-
-print "not " unless $rr->ttl == $ttl;
-print "ok 42\n";
-
-print "not " unless $rr->address eq $isdn_address;
 print "ok 43\n";
 
-print "not " unless $rr->sa eq $isdn_sa;
+print "not " unless $rr->name eq $name;
 print "ok 44\n";
+
+print "not " unless $rr->class eq $class;
+print "ok 45\n";
+
+print "not " unless $rr->type eq "ISDN";
+print "ok 46\n";
+
+print "not " unless $rr->ttl == $ttl;
+print "ok 47\n";
+
+print "not " unless $rr->address eq $isdn_address;
+print "ok 48\n";
+
+print "not " unless $rr->sa eq $isdn_sa;
+print "ok 49\n";
+
+$rr2 = new Net::DNS::RR($rr->string);
+print "not " unless $rr2->string eq $rr->string;
+print "ok 50\n";
 
 #------------------------------------------------------------------------------
 # MB record
 #------------------------------------------------------------------------------
 
 $rr = $answer[6];
-print "not " unless defined $rr;
-print "ok 45\n";
-
-print "not " unless $rr->name eq $name;
-print "ok 46\n";
-
-print "not " unless $rr->class eq $class;
-print "ok 47\n";
-
-print "not " unless $rr->type eq "MB";
-print "ok 48\n";
-
-print "not " unless $rr->ttl == $ttl;
-print "ok 49\n";
-
-print "not " unless $rr->madname eq $mb_madname;
-print "ok 50\n";
-
-#------------------------------------------------------------------------------
-# MG record
-#------------------------------------------------------------------------------
-
-$rr = $answer[7];
 print "not " unless defined $rr;
 print "ok 51\n";
 
@@ -462,14 +511,45 @@ print "ok 52\n";
 print "not " unless $rr->class eq $class;
 print "ok 53\n";
 
-print "not " unless $rr->type eq "MG";
+print "not " unless $rr->type eq "MB";
 print "ok 54\n";
 
 print "not " unless $rr->ttl == $ttl;
 print "ok 55\n";
 
-print "not " unless $rr->mgmname eq $mg_mgmname;
+print "not " unless $rr->madname eq $mb_madname;
 print "ok 56\n";
+
+$rr2 = new Net::DNS::RR($rr->string);
+print "not " unless $rr2->string eq $rr->string;
+print "ok 57\n";
+
+#------------------------------------------------------------------------------
+# MG record
+#------------------------------------------------------------------------------
+
+$rr = $answer[7];
+print "not " unless defined $rr;
+print "ok 58\n";
+
+print "not " unless $rr->name eq $name;
+print "ok 59\n";
+
+print "not " unless $rr->class eq $class;
+print "ok 60\n";
+
+print "not " unless $rr->type eq "MG";
+print "ok 61\n";
+
+print "not " unless $rr->ttl == $ttl;
+print "ok 62\n";
+
+print "not " unless $rr->mgmname eq $mg_mgmname;
+print "ok 63\n";
+
+$rr2 = new Net::DNS::RR($rr->string);
+print "not " unless $rr2->string eq $rr->string;
+print "ok 64\n";
 
 #------------------------------------------------------------------------------
 # MINFO record
@@ -477,25 +557,29 @@ print "ok 56\n";
 
 $rr = $answer[8];
 print "not " unless defined $rr;
-print "ok 57\n";
+print "ok 65\n";
 
 print "not " unless $rr->name eq $name;
-print "ok 58\n";
+print "ok 66\n";
 
 print "not " unless $rr->class eq $class;
-print "ok 59\n";
+print "ok 67\n";
 
 print "not " unless $rr->type eq "MINFO";
-print "ok 60\n";
+print "ok 68\n";
 
 print "not " unless $rr->ttl == $ttl;
-print "ok 61\n";
+print "ok 69\n";
 
 print "not " unless $rr->rmailbx eq $minfo_rmailbx;
-print "ok 62\n";
+print "ok 70\n";
 
 print "not " unless $rr->emailbx eq $minfo_emailbx;
-print "ok 63\n";
+print "ok 71\n";
+
+$rr2 = new Net::DNS::RR($rr->string);
+print "not " unless $rr2->string eq $rr->string;
+print "ok 72\n";
 
 #------------------------------------------------------------------------------
 # MR record
@@ -503,22 +587,26 @@ print "ok 63\n";
 
 $rr = $answer[9];
 print "not " unless defined $rr;
-print "ok 64\n";
+print "ok 73\n";
 
 print "not " unless $rr->name eq $name;
-print "ok 65\n";
+print "ok 74\n";
 
 print "not " unless $rr->class eq $class;
-print "ok 66\n";
+print "ok 75\n";
 
 print "not " unless $rr->type eq "MR";
-print "ok 67\n";
+print "ok 76\n";
 
 print "not " unless $rr->ttl == $ttl;
-print "ok 68\n";
+print "ok 77\n";
 
 print "not " unless $rr->newname eq $mr_newname;
-print "ok 69\n";
+print "ok 78\n";
+
+$rr2 = new Net::DNS::RR($rr->string);
+print "not " unless $rr2->string eq $rr->string;
+print "ok 79\n";
 
 #------------------------------------------------------------------------------
 # MX record
@@ -526,69 +614,35 @@ print "ok 69\n";
 
 $rr = $answer[10];
 print "not " unless defined $rr;
-print "ok 70\n";
+print "ok 80\n";
 
 print "not " unless $rr->name eq $name;
-print "ok 71\n";
+print "ok 81\n";
 
 print "not " unless $rr->class eq $class;
-print "ok 72\n";
+print "ok 82\n";
 
 print "not " unless $rr->type eq "MX";
-print "ok 73\n";
+print "ok 83\n";
 
 print "not " unless $rr->ttl == $ttl;
-print "ok 74\n";
+print "ok 84\n";
 
 print "not " unless $rr->preference == $mx_preference;
-print "ok 75\n";
+print "ok 85\n";
 
 print "not " unless $rr->exchange eq $mx_exchange;
-print "ok 76\n";
+print "ok 86\n";
+
+$rr2 = new Net::DNS::RR($rr->string);
+print "not " unless $rr2->string eq $rr->string;
+print "ok 87\n";
 
 #------------------------------------------------------------------------------
 # NAPTR record
 #------------------------------------------------------------------------------
 
 $rr = $answer[11];
-print "not " unless defined $rr;
-print "ok 77\n";
-
-print "not " unless $rr->name eq $name;
-print "ok 78\n";
-
-print "not " unless $rr->class eq $class;
-print "ok 79\n";
-
-print "not " unless $rr->type eq "NAPTR";
-print "ok 80\n";
-
-print "not " unless $rr->ttl == $ttl;
-print "ok 81\n";
-
-print "not " unless $rr->order == $naptr_order;
-print "ok 82\n";
-
-print "not " unless $rr->preference == $naptr_preference;
-print "ok 83\n";
-
-print "not " unless $rr->flags eq $naptr_flags;
-print "ok 84\n";
-
-print "not " unless $rr->service eq $naptr_service;
-print "ok 85\n";
-
-print "not " unless $rr->regexp eq $naptr_regexp;
-print "ok 86\n";
-
-print "not " unless $rr->replacement eq $naptr_replacement;
-print "ok 87\n";
-
-#------------------------------------------------------------------------------
-# NS record
-#------------------------------------------------------------------------------
-
-$rr = $answer[12];
 print "not " unless defined $rr;
 print "ok 88\n";
 
@@ -598,64 +652,66 @@ print "ok 89\n";
 print "not " unless $rr->class eq $class;
 print "ok 90\n";
 
-print "not " unless $rr->type eq "NS";
+print "not " unless $rr->type eq "NAPTR";
 print "ok 91\n";
 
 print "not " unless $rr->ttl == $ttl;
 print "ok 92\n";
 
-print "not " unless $rr->nsdname eq $ns_nsdname;
+print "not " unless $rr->order == $naptr_order;
 print "ok 93\n";
+
+print "not " unless $rr->preference == $naptr_preference;
+print "ok 94\n";
+
+print "not " unless $rr->flags eq $naptr_flags;
+print "ok 95\n";
+
+print "not " unless $rr->service eq $naptr_service;
+print "ok 96\n";
+
+print "not " unless $rr->regexp eq $naptr_regexp;
+print "ok 97\n";
+
+print "not " unless $rr->replacement eq $naptr_replacement;
+print "ok 98\n";
+
+$rr2 = new Net::DNS::RR($rr->string);
+print "not " unless $rr2->string eq $rr->string;
+print "ok 99\n";
+
+#------------------------------------------------------------------------------
+# NS record
+#------------------------------------------------------------------------------
+
+$rr = $answer[12];
+print "not " unless defined $rr;
+print "ok 100\n";
+
+print "not " unless $rr->name eq $name;
+print "ok 101\n";
+
+print "not " unless $rr->class eq $class;
+print "ok 102\n";
+
+print "not " unless $rr->type eq "NS";
+print "ok 103\n";
+
+print "not " unless $rr->ttl == $ttl;
+print "ok 104\n";
+
+print "not " unless $rr->nsdname eq $ns_nsdname;
+print "ok 105\n";
+
+$rr2 = new Net::DNS::RR($rr->string);
+print "not " unless $rr2->string eq $rr->string;
+print "ok 106\n";
 
 #------------------------------------------------------------------------------
 # NSAP record
 #------------------------------------------------------------------------------
 
 $rr = $answer[13];
-print "not " unless defined $rr;
-print "ok 94\n";
-
-print "not " unless $rr->name eq $name;
-print "ok 95\n";
-
-print "not " unless $rr->class eq $class;
-print "ok 96\n";
-
-print "not " unless $rr->type eq "NSAP";
-print "ok 97\n";
-
-print "not " unless $rr->ttl == $ttl;
-print "ok 98\n";
-
-print "not " unless $rr->afi eq $nsap_afi;
-print "ok 99\n";
-
-print "not " unless $rr->idi eq $nsap_idi;
-print "ok 100\n";
-
-print "not " unless $rr->dfi eq $nsap_dfi;
-print "ok 101\n";
-
-print "not " unless $rr->aa eq $nsap_aa;
-print "ok 102\n";
-
-print "not " unless $rr->rd eq $nsap_rd;
-print "ok 103\n";
-
-print "not " unless $rr->area eq $nsap_area;
-print "ok 104\n";
-
-print "not " unless $rr->id eq $nsap_id;
-print "ok 105\n";
-
-print "not " unless $rr->sel eq $nsap_sel;
-print "ok 106\n";
-
-#------------------------------------------------------------------------------
-# PTR record
-#------------------------------------------------------------------------------
-
-$rr = $answer[14];
 print "not " unless defined $rr;
 print "ok 107\n";
 
@@ -665,49 +721,45 @@ print "ok 108\n";
 print "not " unless $rr->class eq $class;
 print "ok 109\n";
 
-print "not " unless $rr->type eq "PTR";
+print "not " unless $rr->type eq "NSAP";
 print "ok 110\n";
 
 print "not " unless $rr->ttl == $ttl;
 print "ok 111\n";
 
-print "not " unless $rr->ptrdname eq $ptr_ptrdname;
+print "not " unless $rr->afi eq $nsap_afi;
 print "ok 112\n";
 
-#------------------------------------------------------------------------------
-# PX record
-#------------------------------------------------------------------------------
-
-$rr = $answer[15];
-print "not " unless defined $rr;
+print "not " unless $rr->idi eq $nsap_idi;
 print "ok 113\n";
 
-print "not " unless $rr->name eq $name;
+print "not " unless $rr->dfi eq $nsap_dfi;
 print "ok 114\n";
 
-print "not " unless $rr->class eq $class;
+print "not " unless $rr->aa eq $nsap_aa;
 print "ok 115\n";
 
-print "not " unless $rr->type eq "PX";
+print "not " unless $rr->rd eq $nsap_rd;
 print "ok 116\n";
 
-print "not " unless $rr->ttl == $ttl;
+print "not " unless $rr->area eq $nsap_area;
 print "ok 117\n";
 
-print "not " unless $rr->preference == $px_preference;
+print "not " unless $rr->id eq $nsap_id;
 print "ok 118\n";
 
-print "not " unless $rr->map822 eq $px_map822;
+print "not " unless $rr->sel eq $nsap_sel;
 print "ok 119\n";
 
-print "not " unless $rr->mapx400 eq $px_mapx400;
+# $rr2 = new Net::DNS::RR($rr->string);
+# print "not " unless $rr2->string eq $rr->string;
 print "ok 120\n";
 
 #------------------------------------------------------------------------------
-# RP record
+# PTR record
 #------------------------------------------------------------------------------
 
-$rr = $answer[16];
+$rr = $answer[14];
 print "not " unless defined $rr;
 print "ok 121\n";
 
@@ -717,23 +769,24 @@ print "ok 122\n";
 print "not " unless $rr->class eq $class;
 print "ok 123\n";
 
-print "not " unless $rr->type eq "RP";
+print "not " unless $rr->type eq "PTR";
 print "ok 124\n";
 
 print "not " unless $rr->ttl == $ttl;
 print "ok 125\n";
 
-print "not " unless $rr->mbox eq $rp_mbox;
+print "not " unless $rr->ptrdname eq $ptr_ptrdname;
 print "ok 126\n";
 
-print "not " unless $rr->txtdname eq $rp_txtdname;
+$rr2 = new Net::DNS::RR($rr->string);
+print "not " unless $rr2->string eq $rr->string;
 print "ok 127\n";
 
 #------------------------------------------------------------------------------
-# RT record
+# PX record
 #------------------------------------------------------------------------------
 
-$rr = $answer[17];
+$rr = $answer[15];
 print "not " unless defined $rr;
 print "ok 128\n";
 
@@ -743,17 +796,84 @@ print "ok 129\n";
 print "not " unless $rr->class eq $class;
 print "ok 130\n";
 
-print "not " unless $rr->type eq "RT";
+print "not " unless $rr->type eq "PX";
 print "ok 131\n";
 
 print "not " unless $rr->ttl == $ttl;
 print "ok 132\n";
 
-print "not " unless $rr->preference == $rt_preference;
+print "not " unless $rr->preference == $px_preference;
 print "ok 133\n";
 
-print "not " unless $rr->intermediate eq $rt_intermediate;
+print "not " unless $rr->map822 eq $px_map822;
 print "ok 134\n";
+
+print "not " unless $rr->mapx400 eq $px_mapx400;
+print "ok 135\n";
+
+$rr2 = new Net::DNS::RR($rr->string);
+print "not " unless $rr2->string eq $rr->string;
+print "ok 136\n";
+
+#------------------------------------------------------------------------------
+# RP record
+#------------------------------------------------------------------------------
+
+$rr = $answer[16];
+print "not " unless defined $rr;
+print "ok 137\n";
+
+print "not " unless $rr->name eq $name;
+print "ok 138\n";
+
+print "not " unless $rr->class eq $class;
+print "ok 139\n";
+
+print "not " unless $rr->type eq "RP";
+print "ok 140\n";
+
+print "not " unless $rr->ttl == $ttl;
+print "ok 141\n";
+
+print "not " unless $rr->mbox eq $rp_mbox;
+print "ok 142\n";
+
+print "not " unless $rr->txtdname eq $rp_txtdname;
+print "ok 143\n";
+
+$rr2 = new Net::DNS::RR($rr->string);
+print "not " unless $rr2->string eq $rr->string;
+print "ok 144\n";
+
+#------------------------------------------------------------------------------
+# RT record
+#------------------------------------------------------------------------------
+
+$rr = $answer[17];
+print "not " unless defined $rr;
+print "ok 145\n";
+
+print "not " unless $rr->name eq $name;
+print "ok 146\n";
+
+print "not " unless $rr->class eq $class;
+print "ok 147\n";
+
+print "not " unless $rr->type eq "RT";
+print "ok 148\n";
+
+print "not " unless $rr->ttl == $ttl;
+print "ok 149\n";
+
+print "not " unless $rr->preference == $rt_preference;
+print "ok 150\n";
+
+print "not " unless $rr->intermediate eq $rt_intermediate;
+print "ok 151\n";
+
+$rr2 = new Net::DNS::RR($rr->string);
+print "not " unless $rr2->string eq $rr->string;
+print "ok 152\n";
 
 #------------------------------------------------------------------------------
 # SOA record
@@ -761,40 +881,44 @@ print "ok 134\n";
 
 $rr = $answer[18];
 print "not " unless defined $rr;
-print "ok 135\n";
+print "ok 153\n";
 
 print "not " unless $rr->name eq $name;
-print "ok 136\n";
+print "ok 154\n";
 
 print "not " unless $rr->class eq $class;
-print "ok 137\n";
+print "ok 155\n";
 
 print "not " unless $rr->type eq "SOA";
-print "ok 138\n";
+print "ok 156\n";
 
 print "not " unless $rr->ttl == $ttl;
-print "ok 139\n";
+print "ok 157\n";
 
 print "not " unless $rr->mname eq $soa_mname;
-print "ok 140\n";
+print "ok 158\n";
 
 print "not " unless $rr->rname eq $soa_rname;
-print "ok 141\n";
+print "ok 159\n";
 
 print "not " unless $rr->serial == $soa_serial;
-print "ok 142\n";
+print "ok 160\n";
 
 print "not " unless $rr->refresh == $soa_refresh;
-print "ok 143\n";
+print "ok 161\n";
 
 print "not " unless $rr->retry == $soa_retry;
-print "ok 144\n";
+print "ok 162\n";
 
 print "not " unless $rr->expire == $soa_expire;
-print "ok 145\n";
+print "ok 163\n";
 
 print "not " unless $rr->minimum == $soa_minimum;
-print "ok 146\n";
+print "ok 164\n";
+
+$rr2 = new Net::DNS::RR($rr->string);
+print "not " unless $rr2->string eq $rr->string;
+print "ok 165\n";
 
 #------------------------------------------------------------------------------
 # SRV record
@@ -802,31 +926,35 @@ print "ok 146\n";
 
 $rr = $answer[19];
 print "not " unless defined $rr;
-print "ok 147\n";
+print "ok 166\n";
 
 print "not " unless $rr->name eq $name;
-print "ok 148\n";
+print "ok 167\n";
 
 print "not " unless $rr->class eq $class;
-print "ok 149\n";
+print "ok 168\n";
 
 print "not " unless $rr->type eq "SRV";
-print "ok 150\n";
+print "ok 169\n";
 
 print "not " unless $rr->ttl == $ttl;
-print "ok 151\n";
+print "ok 170\n";
 
 print "not " unless $rr->priority == $srv_priority;
-print "ok 152\n";
+print "ok 171\n";
 
 print "not " unless $rr->weight == $srv_weight;
-print "ok 153\n";
+print "ok 172\n";
 
 print "not " unless $rr->port == $srv_port;
-print "ok 154\n";
+print "ok 173\n";
 
 print "not " unless $rr->target eq $srv_target;
-print "ok 155\n";
+print "ok 174\n";
+
+$rr2 = new Net::DNS::RR($rr->string);
+print "not " unless $rr2->string eq $rr->string;
+print "ok 175\n";
 
 #------------------------------------------------------------------------------
 # TXT record
@@ -834,22 +962,26 @@ print "ok 155\n";
 
 $rr = $answer[20];
 print "not " unless defined $rr;
-print "ok 156\n";
+print "ok 176\n";
 
 print "not " unless $rr->name eq $name;
-print "ok 157\n";
+print "ok 177\n";
 
 print "not " unless $rr->class eq $class;
-print "ok 158\n";
+print "ok 178\n";
 
 print "not " unless $rr->type eq "TXT";
-print "ok 159\n";
+print "ok 179\n";
 
 print "not " unless $rr->ttl == $ttl;
-print "ok 160\n";
+print "ok 180\n";
 
 print "not " unless $rr->txtdata eq $txt_txtdata;
-print "ok 161\n";
+print "ok 181\n";
+
+$rr2 = new Net::DNS::RR($rr->string);
+print "not " unless $rr2->string eq $rr->string;
+print "ok 182\n";
 
 #------------------------------------------------------------------------------
 # X25 record
@@ -857,19 +989,68 @@ print "ok 161\n";
 
 $rr = $answer[21];
 print "not " unless defined $rr;
-print "ok 162\n";
+print "ok 183\n";
 
 print "not " unless $rr->name eq $name;
-print "ok 163\n";
+print "ok 184\n";
 
 print "not " unless $rr->class eq $class;
-print "ok 164\n";
+print "ok 185\n";
 
 print "not " unless $rr->type eq "X25";
-print "ok 165\n";
+print "ok 186\n";
 
 print "not " unless $rr->ttl == $ttl;
-print "ok 166\n";
+print "ok 187\n";
 
 print "not " unless $rr->psdn eq $x25_psdn;
-print "ok 167\n";
+print "ok 188\n";
+
+$rr2 = new Net::DNS::RR($rr->string);
+print "not " unless $rr2->string eq $rr->string;
+print "ok 189\n";
+
+#------------------------------------------------------------------------------
+# LOC record
+#------------------------------------------------------------------------------
+
+$rr = $answer[22];
+print "not " unless defined $rr;
+print "ok 190\n";
+
+print "not " unless $rr->name eq $name;
+print "ok 191\n";
+
+print "not " unless $rr->class eq $class;
+print "ok 192\n";
+
+print "not " unless $rr->type eq "LOC";
+print "ok 193\n";
+
+print "not " unless $rr->ttl == $ttl;
+print "ok 194\n";
+
+print "not " unless $rr->version eq $loc_version;
+print "ok 195\n";
+
+print "not " unless $rr->size == $loc_size;
+print "ok 196\n";
+
+print "not " unless $rr->horiz_pre == $loc_horiz_pre;
+print "ok 197\n";
+
+print "not " unless $rr->vert_pre == $loc_vert_pre;
+print "ok 198\n";
+
+print "not " unless $rr->latitude == $loc_latitude;
+print "ok 199\n";
+
+print "not " unless $rr->longitude == $loc_longitude;
+print "ok 200\n";
+
+print "not " unless $rr->altitude == $loc_altitude;
+print "ok 201\n";
+
+$rr2 = new Net::DNS::RR($rr->string);
+print "not " unless $rr2->string eq $rr->string;
+print "ok 202\n";

@@ -1,6 +1,6 @@
 package Net::DNS::RR::NAPTR;
 
-# $Id: NAPTR.pm,v 1.3 1997/06/13 03:33:54 mfuhr Exp $
+# $Id: NAPTR.pm,v 1.4 1997/07/06 16:31:54 mfuhr Exp $
 
 use strict;
 use vars qw(@ISA);
@@ -40,6 +40,28 @@ sub new {
 		$self->{"replacement"} = $replacement;
 	}
   
+	return bless $self, $class;
+}
+
+sub new_from_string {
+	my ($class, $self, $string) = @_;
+
+	if ($string && $string =~ /^      (\d+)      \s+
+				          (\d+)      \s+
+				     ['"] (.*?) ['"] \s+
+				     ['"] (.*?) ['"] \s+
+				     ['"] (.*?) ['"] \s+
+				          (\S+) $/x) {
+
+		$self->{"order"}       = $1;
+		$self->{"preference"}  = $2;
+		$self->{"flags"}       = $3;
+		$self->{"service"}     = $4;
+		$self->{"regexp"}      = $5;
+		$self->{"replacement"} = $6;
+		$self->{"replacement"} =~ s/\.+$//;
+	}
+
 	return bless $self, $class;
 }
 

@@ -6,7 +6,7 @@ use vars qw($VERSION $AUTOLOAD);
 use Carp;
 use Net::DNS;
 
-# $Id: RR.pm,v 1.9 1997/06/13 03:39:58 mfuhr Exp $
+# $Id: RR.pm,v 1.10 1997/07/06 16:37:56 mfuhr Exp $
 $VERSION = $Net::DNS::VERSION;
 
 =head1 NAME
@@ -23,6 +23,11 @@ C<Net::DNS::RR> is the base class for DNS Resource Record (RR) objects.
 See also the manual pages for each RR type.
 
 =head1 METHODS
+
+B<WARNING!!!>  Don't assume the RR objects you receive from a query
+are of a particular type -- always check an object's type before calling
+any of its methods.  If you call an unknown method, you'll get a nasty
+warning message and C<Net::DNS::RR> will return C<undef> to the caller.
 
 =cut
 
@@ -56,7 +61,27 @@ use Net::DNS::RR::SRV;		$RR{"SRV"}	= 1;
 use Net::DNS::RR::TXT;		$RR{"TXT"}	= 1;
 use Net::DNS::RR::X25;		$RR{"X25"}	= 1;
 
-=head2 new
+=head2 new (from string)
+
+    $a = new Net::DNS::RR("foo.bar.com. 86400 A 10.1.2.3");
+    $mx = new Net::DNS::RR("bar.com. 7200 MX 10 mailhost.bar.com.");
+    $cname = new Net::DNS::RR("www.bar.com 300 IN CNAME www1.bar.com");
+    $txt = new Net::DNS::RR("baz.bar.com 3600 HS TXT 'text record'");
+
+Returns a C<Net::DNS::RR> object of the appropriate type and
+initialized from the string passed by the user.  The format of the
+string is that used in zone files, and is compatible with the string
+returned by C<Net::DNS::RR>->C<string>.
+
+The name and RR type are required; all other information is optional.
+If omitted, the TTL defaults to 0 and the RR class defaults to IN.
+Omitting the optional fields is useful for creating the empty RDATA
+sections required for certain dynamic update operations.  See the
+C<Net::DNS::Update> manual page for additional examples.
+
+All names must be fully qualified.  The trailing dot (.) is optional.
+
+=head2 new (from hash)
 
     $rr = new Net::DNS::RR(
 	Name    => "foo.bar.com",
@@ -86,58 +111,180 @@ is recommended.
 =cut
 
 sub new {
-	my $class = shift;
 	my $retval;
-	my %self;
 
-	if (@_ == 7 && ref $_[5]) {
-		my ($name, $rrtype, $rrclass, $ttl,
-		    $rdlength, $data, $offset) = @_;
+	if (@_ == 8 && ref $_[6]) {
+		$retval = new_from_data(@_);
+	}
+	elsif (@_ == 2 || @_ == 3) {
+		$retval = new_from_string(@_);
+	}
+	else {
+		$retval = new_from_hash(@_);
+	}
 
+	return $retval;
+}
+
+sub new_from_data {
+	my $class = shift;
+	my ($name, $rrtype, $rrclass, $ttl, $rdlength, $data, $offset) = @_;
+	my (%self, $retval);
+
+	%self = (
+		"name"		=> $name,
+		"type"		=> $rrtype,
+		"class"		=> $rrclass,
+		"ttl"		=> $ttl,
+		"rdlength"	=> $rdlength,
+		"rdata"		=> substr($$data, $offset, $rdlength),
+	);
+
+
+	if ($RR{$rrtype}) {
+		my $subclass = $class . "::" . $rrtype;
+		$retval = $subclass->new(\%self, $data, $offset);
+	}
+	else {
+		$retval = bless \%self, $class;
+	}
+
+	return $retval;
+}
+
+sub new_from_string {
+	my ($class, $rrstring, $update_type) = @_;
+	my ($s, %self, $retval);
+
+	my $name     = "";
+	my $ttl      = 0;
+	my $rrclass  = "";
+	my $rrtype   = "";
+	my $rdata    = "";
+
+	while ($rrstring =~ /\s*(\S+)\s*/g) {
+		$s = $1;
+
+		if (!$name) {
+			($name = $s) =~ s/\.+$//;
+		}
+		elsif ($s =~ /^\d+$/) {
+			$ttl = $s;
+		}
+		elsif (!$rrclass && exists $Net::DNS::classesbyname{uc($s)}) {
+			$rrclass = $s;
+			$rdata = $';  # in case this is really type=ANY
+		}
+		elsif (exists $Net::DNS::typesbyname{uc($s)}) {
+			$rrtype = $s;
+			$rdata = $';
+			last;
+		}
+		else {
+			last;
+		}
+	}
+
+	$rdata =~ s/\s+$// if $rdata;
+
+	if (!$rrtype && $rrclass && $rrclass eq "ANY") {
+		$rrtype = $rrclass;
+		$rrclass = "IN";
+	}
+	elsif (!$rrclass) {
+		$rrclass = "IN";
+	}
+
+	unless ($rrtype) {
+		$rrtype = "ANY";
+	}
+
+	if ($update_type) {
+		$update_type = lc $update_type;
+		if ($update_type eq "yxrrset") {
+			$ttl = 0;
+			$rrclass = "ANY" unless $rdata;
+		}
+		elsif ($update_type eq "nxrrset") {
+			$ttl = 0;
+			$rrclass = "NONE";
+			$rdata = "";
+		}
+		elsif ($update_type eq "yxdomain") {
+			$ttl = 0;
+			$rrclass = "ANY";
+			$rrtype = "ANY";
+			$rdata = "";
+		}
+		elsif ($update_type eq "nxdomain") {
+			$ttl = 0;
+			$rrclass = "NONE";
+			$rrtype = "ANY";
+			$rdata = "";
+		}
+		elsif ($update_type =~ /^(rr_)?add$/) {
+			$ttl = 86400 unless $ttl;
+		}
+		elsif ($update_type =~ /^(rr_)?del(ete)?$/) {
+			$ttl = 0;
+			$rrclass = $rdata ? "NONE" : "ANY";
+		}
+	}
+
+	if ($rrtype) {
 		%self = (
 			"name"		=> $name,
 			"type"		=> $rrtype,
 			"class"		=> $rrclass,
 			"ttl"		=> $ttl,
-			"rdlength"	=> $rdlength,
-			"rdata"		=> substr($$data, $offset, $rdlength),
+			"rdlength"      => 0,
+			"rdata"         => "",
 		);
 
 		my $subclass = $class . "::" . $rrtype;
 
 		if ($RR{$rrtype}) {
-			$retval = new $subclass(\%self, $data, $offset);
+			my $subclass = $class . "::" . $rrtype;
+			$retval = $subclass->new_from_string(\%self, $rdata);
 		}
 		else {
 			$retval = bless \%self, $class;
 		}
 	}
 	else {
-		my %tempself = @_;
-		my ($key, $val);
+		$retval = undef;
+	}
 
-		while (($key, $val) = each %tempself) {
-			$self{lc($key)} = $val;
-		}
+	return $retval;
+}
 
-		Carp::confess("RR name not specified")
-			unless exists $self{"name"};
-		Carp::confess("RR type not specified")
-			unless exists $self{"type"};
+sub new_from_hash {
+	my $class = shift;
+	my %tempself = @_;
+	my (%self, $retval);
+	my ($key, $val);
 
-		$self{"ttl"}   = 0    unless exists $self{"ttl"};
-		$self{"class"} = "IN" unless exists $self{"class"};
+	while (($key, $val) = each %tempself) {
+		$self{lc($key)} = $val;
+	}
 
-		$self{"rdlength"} = length $self{"rdata"}
-			if exists $self{"rdata"};
+	Carp::confess("RR name not specified")
+		unless exists $self{"name"};
+	Carp::confess("RR type not specified")
+		unless exists $self{"type"};
 
-		if ($RR{$self{"type"}}) {
-			my $subclass = $class . "::" . $self{"type"};
-			$retval = bless \%self, $subclass;
-		}
-		else {
-			$retval = bless \%self, $class;
-		}
+	$self{"ttl"}   = 0    unless exists $self{"ttl"};
+	$self{"class"} = "IN" unless exists $self{"class"};
+
+	$self{"rdlength"} = length $self{"rdata"}
+		if exists $self{"rdata"};
+
+	if ($RR{$self{"type"}}) {
+		my $subclass = $class . "::" . $self{"type"};
+		$retval = bless \%self, $subclass;
+	}
+	else {
+		$retval = bless \%self, $class;
 	}
 
 	return $retval;
@@ -151,7 +298,7 @@ sub DESTROY {}
 
 =head2 print
 
-    $rrobj->print;
+    $rr->print;
 
 Prints the record to the standard output.  Calls the
 B<string> method to get the RR's string representation.
@@ -165,7 +312,7 @@ sub print {
 
 =head2 string
 
-    print $rrobj->string, "\n";
+    print $rr->string, "\n";
 
 Returns a string representation of the RR.  Calls the
 B<rdatastr> method to get the RR-specific data.
@@ -184,7 +331,7 @@ sub string {
 
 =head2 rdatastr
 
-    $s = $rrobj->rdatastr;
+    $s = $rr->rdatastr;
 
 Returns a string containing RR-specific data.  Subclasses will need
 to implement this method.
@@ -200,37 +347,37 @@ sub rdatastr {
 
 =head2 name
 
-    $name = $rrobj->name;
+    $name = $rr->name;
 
 Returns the record's domain name.
 
 =head2 type
 
-    $type = $rrobj->type;
+    $type = $rr->type;
 
 Returns the record's type.
 
 =head2 class
 
-    $class = $rrobj->class;
+    $class = $rr->class;
 
 Returns the record's class.
 
 =head2 ttl
 
-    $ttl = $rrobj->ttl;
+    $ttl = $rr->ttl;
 
 Returns the record's time-to-live (TTL).
 
 =head2 rdlength
 
-    $rdlength = $rrobj->rdlength;
+    $rdlength = $rr->rdlength;
 
 Returns the length of the record's data section.
 
 =head2 rdata
 
-    $rdata = $rrobj->rdata
+    $rdata = $rr->rdata
 
 Returns the record's data section as binary data.
 
@@ -290,10 +437,26 @@ sub AUTOLOAD {
 	if (@_) {
 		$self->{$name} = shift;
 	} elsif (!exists $self->{$name}) {
-		Carp::confess "\nERROR: no such method \"$name\" for the " .
-			      "following RR.\nPlease check your RR types " .
-			      "and call appropriate methods.\n\n  " .
-			      $self->string . "\n\nDied";
+		my $rr_string = $self->string;
+		Carp::carp(<<"AMEN");
+
+***
+***  WARNING!!!  The program has attempted to call the method
+***  "$name" for the following RR object:
+***
+***  $rr_string
+***
+***  This object doesn't have a method "$name".  THIS IS A BUG
+***  IN THE CALLING SOFTWARE, which has incorrectly assumed that
+***  the object would be of a particular type.  The calling
+***  software should check the type of each RR object before
+***  calling any of its methods.
+***
+***  Net::DNS has returned undef to the caller.
+***
+AMEN
+		warn "\n";
+		return undef;
 	}
 
 	return $self->{$name};
@@ -301,7 +464,7 @@ sub AUTOLOAD {
 
 =head1 BUGS
 
-This version of C<Net::DNS::RR> does no sanity checking on user-created
+This version of C<Net::DNS::RR> does little sanity checking on user-created
 RR objects.
 
 =head1 COPYRIGHT

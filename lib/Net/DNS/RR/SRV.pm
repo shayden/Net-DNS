@@ -1,6 +1,6 @@
 package Net::DNS::RR::SRV;
 
-# $Id: SRV.pm,v 1.3 1997/06/13 03:33:54 mfuhr Exp $
+# $Id: SRV.pm,v 1.4 1997/07/06 16:31:54 mfuhr Exp $
 
 use strict;
 use vars qw(@ISA);
@@ -22,6 +22,20 @@ sub new {
 		$self->{"weight"}   = $weight;
 		$self->{"port"}     = $port;
 		$self->{"target"}   = $target;
+	}
+
+	return bless $self, $class;
+}
+
+sub new_from_string {
+	my ($class, $self, $string) = @_;
+
+	if ($string && ($string =~ /^(\d+)\s+(\d+)\s+(\d+)\s+(\S+)$/)) {
+		$self->{"priority"} = $1;
+		$self->{"weight"}   = $2;
+		$self->{"port"}     = $3;
+		$self->{"target"}   = $4;
+		$self->{"target"}   =~ s/\.+$//;
 	}
 
 	return bless $self, $class;

@@ -1,0 +1,13 @@
+This directory contains contributed scripts that use Net::DNS.
+The Net::DNS author assumes no responsibility for them -- if
+you have problems or questions, please contact the contributor.
+
+
+Script			Contributor
+------			-----------
+loc2earth.cgi		Christopher Davis <ckd@kei.com>
+loclist.pl		Christopher Davis <ckd@kei.com>
+
+
+---
+$Id: README,v 1.1 1997/07/04 19:13:30 mfuhr Exp $

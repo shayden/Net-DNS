@@ -1,33 +1,38 @@
-# $Id: Makefile.PL,v 1.3 1997/04/03 06:28:30 mfuhr Exp $
+# $Id: Makefile.PL,v 1.4 1997/07/06 16:43:35 mfuhr Exp $
 
-# Check for required modules.  This stolen from libwww.
+# Check for required modules (borrowed from libwww).
 $| = 1;
 my $missing_modules = 0;
 
-# Not sure what version of IO::Socket I should be checking for.
-print "Checking for IO::Socket.";
+print "Checking for IO::Socket...";
 eval {
-    require IO::Socket;
-    IO::Socket->require_version('1.15');
+	require IO::Socket;
+	IO::Socket->require_version('1.15');
 };
 if ($@) {
-    print " failed\n";
-    $missing_modules++;
-print <<EOT;
-$@
-The IO::Socket module is used by Net::DNS::Resolver.
+	print "failed\n";
+	$missing_modules++;
+	print <<"AMEN";
 
-EOT
-    sleep(2);  # Don't hurry too much
-} else {
-    print "  ok\n";
+ERROR: $@
+IO::Socket is required but wasn't found.  You must install the IO-1.15
+module to use Net::DNS.
+
+AMEN
+}
+else {
+    print "ok\n";
 }
 
-print <<EOT if $missing_modules;
-The missing modules can be obtained from CPAN.  Visit
-<URL:http://www.perl.com/CPAN/> to find a CPAN site near you.
+if ($missing_modules) {
+	die <<"AMEN";
+Missing modules can be obtained from the Comprehensive Perl Archive
+Network (CPAN) at <URL:http://www.perl.org/CPAN/>.
 
-EOT
+*** You can't use Net::DNS until any missing modules are installed ***
+
+AMEN
+}
 
 use ExtUtils::MakeMaker;
 

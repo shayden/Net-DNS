@@ -1,6 +1,6 @@
 package Net::DNS::RR::A;
 
-# $Id: A.pm,v 1.3 1997/06/13 03:33:54 mfuhr Exp $
+# $Id: A.pm,v 1.4 1997/07/06 16:31:54 mfuhr Exp $
 
 use strict;
 use vars qw(@ISA);
@@ -16,6 +16,21 @@ sub new {
 	if ($self->{"rdlength"} > 0) {
 		my $addr = inet_ntoa(substr($$data, $offset, 4));
 		$self->{"address"} = $addr;
+	}
+
+	return bless $self, $class;
+}
+
+sub new_from_string {
+	my ($class, $self, $string) = @_;
+
+	if ($string && ($string =~ /^(\d+)\.(\d+)\.(\d+)\.(\d+)\s*$/)
+	    && ($1 >= 0) && ($1 <= 255)
+	    && ($2 >= 0) && ($2 <= 255)
+	    && ($3 >= 0) && ($3 <= 255)
+	    && ($4 >= 0) && ($4 <= 255) ) {
+
+		$self->{"address"} = "$1.$2.$3.$4";
 	}
 
 	return bless $self, $class;

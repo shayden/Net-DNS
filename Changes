@@ -1,6 +1,48 @@
 Revision history for Net::DNS
 =============================
 
+*** 0.11  6 Jul 1997
+
+Net::DNS::RR->new now allows the programmer to create RR objects
+from text strings like "foo.com. 86400 IN A 172.16.1.2".  See the
+Net::DNS::RR manual page for examples.
+
+Wrote the functions yxrrset, nxrrset, yxdomain, nxdomain, rr_add,
+and rr_del as front-ends for creating RR objects in an update
+packet.  See the Net::DNS and Net::DNS::Update manual pages for
+documentation and examples.
+
+Changed Net::DNS::RR->AUTOLOAD to print a warning message and return
+undef if the programmer calls an unknown method for an RR object.
+Previous behavior died with an error message and a stack trace.
+This error happens when the calling software assumes that an RR
+object is of a particular type when it's actually of a different
+type.  THE CALLER SHOULD ALWAYS CHECK AN RR OBJECT'S TYPE BEFORE
+CALLING ANY OF ITS METHODS!  Personally, I think failure to do so
+deserves a fatal error but I can appreciate that not everyone agrees
+with me.  Suggested by Dirk Herr-Hoyman.
+
+Added the "answerfrom" and "answersize" methods to Net::DNS::Resolver
+and Net::DNS::Packet.
+
+Added the "mx" method to Net::DNS as a high-level function to return
+the MX records for a specified name.  This method will follow CNAME
+references as long as there are MX records in the answer section
+of the response packet (actually, it just ignores the CNAME records
+and returns whatever MX records are present -- I'm not sure if this
+is really correct).  Modified demo/mx to use this new method.
+
+Made the error message in Makefile.PL more descriptive.
+
+Net::DNS::Resolver->axfr no longer returns the redundant SOA record
+that terminates a zone transfer.
+
+Finished the code for adding a LOC RR to a dynamic update packet.
+
+Added loc2earth.cgi and loclist.pl to the contrib/ directory.
+Contributed by Christopher Davis.
+
+
 *** 0.10  12 Jun 1997
 
 Added an index and some more information to README.
@@ -183,4 +225,4 @@ memory management.
 
 ---
 Michael Fuhr <mfuhr@dimensional.com>
-$Id: Changes,v 1.9 1997/06/13 03:50:19 mfuhr Exp $
+$Id: Changes,v 1.10 1997/07/06 16:43:21 mfuhr Exp $

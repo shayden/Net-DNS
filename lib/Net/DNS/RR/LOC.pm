@@ -1,10 +1,12 @@
 package Net::DNS::RR::LOC;
 
-# $Id: LOC.pm,v 1.3 1997/06/13 03:34:54 mfuhr Exp $
+# $Id: LOC.pm,v 1.4 1997/07/06 16:32:33 mfuhr Exp $
 
 use strict;
 use vars qw(@ISA @EXPORT @EXPORT_OK @poweroften $reference_alt
-	    $reference_latlon $conv_sec $conv_min $conv_deg);
+	    $reference_latlon $conv_sec $conv_min $conv_deg
+	    $default_min $default_sec $default_size
+	    $default_horiz_pre $default_vert_pre);
 
 require Exporter;
 use Net::DNS;
@@ -29,6 +31,13 @@ $reference_latlon = 2**31;
 $conv_sec = 1000;
 $conv_min = 60 * $conv_sec;
 $conv_deg = 60 * $conv_min;
+
+# Defaults (from RFC 1876, Section 3).
+$default_min       = 0;
+$default_sec       = 0;
+$default_size      = 1;
+$default_horiz_pre = 10_000;
+$default_vert_pre  = 10;
 
 sub new {
 	my ($class, $self, $data, $offset) = @_;
@@ -76,6 +85,57 @@ sub new {
 	return bless $self, $class;
 }
 
+sub new_from_string {
+	my ($class, $self, $string) = @_;
+
+	if ($string && 
+	    $string =~ /^ (\d+) \s+		# deg lat
+			  ((\d+) \s+)?		# min lat
+			  (([\d.]+) \s+)?	# sec lat
+			  (N|S) \s+		# hem lat
+			  (\d+) \s+		# deg lon
+			  ((\d+) \s+)?		# min lon
+			  (([\d.]+) \s+)?	# sec lon
+			  (E|W) \s+		# hem lon
+			  (-?[\d.]+) m? 	# altitude
+			  (\s+ ([\d.]+) m?)?	# size
+			  (\s+ ([\d.]+) m?)?	# horiz precision
+			  (\s+ ([\d.]+) m?)? 	# vert precision
+		       /ix) {
+
+		# What to do for other versions?
+		my $version = 0;
+
+		my ($latdeg, $latmin, $latsec, $lathem) = ($1, $3, $5, $6);
+		my ($londeg, $lonmin, $lonsec, $lonhem) = ($7, $9, $11, $12);
+		my ($alt, $size, $horiz_pre, $vert_pre) = ($13, $15, $17, $19);
+
+		$latmin    = $default_min       unless $latmin;
+		$latsec    = $default_sec       unless $latsec;
+		$lathem    = uc($lathem);
+
+		$lonmin    = $default_min       unless $lonmin;
+		$lonsec    = $default_sec       unless $lonsec;
+		$lonhem    = uc($lonhem);
+
+		$size      = $default_size      unless $size;
+		$horiz_pre = $default_horiz_pre unless $horiz_pre;
+		$vert_pre  = $default_vert_pre  unless $vert_pre;
+
+		$self->{"version"}   = $version;
+		$self->{"size"}      = $size * 100;
+		$self->{"horiz_pre"} = $horiz_pre * 100;
+		$self->{"vert_pre"}  = $vert_pre * 100;
+		$self->{"latitude"}  = dms2latlon($latdeg, $latmin, $latsec,
+						  $lathem);
+		$self->{"longitude"} = dms2latlon($londeg, $lonmin, $lonsec,
+						  $lonhem);
+		$self->{"altitude"}  = $alt * 100 + $reference_alt;
+	}
+
+	return bless $self, $class;
+}
+
 sub rdatastr {
 	my $self = shift;
 	my $rdatastr;
@@ -113,12 +173,45 @@ sub rdatastr {
 	return $rdatastr;
 }
 
+sub rr_rdata {
+	my $self = shift;
+	my $rdata = "";
+
+	if (exists $self->{"version"}) {
+		$rdata .= pack("C", $self->{"version"});
+		if ($self->{"version"} == 0) {
+			$rdata .= pack("C3", precsize_valton($self->{"size"}),
+					     precsize_valton($self->{"horiz_pre"}),
+					     precsize_valton($self->{"vert_pre"}));
+			$rdata .= pack("N3", $self->{"latitude"},
+					     $self->{"longitude"},
+					     $self->{"altitude"});
+		}
+		else {
+			# What to do for other versions?
+		}
+	}
+
+	return $rdata;
+}
+
 sub precsize_ntoval {
 	my $prec = shift;
 
 	my $mantissa = (($prec >> 4) & 0x0f) % 10;
 	my $exponent = ($prec & 0x0f) % 10;
 	return $mantissa * $poweroften[$exponent];
+}
+
+sub precsize_valton {
+	my $val = shift;
+
+	my $exponent = 0;
+	while ($val > 10) {
+		$val /= 10;
+		++$exponent;
+	}
+	return (int($val) << 4) | ($exponent & 0x0f);
 }
 
 sub latlon2dms {
@@ -141,6 +234,16 @@ sub latlon2dms {
 	$hem = substr($hems, ($rawmsec >= $reference_latlon ? 0 : 1), 1);
 
 	return sprintf("%d %02d %02d.%03d %s", $deg, $min, $sec, $msec, $hem);
+}
+
+sub dms2latlon {
+	my ($deg, $min, $sec, $hem) = @_;
+	my ($retval);
+
+	$retval = ($deg * $conv_deg) + ($min * $conv_min) + ($sec * $conv_sec);
+	$retval = -$retval if ($hem eq "S") || ($hem eq "W");
+	$retval += $reference_latlon;
+	return $retval;
 }
 
 sub latlon {

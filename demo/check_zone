@@ -1,5 +1,5 @@
 #!/usr/local/bin/perl -w
-# $Id: check_zone,v 1.3 1997/05/21 03:30:21 mfuhr Exp $
+# $Id: check_zone,v 1.4 1997/06/29 04:48:45 mfuhr Exp $
 
 =head1 NAME
 
@@ -84,12 +84,14 @@ sub check_domain {
 
 	print "nameservers (will request zone from first available):\n";
 	my $ns;
-	foreach $ns ($nspack->answer) {
+	foreach $ns (grep { $_->type eq "NS" } $nspack->answer) {
 		print "\t", $ns->nsdname, "\n";
 	}
 	print "\n";
 		
-	$res->nameservers(map { $_->nsdname } $nspack->answer);
+	$res->nameservers(map  { $_->nsdname }
+			  grep { $_->type eq "NS" }
+			  $nspack->answer);
 
 	my @zone = $res->axfr($domain, $class);
 	unless (defined(@zone) && @zone) {
@@ -129,7 +131,7 @@ sub check_ptr {
 	my ($domain, $class, @zone) = @_;
 	my $res = new Net::DNS::Resolver;
 	my $rr;
-	foreach $rr (grep { $_->type eq "A"} @zone) {
+	foreach $rr (grep { $_->type eq "A" } @zone) {
 		my $host = $rr->name;
 		my $addr = $rr->address;
 		my $ans = $res->send($addr, "A", $class);
