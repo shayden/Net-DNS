@@ -67,6 +67,8 @@ use IO::Select;
 use Net::DNS;
 use Net::DNS::Packet;
 
+use constant MAX_ID => 65535;
+
 # $Id: Resolver.pm,v 1.12 1997/10/02 05:29:08 mfuhr Exp $
 $VERSION = $Net::DNS::VERSION;
 
@@ -101,7 +103,7 @@ push(@confpath, ".");
 );
 
 %global = (
-	"id"		=> int(rand(65535)),
+	"id"		=> int(rand(MAX_ID)),
 );
 
 =head2 new
@@ -244,7 +246,7 @@ sub string {
 }
 
 sub nextid {
-	return $global{"id"}++;
+	return $global{"id"}++ % (MAX_ID + 1);
 }
 
 =head2 searchlist

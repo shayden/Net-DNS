@@ -1,6 +1,24 @@
 Revision history for Net::DNS
 =============================
 
+
+*** 0.14  21 Jan 2002
+
+Net::DNS is in a state of flux.  The module is now maintained by a group
+of people including Mike Fuhr (the original developer) and others.
+
+This is an interum release, intended to return Net::DNS to 
+CPAN, and encourage new devopement.  Version 2.0 is not far behind 
+with major changes including support for windows platforms, TSIG 
+and Net::DNS::Nameserver (a very simple nameserver). 
+
+Fixed the "defined(@array) is deprecated" message in DNS.pm under perl 
+5.6.0 and greater.
+
+Fixed a bug in the Net::DNS::Resolver->nextid method to ensure
+that the query ID remains 16 bits.
+
+
 *** 0.12  1 Oct 1997
 
 Implemented TCP queries.  UDP is still the default, but you can

@@ -16,7 +16,7 @@ use vars qw(
 	%rcodesbyval
 );
 
-$VERSION = "0.12";
+$VERSION = "0.14";
 
 use Net::DNS::Resolver;
 use Net::DNS::Packet;
@@ -134,7 +134,7 @@ sub mx {
 		@mxlist = sort { $a->preference <=> $b->preference } @mxlist;
 	}
 
-	return defined @mxlist ? @mxlist : ();
+	return @mxlist;
 }
 
 sub yxrrset {
