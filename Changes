@@ -1,6 +1,24 @@
 Revision history for Net::DNS
 =============================
 
+*** 0.05  27 Mar 1997
+
+Fixed Net::DNS::Resolver->nameservers to accept IP addresses.  Was
+accepting only names.
+
+Fixed Net::DNS::Resolver->read_config() to ignore end-of-line comments
+when reading resolver config files.  Also fixed to recognize multiple
+"nameserver" and "search" lines.
+
+Fixed ISDN.pm to handle a non-existent sa field (sets it to an empty
+string).
+
+demo/check_zone now sets $res->defnames to false, so the domain name
+given on the command line should be fully qualified.
+
+Started adding code for dynamic updates.  Not yet finished.
+
+
 *** 0.04  13 Feb 1997
 
 Added background queries.  See the examples in the Net::DNS and
@@ -35,4 +53,4 @@ memory management.
 
 ---
 Michael Fuhr <mfuhr@dimensional.com>
-$Id: Changes,v 1.3 1997/02/13 23:22:05 mfuhr Exp $
+$Id: Changes,v 1.4 1997/03/28 02:33:57 mfuhr Exp $

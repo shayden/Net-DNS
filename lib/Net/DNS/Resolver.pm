@@ -66,7 +66,7 @@ use IO::Socket;
 use Net::DNS;
 use Net::DNS::Packet;
 
-# $Id: Resolver.pm,v 1.5 1997/02/13 23:24:58 mfuhr Exp $
+# $Id: Resolver.pm,v 1.6 1997/03/28 02:22:23 mfuhr Exp $
 $VERSION = $Net::DNS::VERSION;
 
 #------------------------------------------------------------------------------
@@ -99,12 +99,11 @@ $dotfile     = ".resolv.conf";
 );
 
 %global = (
-	"initialized"	=> 0,
 	"id"		=> int(rand(65535)),
 );
 
 BEGIN {
-	srand(time() ^ ($$ + ($$ << 15)));
+	srand(time ^ ($$ + ($$ << 15)));
 }
 
 =head2 new
@@ -117,16 +116,11 @@ Creates a new DNS resolver object.
 
 sub new {
 	my $class = shift;
-
-	res_init() unless $global{"initialized"};
-
 	my $self = { %default };
 	return bless $self, $class;
 }
 
 sub res_init {
-	$global{"initialized"} = 1;
-
 	read_config($resolv_conf) if (-f $resolv_conf) and (-r $resolv_conf);
 
 	my $dir;
@@ -147,10 +141,14 @@ sub res_init {
 
 sub read_config {
 	my $file = shift;
+	my @ns;
+	my @searchlist;
 	local *FILE;
+
 	open(FILE, $file) or Carp::confess "can't open $file: $!";
 	while (<FILE>) {
-		next if /^\s*[;#]/;
+		s/\s*[;#].*//;
+		next if /^\s*$/;
 
 		SWITCH: {
 			/^\s*domain\s+(\S+)/ && do {
@@ -159,17 +157,20 @@ sub read_config {
 			};
 
 			/^\s*search\s+(.*)/ && do {
-				$default{"searchlist"} = [split(" ", $1)];
+				push(@searchlist, split(" ", $1));
 				last SWITCH;
 			};
 
 			/^\s*nameserver\s+(.*)/ && do {
-				$default{"nameservers"} = [split(" ", $1)];
+				push(@ns, split(" ", $1));
 				last SWITCH;
 			};
 		}
 	}
 	close FILE;
+
+	$default{"nameservers"} = [ @ns ]         if @ns;
+	$default{"searchlist"}  = [ @searchlist ] if @searchlist;
 }
 
 sub read_env {
@@ -259,10 +260,15 @@ sub nameservers {
 		my @a;
 		my $ns;
 		foreach $ns (@_) {
-			my $packet = $defres->query($ns);
-			$self->errorstring($defres->errorstring);
-			if (defined($packet)) {
-				push(@a, ($packet->answer)[0]->address);
+			if ($ns =~ /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/) {
+				push(@a, $ns);
+			}
+			else {
+				my $packet = $defres->query($ns);
+				$self->errorstring($defres->errorstring);
+				if (defined($packet)) {
+					push(@a, ($packet->answer)[0]->address);
+				}
 			}
 		}
 		$self->{"nameservers"} = [ @a ];
@@ -902,4 +908,5 @@ RFC 1035
 
 =cut
 
+res_init();
 1;

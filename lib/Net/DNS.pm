@@ -72,7 +72,10 @@ See the manual pages listed above for class-specific methods.
 
 =head1 EXAMPLES
 
-These examples show how to use the DNS modules:
+The following examples show how to use the DNS modules.  Please note
+that most of the examples are simple and expect a successful query
+and certain record types.  See the demo scripts included with the
+source code for examples of more robust code.
 
   #
   # Look up a host's addresses.
@@ -192,8 +195,8 @@ use Net::DNS::Header;
 use Net::DNS::Question;
 use Net::DNS::RR;
 
-# $Id: DNS.pm,v 1.6 1997/02/13 23:23:47 mfuhr Exp $
-$VERSION = "0.04";
+# $Id: DNS.pm,v 1.7 1997/03/28 02:29:49 mfuhr Exp $
+$VERSION = "0.05";
 
 %typesbyname= (
 	"A"		=> 1,		# RFC 1035, Section 3.4.1
@@ -223,8 +226,8 @@ $VERSION = "0.04";
 	"KEY"		=> 25,
 	"PX"		=> 26,		# RFC 1664, Section 4
 	"GPOS"		=> 27,
-	"AAAA"		=> 28,
-	"LOC"		=> 29,
+	"AAAA"		=> 28,		# RFC 1886, Section 2.1
+	"LOC"		=> 29,		# RFC 1876
 	"NXT"		=> 30,
 	"EID"		=> 31,
 	"NIMLOC"	=> 32,

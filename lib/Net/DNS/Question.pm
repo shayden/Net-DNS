@@ -6,7 +6,7 @@ use vars qw($VERSION $AUTOLOAD);
 use Carp;
 use Net::DNS;
 
-# $Id: Question.pm,v 1.2 1997/02/02 08:32:41 mfuhr Exp $
+# $Id: Question.pm,v 1.3 1997/03/28 01:22:32 mfuhr Exp $
 $VERSION = $Net::DNS::VERSION;
 
 =head1 NAME
@@ -49,23 +49,26 @@ sub new {
 	bless \%self, $class;
 }
 
-=head2 qname
+=head2 qname, zname
 
     print "qname = ", $question->qname, "\n";
 
-Returns the domain name.
+Returns the domain name.  In dynamic update packets, this field is
+known as C<zname> and refers to the zone name.
 
-=head2 qtype
+=head2 qtype, ztype
 
     print "qtype = ", $question->qtype, "\n";
 
-Returns the record type.
+Returns the record type.  In dymamic update packets, this field is
+known as C<ztype> and refers to the zone type (must be SOA).
 
-=head2 qclass
+=head2 qclass, zclass
 
     print "qclass = ", $question->qclass, "\n";
 
-Returns the record class.
+Returns the record class.  In dynamic update packets, this field is
+known as C<zclass> and refers to the zone's class.
 
 =cut
 
@@ -77,6 +80,10 @@ sub AUTOLOAD {
 	Carp::confess "$name: no such method" unless exists $self->{$name};
 	return $self->{$name};
 }
+
+sub zname  { my $self = shift; $self->qname(@_);  }
+sub ztype  { my $self = shift; $self->qtype(@_);  }
+sub zclass { my $self = shift; $self->qclass(@_); }
 
 =head2 print
 

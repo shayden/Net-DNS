@@ -1,9 +1,9 @@
-# $Id: 03-question.t,v 1.1 1997/02/03 05:19:37 mfuhr Exp $
+# $Id: 03-question.t,v 1.2 1997/03/28 02:34:57 mfuhr Exp $
 
 BEGIN { $| = 1; print "1..5\n"; }
 END {print "not ok 1\n" unless $loaded;}
 
-use Net::DNS::Question;
+use Net::DNS;
 
 $loaded = 1;
 print "ok 1\n";

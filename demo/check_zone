@@ -1,5 +1,5 @@
 #!/usr/local/bin/perl -w
-# $Id: check_zone,v 1.1 1997/02/08 21:05:32 mfuhr Exp $
+# $Id: check_zone,v 1.2 1997/03/28 02:41:37 mfuhr Exp $
 
 =head1 NAME
 
@@ -71,6 +71,8 @@ sub check_domain {
 	print "\n";
 
 	my $res = new Net::DNS::Resolver;
+	$res->defnames(0);
+	$res->retry(2);
 
 	my $nspack = $res->query($domain, "NS", $class);
 

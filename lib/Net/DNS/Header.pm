@@ -5,7 +5,7 @@ use vars qw($VERSION $AUTOLOAD);
 
 use Net::DNS;
 
-# $Id: Header.pm,v 1.2 1997/02/02 08:32:08 mfuhr Exp $
+# $Id: Header.pm,v 1.3 1997/03/28 01:21:43 mfuhr Exp $
 $VERSION = $Net::DNS::VERSION;
 
 =head1 NAME
@@ -104,79 +104,111 @@ sub print {
 
 	print ";; ra = $self->{ra}    ",
 	      "rcode  = $self->{rcode}\n";
+
+	if ($self->{"opcode"} eq "UPDATE") {
+		print ";; zocount = ", $self->zocount, "  ";
+		print "prcount = ",    $self->prcount, "  ";
+		print "upcount = ",    $self->upcount, "  ";
+		print "adcount = ",    $self->adcount, "\n";
+	}
+	else {
+		print ";; qdcount = $self->{qdcount}  ";
+		print "ancount = $self->{ancount}  ";
+		print "nscount = $self->{nscount}  ";
+		print "arcount = $self->{arcount}\n";
+	}
 }
 
 =head2 id
 
     print "query id = ", $header->id, "\n";
+    $header->id(1234);
 
-Returns the query identification number.
+Gets or sets the query identification number.
 
 =head2 qr
 
     print "query response flag = ", $header->qr, "\n";
+    $header->qr(0);
 
-Returns the query response flag.
+Gets or sets the query response flag.
 
 =head2 opcode
 
     print "query opcode = ", $header->opcode, "\n";
+    $header->opcode("UPDATE");
 
-Returns the query opcode (the purpose of the query).
+Gets or sets the query opcode (the purpose of the query).
 
 =head2 aa
 
     print "answer is ", $header->aa ? "" : "non-", "authoritative\n";
+    $header->aa(0);
 
-Returns true if this is an authoritative answer.
+Gets or sets the authoritative answer flag.
 
 =head2 tc
 
     print "packet is ", $header->tc ? "" : "not ", "truncated\n";
+    $header->tc(0);
 
-Returns true if this packet is truncated.
+Gets or sets the truncated packet flag.
 
 =head2 rd
 
     print "recursion was ", $header->rd ? "" : "not ", "desired\n";
+    $header->rd(0);
 
-Returns true if recursion was desired.
+Gets or sets the recursion desired flag.
 
 =head2 ra
 
     print "recursion is ", $header->ra ? "" : "not ", "available\n";
+    $header->ra(0);
 
-Returns true if recursion is available.
+Gets or sets the recursion available flag.
 
 =head2 rcode
 
     print "query response code = ", $header->rcode, "\n";
+    $header->rcode("SERVFAIL");
 
-The query response code, i.e., the status of the query.
+Gets or sets the query response code (the status of the query).
 
-=head2 qdcount
+=head2 qdcount, zocount
 
     print "# of question records: ", $header->qdcount, "\n";
+    $header->qdcount(2);
 
-Returns the number of records in the question section of the packet.
+Gets or sets the number of records in the question section of the packet.
+In dynamic update packets, this field is known as C<zocount> and refers
+to the number of RRs in the zone section.
 
-=head2 ancount
+=head2 ancount, prcount
 
     print "# of answer records: ", $header->ancount, "\n";
+    $header->ancount(5);
 
-Returns the number of records in the answer section of the packet.
+Gets or sets the number of records in the answer section of the packet.
+In dynamic update packets, this field is known as C<prcount> and refers
+to the number of RRs in the prerequisite section.
 
-=head2 nscount
+=head2 nscount, upcount
 
     print "# of authority records: ", $header->nscount, "\n";
+    $header->nscount(2);
 
-Returns the number of records in the authority section of the packet.
+Gets or sets the number of records in the authority section of the packet.
+In dynamic update packets, this field is known as C<upcount> and refers
+to the number of RRs in the update section.
 
-=head2 arcount
+=head2 arcount, adcount
 
     print "# of additional records: ", $header->arcount, "\n";
+    $header->arcount(3);
 
-Returns the number of records in the additional section of the packet.
+Gets or sets the number of records in the additional section of the packet.
+In dynamic update packets, this field is known as C<adcount>.
 
 =cut
 
@@ -191,6 +223,11 @@ sub AUTOLOAD {
 	$self->{$name} = shift if @_;
 	return $self->{$name};
 }
+
+sub zocount { my $self = shift; $self->qdcount(@_); }
+sub prcount { my $self = shift; $self->ancount(@_); }
+sub upcount { my $self = shift; $self->nscount(@_); }
+sub adcount { my $self = shift; $self->arcount(@_); }
 
 =head2 data
 

@@ -8,7 +8,7 @@ use Net::DNS;
 use Net::DNS::Question;
 use Net::DNS::RR;
 
-# $Id: Packet.pm,v 1.2 1997/02/02 08:32:24 mfuhr Exp $
+# $Id: Packet.pm,v 1.3 1997/03/28 01:22:15 mfuhr Exp $
 $VERSION = $Net::DNS::VERSION;
 
 =head1 NAME
@@ -131,12 +131,15 @@ sub header {
 	return $self->{"header"};
 }
 
-=head2 question
+=head2 question, zone
 
     @question = $packet->question;
 
 Returns a list of C<Net::DNS::Question> objects representing the
 question section of the packet.
+
+In dynamic update packets, this section is known as C<zone> and
+specifies the zone to be updated.
 
 =cut
 
@@ -145,12 +148,21 @@ sub question {
 	return @{$self->{"question"}};
 }
 
-=head2 answer
+sub zone {
+	my $self = shift;
+	$self->question(@_);
+}
+
+=head2 answer, pre, prerequisite
 
     @answer = $packet->answer;
 
 Returns a list of C<Net::DNS::RR> objects representing the answer
 section of the packet.
+
+In dynamic update packets, this section is known as C<pre> or
+C<prerequisite> and specifies the RRs or RRsets which must (not)
+preexist.
 
 =cut
 
@@ -159,18 +171,36 @@ sub answer {
 	return @{$self->{"answer"}};
 }
 
-=head2 authority
+sub pre {
+	my $self = shift;
+	$self->answer(@_);
+}
+
+sub prerequisite {
+	my $self = shift;
+	$self->answer(@_);
+}
+
+=head2 authority, update
 
     @authority = $packet->authority;
 
 Returns a list of C<Net::DNS::RR> objects representing the authority
 section of the packet.
 
+In dynamic update packets, this section is known as C<update> and
+specifies the RRs or RRsets to be added or delted.
+
 =cut
 
 sub authority {
 	my $self = shift;
 	return @{$self->{"authority"}};
+}
+
+sub update {
+	my $self = shift;
+	$self->authority(@_);
 }
 
 =head2 additional
@@ -198,13 +228,14 @@ similar to that used in DNS zone files.
 
 sub print {
 	my $self = shift;
-	my ($qr, $rr);
+	my ($qr, $rr, $section);
 
 	print ";; HEADER SECTION\n";
 	$self->header->print;
 
 	print "\n";
-	print ";; QUESTION SECTION (", $self->header->qdcount, " record",
+	$section = ($self->header->opcode eq "UPDATE") ? "ZONE" : "QUESTION";
+	print ";; $section SECTION (", $self->header->qdcount, " record",
 	      $self->header->qdcount == 1 ? "" : "s", ")\n";
 	foreach $qr ($self->question) {
 		print ";; ";
@@ -212,14 +243,16 @@ sub print {
 	}
 
 	print "\n";
-	print ";; ANSWER SECTION (", $self->header->ancount, " record",
+	$section = ($self->header->opcode eq "UPDATE") ? "PREREQUISITE" : "ANSWER";
+	print ";; $section SECTION (", $self->header->ancount, " record",
 	      $self->header->ancount == 1 ? "" : "s", ")\n";
 	foreach $rr ($self->answer) {
 		$rr->print;
 	}
 
 	print "\n";
-	print ";; AUTHORITY SECTION (", $self->header->nscount, " record",
+	$section = ($self->header->opcode eq "UPDATE") ? "UPDATE" : "AUTHORITY";
+	print ";; $section SECTION (", $self->header->nscount, " record",
 	      $self->header->nscount == 1 ? "" : "s", ")\n";
 	foreach $rr ($self->authority) {
 		$rr->print;

@@ -1,6 +1,8 @@
 To Do list for Net::DNS
 =======================
 
+Handle "host is down" error in Resolver.pm.
+
 Net::DNS::Packet->data currently returns only header and question section
 data.  Need to return data for the entire packet.
 
@@ -10,7 +12,7 @@ Implement TCP queries.
 
 Add DNS Dynamic Updates.
 
-Add ability to modify Net::DNS::Header fields.
+Add more RR types.
 
 Accept options in resolver config files.
 
@@ -26,4 +28,4 @@ Consider providing an .xs file for those who wish to link against
 libresolv instead of using the entirely-Perl resolver.
 
 ---
-$Id: TODO,v 1.5 1997/02/13 23:20:42 mfuhr Exp $
+$Id: TODO,v 1.6 1997/03/28 02:32:58 mfuhr Exp $
