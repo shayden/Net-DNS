@@ -1,5 +1,5 @@
 #!/usr/local/bin/perl -w
-# $Id: perldig,v 1.7 2000/11/10 16:04:41 mfuhr Exp mfuhr $
+# $Id: perldig,v 1.2 2002/02/07 03:54:18 ctriv Exp $
 
 =head1 NAME
 

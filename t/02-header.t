@@ -1,13 +1,11 @@
-# $Id: 02-header.t,v 1.3 2000/11/19 06:10:00 mfuhr Exp mfuhr $
+# $Id: 02-header.t,v 1.3 2002/02/26 04:21:06 ctriv Exp $
 
-BEGIN { $| = 1; print "1..2\n"; }
-END {print "not ok 1\n" unless $loaded;}
+use Test::More tests => 2;
+use strict;
 
-use Net::DNS;
+BEGIN { use_ok('Net::DNS'); }
 
-$loaded = 1;
-print "ok 1\n";
+my $header = Net::DNS::Header->new;
 
-$header = Net::DNS::Header->new;
-print "not " unless defined($header);
-print "ok 2\n";
+ok($header,                "new() returned something");
+

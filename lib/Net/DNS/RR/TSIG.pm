@@ -1,6 +1,6 @@
 package Net::DNS::RR::TSIG;
 
-# $Id: TSIG.pm,v 1.7 2001/02/07 05:16:05 mfuhr Exp mfuhr $
+# $Id: TSIG.pm,v 1.1 2002/02/13 04:07:50 ctriv Exp $
 
 use strict;
 use vars qw(@ISA);

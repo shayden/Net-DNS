@@ -1,5 +1,5 @@
 #!/usr/local/bin/perl -w
-# $Id: check_soa,v 1.7 2000/11/10 16:01:21 mfuhr Exp mfuhr $
+# $Id: check_soa,v 1.3 2002/02/07 03:54:18 ctriv Exp $
 
 =head1 NAME
 
@@ -39,13 +39,14 @@ use strict;
 #------------------------------------------------------------------------------
 
 die "Usage: ", basename($0), " domain\n" unless @ARGV == 1;
+
 my ($domain) = @ARGV;
 
 #------------------------------------------------------------------------------
 # Find all the nameservers for the domain.
 #------------------------------------------------------------------------------
 
-my $res = Net::DNS::Resolver->new;
+my $res = Net::DNS::Resolver->new();
 
 $res->defnames(0);
 $res->retry(2);
@@ -61,73 +62,76 @@ die "No nameservers found for $domain: ", $res->errorstring, "\n"
 $res->recurse(0);
 $| = 1;
 
-foreach my $nsrr (grep {$_->type eq "NS" } $ns_req->answer) {
 
+
+foreach my $nsrr (grep {$_->type eq "NS" } $ns_req->answer) {
+	
 	#----------------------------------------------------------------------
 	# Set the resolver to query this nameserver.
 	#----------------------------------------------------------------------
 
 	my $ns = $nsrr->nsdname;
-	print "$ns ";
+	
+	my $a_req = $res->query($ns, 'A');
 
-	unless ($res->nameservers($ns)) {
+	unless ($a_req) {
 		warn ": can't find address: ", $res->errorstring, "\n";
 		next;
 	}
+	
+	foreach my $ip (map { $_->address } grep { $_->type eq 'A' } $a_req->answer) {
+		#----------------------------------------------------------------------
+		# Ask this IP.
+		#----------------------------------------------------------------------
+		$res->nameservers($ip);	
+	
+		print "$ns ($ip): ";
 
-	print "(", join(" ", $res->nameservers), ") ";
-
-	#----------------------------------------------------------------------
-	# Get the SOA record.
-	#----------------------------------------------------------------------
-
-	my $packet = Net::DNS::Packet->new($domain, "SOA", "IN");
-	my $soa_req = $res->send($packet);
-	unless (defined($soa_req)) {
-		warn ": ", $res->errorstring, "\n";
-		next;
-	}
-
-	#----------------------------------------------------------------------
-	# Is this nameserver authoritative for the domain?
-	#----------------------------------------------------------------------
-
-	unless ($soa_req->header->aa) {
-		print STDERR "isn't authoritative for $domain";
-
-		if ($soa_req->header->ancount >= 1 &&
-		   ($soa_req->answer)[0]->type eq "SOA") {
-			print STDERR " (has SOA, serial = ",
-		                     ($soa_req->answer)[0]->serial, ")";
+		#----------------------------------------------------------------------
+		# Get the SOA record.
+		#----------------------------------------------------------------------
+	
+		my $packet = Net::DNS::Packet->new($domain, "SOA", "IN");
+		my $soa_req = $res->send($packet);
+		
+		unless (defined($soa_req)) {
+			warn $res->errorstring, "\n";
+			next;
 		}
 
-		print "\n";
-		next;
-	}
+		#----------------------------------------------------------------------
+		# Is this nameserver authoritative for the domain?
+		#----------------------------------------------------------------------
 
-	#----------------------------------------------------------------------
-	# We should have received exactly one answer.
-	#----------------------------------------------------------------------
+		unless ($soa_req->header->aa) {
+			warn "isn't authoritative for $domain\n";
+			next;
+		}
 
-	unless ($soa_req->header->ancount == 1) {
-		warn ": expected 1 answer, got ",
-		      $soa_req->header->ancount, "\n";
-		next;
-	}
+		#----------------------------------------------------------------------
+		# We should have received exactly one answer.
+		#----------------------------------------------------------------------
+
+		unless ($soa_req->header->ancount == 1) {
+			warn "expected 1 answer, got ", $soa_req->header->ancount, "\n";
+			next;
+		}
 		
-	#----------------------------------------------------------------------
-	# Did we receive an SOA record?
-	#----------------------------------------------------------------------
-
-	unless (($soa_req->answer)[0]->type eq "SOA") {
-		warn ": expected SOA, got ",
-		     ($soa_req->answer)[0]->type, "\n";
-		next;
-	}
+		#----------------------------------------------------------------------
+		# Did we receive an SOA record?
+		#----------------------------------------------------------------------
+	
+		unless (($soa_req->answer)[0]->type eq "SOA") {
+			warn "expected SOA, got ", ($soa_req->answer)[0]->type, "\n";
+			next;
+		}
 		
-	#----------------------------------------------------------------------
-	# Print the serial number.
-	#----------------------------------------------------------------------
+		#----------------------------------------------------------------------
+		# Print the serial number.
+		#----------------------------------------------------------------------
 
-	print "has serial number ", ($soa_req->answer)[0]->serial, "\n";
+		print "has serial number ", ($soa_req->answer)[0]->serial, "\n";
+	}
 }
+
+0;

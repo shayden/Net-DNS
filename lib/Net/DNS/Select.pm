@@ -7,7 +7,7 @@ use Carp;
 use strict;
 use vars qw($VERSION);
 
-# $Id: Select.pm,v 1.1 2000/11/10 16:17:51 mfuhr Exp mfuhr $
+# $Id: Select.pm,v 1.1 2002/02/13 04:29:58 ctriv Exp $
 $VERSION = $Net::DNS::Version;
 
 sub new {

@@ -12,7 +12,7 @@ use Net::DNS;
 use Net::DNS::Question;
 use Net::DNS::RR;
 
-# $Id: Packet.pm,v 1.13 2001/02/07 05:13:48 mfuhr Exp mfuhr $
+# $Id: Packet.pm,v 1.3 2002/05/14 10:51:23 ctriv Exp $
 $VERSION = $Net::DNS::VERSION;
 
 =head1 NAME
@@ -856,7 +856,7 @@ sub parse_rr {
 
 =head1 COPYRIGHT
 
-Copyright (c) 1997-2000 Michael Fuhr.  All rights reserved.  This
+Copyright (c) 1997-2002 Michael Fuhr.  All rights reserved.  This
 program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself. 
 

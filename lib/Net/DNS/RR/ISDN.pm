@@ -1,6 +1,6 @@
 package Net::DNS::RR::ISDN;
 
-# $Id: ISDN.pm,v 1.7 2000/11/19 06:04:02 mfuhr Exp mfuhr $
+# $Id: ISDN.pm,v 1.2 2002/02/13 03:53:59 ctriv Exp $
 
 use strict;
 use vars qw(@ISA);

@@ -17,13 +17,9 @@ check_zone	Checks a zone for errors like missing PTR records.
 
 mresolv		Performs multiple DNS queries in parallel.
 
-mresolv2	Another program to perform parallel DNS queries.  Should			be an improvement over mresolv.
-
 mx		Prints a domain's MX records sorted by preference.
 
 perldig		Performs DNS queries and print the results.
 
-time-query	Issue a DNS query and time the response.
-
 ---
-$Id: README,v 1.8 2000/11/10 16:00:26 mfuhr Exp mfuhr $
+$Id: README,v 1.1.1.1 2002/02/02 03:48:16 ctriv Exp $

@@ -1,6 +1,6 @@
 package Net::DNS::RR::NAPTR;
 
-# $Id: NAPTR.pm,v 1.6 2000/11/19 06:04:45 mfuhr Exp mfuhr $
+# $Id: NAPTR.pm,v 1.2 2002/02/13 03:53:59 ctriv Exp $
 
 use strict;
 use vars qw(@ISA);

@@ -1,6 +1,6 @@
 package Net::DNS::RR::NULL;
 
-# $Id: NULL.pm,v 1.2 2000/11/19 06:04:45 mfuhr Exp mfuhr $
+# $Id: NULL.pm,v 1.2 2002/02/13 03:53:59 ctriv Exp $
 
 use strict;
 use vars qw(@ISA);

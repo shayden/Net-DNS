@@ -48,21 +48,22 @@ send me the information described in the BUGS section below.
 ---------------
 
 You can get the latest version of Net::DNS from the Comprehensive
-Perl Archive Network (CPAN) or from the author's homepage:
+Perl Archive Network (CPAN) or from the module's homepage:
 
-    http://www.cpan.org/modules/by-module/Net/
-    http://www.cpan.org/modules/by-authors/Michael_Fuhr/
-    http://www.fuhr.org/~mfuhr/perldns/
+    http://www.perl.org/CPAN/modules/by-module/Net/
+    http://www.net-dns.org/
 
-The following links will redirect your browser to the current
-released version and the current development (i.e., not released)
-version, respectively:
+The following links will always be the current released version:
 
-    http://www.fuhr.org/~mfuhr/perldns/Net-DNS-release.tar.gz
-    http://www.fuhr.org/~mfuhr/perldns/Net-DNS-release.zip
+    http://www.net-dns.org/download/Net-DNS-release.tar.gz
+    
+Additionally, nightly cvs snapshots of the current developement version
+are at:
 
-    http://www.fuhr.org/~mfuhr/perldns/Net-DNS-current.tar.gz
-    http://www.fuhr.org/~mfuhr/perldns/Net-DNS-current.zip
+	http://www.dyndns.org/~ctriv/net-dns-snaps/
+	
+Note that the CVS version at any given moment may be broken.
+
 
 
 3. PREREQUISITES
@@ -70,12 +71,12 @@ version, respectively:
 
 Net::DNS has been tested with the following:
 
-    Perl 5.6.0
+    Perl 5.6.1
 
-    Version of Socket distributed with Perl 5.6.0
-    Version of IO::Socket distributed with Perl 5.6.0
-    Version of IO::Select distributed with Perl 5.6.0
-    Version of FileHandle distributed with Perl 5.6.0
+    Version of Socket distributed with Perl 5.6.1
+    Version of IO::Socket distributed with Perl 5.6.1
+    Version of IO::Select distributed with Perl 5.6.1
+    Version of FileHandle distributed with Perl 5.6.1
 
     Digest::MD5  2.12
     MIME::Base64 2.11
@@ -154,12 +155,10 @@ maintain a production nameserver via dynamic updates.
 Please note that there are some bugs in the BIND 8.1-REL nameserver
 that can cause it to dump core when receiving certain dynamic
 updates, so if you have problems using Net::DNS that might be the
-cause.  If you're running BIND 8, you should be using the latest
+cause.  If you're running BIND 9, you should be using the latest
 version available from the Internet Software Consortium (ISC,
 www.isc.org) or from your OS vendor.  As of this writing, the latest
-production version of BIND 8 available from the ISC is 8.2.2-P7.
-BIND 9.0.1 is also available, but the Net::DNS author hasn't tested
-with it yet.
+production version of BIND 9 available from the ISC is 9.2.0.
 
 Here's a summary of the update semantics for those interested (see
 RFC 2136 for details):
@@ -196,13 +195,11 @@ generate keys and configure the nameserver to use them:
 http://www.nominum.com/resources/faqs/bind-faq.html
 
 TSIG support is new and isn't yet complete.  Please use with caution
-on production systems.
+on production systems.  
 
 
 9. BUGS
 -------
-
-  *** THIS VERSION OF Net::DNS IS FOR TESTING AND STILL CONTAINS BUGS ***
 
 Net::DNS, while nearly four years old, is still under development
 and is sure to contain a few bugs.  Please see the TODO and Changes
@@ -232,7 +229,6 @@ If I don't have access to a system similar to yours, I may ask you
 to insert some debugging lines and report back on the results.
 The more help and information you can provide, the better.
 
-
 10. COPYRIGHT
 -------------
 
@@ -244,8 +240,19 @@ under the same terms as Perl itself.
 11. AUTHOR INFORMATION
 ----------------------
 
-Michael Fuhr <mike@fuhr.org>
-http://www.fuhr.org/~mfuhr/perldns/
+Net::DNS is currently maintained by a group, led by:
+	Chris Reinhardt
+	ctriv@net-dns.org
+
+Net::DNS was created by:
+	Michael Fuhr
+	mike@fuhr.org 
+
+
+If you have any questions about Net::DNS or wish to help in development, 
+please join the Net::DNS mailing list by sending an email to 
+devel-request@lists.net-dns.org with "subscribe" in the subject.
+
 
 
 12. ACKNOWLEDGMENTS
@@ -273,4 +280,4 @@ proud to make Net::DNS freely available to the world.
 
 
 ----
-$Id: README,v 1.13 2000/11/20 00:07:47 mfuhr Exp mfuhr $
+$Id: README,v 1.6 2002/05/15 00:10:18 ctriv Exp $

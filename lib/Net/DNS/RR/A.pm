@@ -1,6 +1,6 @@
 package Net::DNS::RR::A;
 
-# $Id: A.pm,v 1.5 2000/11/19 06:02:34 mfuhr Exp mfuhr $
+# $Id: A.pm,v 1.2 2002/02/13 03:53:58 ctriv Exp $
 
 use strict;
 use vars qw(@ISA);

@@ -5,10 +5,8 @@ README
 TODO
 contrib/DNSHash.pm
 contrib/README
-contrib/README.dnswalk
-contrib/README.dssl
 contrib/check_zone
-contrib/dnslookup.pl
+contrib/dnswalk.README
 contrib/loc2earth.fcgi
 contrib/loclist.pl
 demo/README
@@ -16,11 +14,8 @@ demo/axfr
 demo/check_soa
 demo/check_zone
 demo/mresolv
-demo/mresolv2
 demo/mx
-demo/nameserver
 demo/perldig
-demo/time-query
 lib/Net/DNS.pm
 lib/Net/DNS/Header.pm
 lib/Net/DNS/Nameserver.pm

@@ -1,6 +1,6 @@
 package Net::DNS::RR::EID;
 
-# $Id: EID.pm,v 1.2 2000/11/19 06:03:34 mfuhr Exp mfuhr $
+# $Id: EID.pm,v 1.2 2002/02/13 03:53:59 ctriv Exp $
 
 use strict;
 use vars qw(@ISA);

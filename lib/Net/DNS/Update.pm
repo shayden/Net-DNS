@@ -5,7 +5,7 @@ use vars qw($VERSION);
 
 use Net::DNS;
 
-# $Id: Update.pm,v 1.6 2000/11/19 23:55:28 mfuhr Exp mfuhr $
+# $Id: Update.pm,v 1.3 2002/05/14 10:51:24 ctriv Exp $
 $VERSION = $Net::DNS::VERSION;
 
 =head1 NAME
@@ -176,7 +176,7 @@ production nameservers.
 
 =head1 COPYRIGHT
 
-Copyright (c) 1997-2000 Michael Fuhr.  All rights reserved.  This
+Copyright (c) 1997-2002 Michael Fuhr.  All rights reserved.  This
 program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself. 
 

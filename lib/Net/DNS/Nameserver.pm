@@ -1,5 +1,5 @@
 package Net::DNS::Nameserver;
-# $Id: Nameserver.pm,v 1.1 2000/12/12 17:18:00 mfuhr Exp mfuhr $
+# $Id: Nameserver.pm,v 1.2 2002/05/14 10:51:23 ctriv Exp $
 
 use Net::DNS;
 use IO::Socket;
@@ -18,76 +18,76 @@ use constant DEFAULT_PORT => 53;
 #------------------------------------------------------------------------------
 
 sub new {
-    my ($class, %self) = @_;
+	my ($class, %self) = @_;
 
-    my $addr = $self{"LocalAddr"} || inet_ntoa(DEFAULT_ADDR);
-    my $port = $self{"LocalPort"} || DEFAULT_PORT;
+	my $addr = $self{"LocalAddr"} || inet_ntoa(DEFAULT_ADDR);
+	my $port = $self{"LocalPort"} || DEFAULT_PORT;
 
-    if (!$self{"ReplyHandler"} || !ref($self{"ReplyHandler"})) {
-	cluck "No reply handler!";
-	return;
-    }
+	if (!$self{"ReplyHandler"} || !ref($self{"ReplyHandler"})) {
+		cluck "No reply handler!";
+		return;
+	}
 
-    #--------------------------------------------------------------------------
-    # Create the TCP socket.
-    #--------------------------------------------------------------------------
+	#--------------------------------------------------------------------------
+	# Create the TCP socket.
+	#--------------------------------------------------------------------------
 
-    print "creating TCP socket..." if $self{"Verbose"};
+	print "creating TCP socket..." if $self{"Verbose"};
 
-    my $sock_tcp = IO::Socket::INET->new(
-	LocalAddr => $addr,
-	LocalPort => $port,
-	Listen    => 5,
-	Proto     => "tcp",
-	Reuse     => 1,
-    );
+	my $sock_tcp = IO::Socket::INET->new(
+		LocalAddr => $addr,
+		LocalPort => $port,
+		Listen	  => 5,
+		Proto	  => "tcp",
+		Reuse	  => 1,
+	);
 
-    if (!$sock_tcp) {
-	cluck "couldn't create TCP socket: $!";
-	return;
-    }
+	if (!$sock_tcp) {
+		cluck "couldn't create TCP socket: $!";
+		return;
+	}
 
-    print "done.\n" if $self{"Verbose"};
+	print "done.\n" if $self{"Verbose"};
 
-    #--------------------------------------------------------------------------
-    # Create the UDP Socket.
-    #--------------------------------------------------------------------------
+	#--------------------------------------------------------------------------
+	# Create the UDP Socket.
+	#--------------------------------------------------------------------------
 
-    print "creating UDP socket..." if $self{"Verbose"};
+	print "creating UDP socket..." if $self{"Verbose"};
 
-    my $sock_udp = IO::Socket::INET->new(
-	Proto => "udp",
-    );
+	my $sock_udp = IO::Socket::INET->new(
+		Proto => "udp",
+	);
 
-    if (!$sock_udp) {
-        cluck "couldn't create UDP socket: $!";
-	return;
-    }
+	if (!$sock_udp) {
+		cluck "couldn't create UDP socket: $!";
+		return;
+	}
 
-    print "done.\n" if $self{"Verbose"};
+	print "done.\n" if $self{"Verbose"};
 
-    print "binding UDP socket..." if $self{"Verbose"};
-    my $sockaddr = sockaddr_in($port, inet_aton($addr));
-    if (!$sock_udp->bind($sockaddr)) {
-	cluck "couldn't bind UDP socket: $!";
-	return;
-    }
-    print "done.\n";
+	print "binding UDP socket..." if $self{"Verbose"};
+	my $sockaddr = sockaddr_in($port, inet_aton($addr));
+	if (!$sock_udp->bind($sockaddr)) {
+		cluck "couldn't bind UDP socket: $!";
+		return;
+	}
+	print "done.\n";
 
-    #--------------------------------------------------------------------------
-    # Create the Select object.
-    #--------------------------------------------------------------------------
+	#--------------------------------------------------------------------------
+	# Create the Select object.
+	#--------------------------------------------------------------------------
 
-    $self{"select"} = IO::Select->new;
-    $self{"select"}->add($sock_tcp);
-    $self{"select"}->add($sock_udp);
+	$self{"select"} = IO::Select->new;
+	$self{"select"}->add($sock_tcp);
+	$self{"select"}->add($sock_udp);
 
-    #--------------------------------------------------------------------------
-    # Return the object.
-    #--------------------------------------------------------------------------
+	#--------------------------------------------------------------------------
+	# Return the object.
+	#--------------------------------------------------------------------------
 
-    my $self = bless \%self, $class;
-    return $self;
+	my $self = bless \%self, $class;
+	return $self;
 }
 
 #------------------------------------------------------------------------------
@@ -95,59 +95,59 @@ sub new {
 #------------------------------------------------------------------------------
 
 sub make_reply {
-    my ($self, $query) = @_;
+	my ($self, $query) = @_;
 
-    my $reply;
+	my $reply;
 
-    if ($query) {
-        my $qr = ($query->question)[0];
+	if ($query) {
+		my $qr = ($query->question)[0];
 
-        my $qname  = $qr ? $qr->qname  : "";
-        my $qclass = $qr ? $qr->qclass : "ANY";
-        my $qtype  = $qr ? $qr->qtype  : "ANY";
+		my $qname  = $qr ? $qr->qname  : "";
+		my $qclass = $qr ? $qr->qclass : "ANY";
+		my $qtype  = $qr ? $qr->qtype  : "ANY";
 
-        $reply = Net::DNS::Packet->new($qname, $qclass, $qtype);
+		$reply = Net::DNS::Packet->new($qname, $qclass, $qtype);
 
-        if ($query->header->opcode eq "QUERY") {
-            if ($query->header->qdcount == 1) {
-                print "query ", $query->header->id,
-		      ": ($qname, $qclass, $qtype)..." if $self->{"Verbose"};
+		if ($query->header->opcode eq "QUERY") {
+			if ($query->header->qdcount == 1) {
+				print "query ", $query->header->id,
+			  ": ($qname, $qclass, $qtype)..." if $self->{"Verbose"};
 
 		my ($rcode, $ans, $auth, $add) =
-		    &{$self->{"ReplyHandler"}}($qname, $qclass, $qtype);
+			&{$self->{"ReplyHandler"}}($qname, $qclass, $qtype);
 
 		print "$rcode\n" if $self->{"Verbose"};
 
 		$reply->header->rcode($rcode);
 
-		$reply->push("answer",     @$ans)  if $ans;
+		$reply->push("answer",	   @$ans)  if $ans;
 		$reply->push("authority",  @$auth) if $auth;
 		$reply->push("additional", @$add)  if $add;
-	    }
-	    else {
-	        print "ERROR: qdcount ", $query->header->qdcount,
-		      "unsupported\n" if $self->{"Verbose"};
+		}
+		else {
+			print "ERROR: qdcount ", $query->header->qdcount,
+			  "unsupported\n" if $self->{"Verbose"};
 		$reply->header->rcode("FORMERR");
-	    }
-        }
-        else {
-            print "ERROR: opcode ", $query->header->opcode, " unsupported\n"
-	      if $self->{"Verbose"};
-            $reply->header->rcode("FORMERR");
-        }
-    }
-    else {
-        print "ERROR: invalid packet\n" if $self->{"Verbose"};
-        $reply = Net::DNS::Packet->new("", "ANY", "ANY");
-        $reply->header->rcode("FORMERR");
-    }
+		}
+		}
+		else {
+			print "ERROR: opcode ", $query->header->opcode, " unsupported\n"
+		  if $self->{"Verbose"};
+			$reply->header->rcode("FORMERR");
+		}
+	}
+	else {
+		print "ERROR: invalid packet\n" if $self->{"Verbose"};
+		$reply = Net::DNS::Packet->new("", "ANY", "ANY");
+		$reply->header->rcode("FORMERR");
+	}
 
-    $reply->header->qr(1);
-    $reply->header->ra(1);
-    $reply->header->rd($query->header->rd);
-    $reply->header->id($query->header->id);
+	$reply->header->qr(1);
+	$reply->header->ra(1);
+	$reply->header->rd($query->header->rd);
+	$reply->header->id($query->header->id);
 
-    return $reply;
+	return $reply;
 }
 
 #------------------------------------------------------------------------------
@@ -155,34 +155,34 @@ sub make_reply {
 #------------------------------------------------------------------------------
 
 sub tcp_connection {
-    my ($self, $sock) = @_;
+	my ($self, $sock) = @_;
 
-    print "TCP connection from ", $sock->peerhost, ":", $sock->peerport, "\n"
-      if $self->{"Verbose"};
-	    
-    while (1) {
-        my $buf;
-        print "reading message length..." if $self->{"Verbose"};
-        $sock->read($buf, 2) or last;
-        print "done\n" if $self->{"Verbose"};
+	print "TCP connection from ", $sock->peerhost, ":", $sock->peerport, "\n"
+	  if $self->{"Verbose"};
+		
+	while (1) {
+		my $buf;
+		print "reading message length..." if $self->{"Verbose"};
+		$sock->read($buf, 2) or last;
+		print "done\n" if $self->{"Verbose"};
 
-        my ($msglen) = unpack("n", $buf);
-        print "expecting $msglen bytes..." if $self->{"Verbose"};
-        $sock->read($buf, $msglen);
-        print "got ", length($buf), " bytes\n" if $self->{"Verbose"};
+		my ($msglen) = unpack("n", $buf);
+		print "expecting $msglen bytes..." if $self->{"Verbose"};
+		$sock->read($buf, $msglen);
+		print "got ", length($buf), " bytes\n" if $self->{"Verbose"};
 
-        my $query = Net::DNS::Packet->new(\$buf);
-	my $reply = $self->make_reply($query);
-        my $reply_data = $reply->data;
+		my $query = Net::DNS::Packet->new(\$buf);
+		my $reply = $self->make_reply($query);
+		my $reply_data = $reply->data;
 
-        print "writing response..." if $self->{"Verbose"};
-        $sock->write(pack("n", length($reply_data)) . $reply_data);
-        print "done\n" if $self->{"Verbose"};
-    }
+		print "writing response..." if $self->{"Verbose"};
+		$sock->write(pack("n", length($reply_data)) . $reply_data);
+		print "done\n" if $self->{"Verbose"};
+	}
 
-    print "closing connection..." if $self->{"Verbose"};
-    $sock->close;
-    print "done\n" if $self->{"Verbose"};
+	print "closing connection..." if $self->{"Verbose"};
+	$sock->close;
+	print "done\n" if $self->{"Verbose"};
 }
 
 #------------------------------------------------------------------------------
@@ -190,22 +190,22 @@ sub tcp_connection {
 #------------------------------------------------------------------------------
 
 sub udp_connection {
-    my ($self, $sock) = @_;
+	my ($self, $sock) = @_;
 
-    my $buf = "";
-    my $peer_sockaddr = $sock->recv($buf, &Net::DNS::PACKETSZ);
-    my ($peerport, $peeraddr) = sockaddr_in($peer_sockaddr);
-    my $peerhost = inet_ntoa($peeraddr);
+	my $buf = "";
+	my $peer_sockaddr = $sock->recv($buf, &Net::DNS::PACKETSZ);
+	my ($peerport, $peeraddr) = sockaddr_in($peer_sockaddr);
+	my $peerhost = inet_ntoa($peeraddr);
 
-    print "UDP connection from $peerhost:$peerport\n" if $self->{"Verbose"};
+	print "UDP connection from $peerhost:$peerport\n" if $self->{"Verbose"};
 
-    my $query = Net::DNS::Packet->new(\$buf);
-    my $reply = $self->make_reply($query);
-    my $reply_data = $reply->data;
+	my $query = Net::DNS::Packet->new(\$buf);
+	my $reply = $self->make_reply($query);
+	my $reply_data = $reply->data;
 
-    print "writing response..." if $self->{"Verbose"};
-    $sock->send($reply_data) or die "send: $!";
-    print "done\n" if $self->{"Verbose"};
+	print "writing response..." if $self->{"Verbose"};
+	$sock->send($reply_data) or die "send: $!";
+	print "done\n" if $self->{"Verbose"};
 }
 
 #------------------------------------------------------------------------------
@@ -213,34 +213,34 @@ sub udp_connection {
 #------------------------------------------------------------------------------
 
 sub main_loop {
-    my $self = shift;
+	my $self = shift;
 
-    local $| = 1;
+	local $| = 1;
 
-    while (1) {
+	while (1) {
 	print "waiting for connections..." if $self->{"Verbose"};
 	my @ready = $self->{"select"}->can_read;
 
 	foreach my $sock (@ready) {
-            my $proto = getprotobynumber($sock->protocol);
+			my $proto = getprotobynumber($sock->protocol);
 
-            if (!$proto) {
-                print "ERROR: connection with unknown protocol\n"
-                    if $self->{"Verbose"};
-            }
-            elsif (lc($proto) eq "tcp") {
-                my $client = $sock->accept;
-                $self->tcp_connection($client);
-            }
-            elsif (lc($proto) eq "udp") {
-                $self->udp_connection($sock);
-            }
-            else {
-                print "ERROR: connection with unsupported protocol $proto\n"
-                    if $self->{"Verbose"};
-            }
-        }
-    }
+			if (!$proto) {
+				print "ERROR: connection with unknown protocol\n"
+					if $self->{"Verbose"};
+			}
+			elsif (lc($proto) eq "tcp") {
+				my $client = $sock->accept;
+				$self->tcp_connection($client);
+			}
+			elsif (lc($proto) eq "udp") {
+				$self->udp_connection($sock);
+			}
+			else {
+				print "ERROR: connection with unsupported protocol $proto\n"
+					if $self->{"Verbose"};
+			}
+		}
+	}
 }
 
 1;
@@ -264,31 +264,31 @@ objects.  See L</EXAMPLE> for an example.
 
 =head2 new
 
-    my $ns = Net::DNS::Nameserver->new(
-	LocalAddr    => "10.1.2.3",
-	LocalPort    => "5353",
+	my $ns = Net::DNS::Nameserver->new(
+	LocalAddr	 => "10.1.2.3",
+	LocalPort	 => "5353",
 	ReplyHandler => \&reply_handler,
-	Verbose      => 1
-    );
+	Verbose		 => 1
+	);
 
 Creates a nameserver object.  Attributes are:
 
-  LocalAddr     IP address on which to listen.  Defaults to INADDR_ANY.
-  LocalPort     Port on which to listen.  Defaults to 53.
-  ReplyHandler  Reference to reply-handling subroutine.  Required.
-  Verbose       Print info about received queries.  Defaults to 0 (off).
+  LocalAddr		IP address on which to listen.	Defaults to INADDR_ANY.
+  LocalPort		Port on which to listen.  Defaults to 53.
+  ReplyHandler	Reference to reply-handling subroutine.	 Required.
+  Verbose		Print info about received queries.	Defaults to 0 (off).
 
 The ReplyHandler subroutine is passed the query name, query class,
-and query type.  It must return the response code and references
+and query type.	 It must return the response code and references
 to the answer, authority, and additional sections of the response.
 Common response codes are:
 
-  NOERROR   No error
-  FORMERR   Format error
-  SERVFAIL  Server failure
-  NXDOMAIN  Non-existent domain (name doesn't exist)
-  NOTIMP    Not implemented
-  REFUSED   Query refused
+  NOERROR	No error
+  FORMERR	Format error
+  SERVFAIL	Server failure
+  NXDOMAIN	Non-existent domain (name doesn't exist)
+  NOTIMP	Not implemented
+  REFUSED	Query refused
 
 See RFC 1035 and the IANA dns-parameters file for more information:
 
@@ -297,25 +297,25 @@ See RFC 1035 and the IANA dns-parameters file for more information:
 
 The nameserver will listen for both UDP and TCP connections.  On
 Unix-like systems, the program will probably have to run as root
-to listen on the default port, 53.  A non-privileged user should
+to listen on the default port, 53.	A non-privileged user should
 be able to listen on ports 1024 and higher.
 
 Returns a Net::DNS::Nameserver object, or undef if the object
 couldn't be created.
 
-See L</EXAMPLE> for an example.  
+See L</EXAMPLE> for an example.	 
 
 =head2 main_loop
 
-    $ns->main_loop;
+	$ns->main_loop;
 
 Start accepting queries.
 
 =head1 EXAMPLE
 
 The following example will listen on port 5353 and respond to all queries
-for A records with the IP address 10.1.2.3.  All other queries will be
-answered with NXDOMAIN.  Authority and additional sections are left empty.
+for A records with the IP address 10.1.2.3.	 All other queries will be
+answered with NXDOMAIN.	 Authority and additional sections are left empty.
 
   #!/usr/bin/perl -Tw
   
@@ -323,32 +323,32 @@ answered with NXDOMAIN.  Authority and additional sections are left empty.
   use strict;
   
   sub reply_handler {
-      my ($qname, $qclass, $qtype) = @_;
-      my ($rcode, @ans, @auth, @add);
+	  my ($qname, $qclass, $qtype) = @_;
+	  my ($rcode, @ans, @auth, @add);
   
-      if ($qtype eq "A") {
-        my ($ttl, $rdata) = (3600, "10.1.2.3");
-        push @ans, Net::DNS::RR->new("$qname $ttl $qclass $qtype $rdata");
-        $rcode = "NOERROR";
-      }
-      else {
-        $rcode = "NXDOMAIN";
-      }
-        
-      return ($rcode, \@ans, \@auth, \@add);
+	  if ($qtype eq "A") {
+		my ($ttl, $rdata) = (3600, "10.1.2.3");
+		push @ans, Net::DNS::RR->new("$qname $ttl $qclass $qtype $rdata");
+		$rcode = "NOERROR";
+	  }
+	  else {
+		$rcode = "NXDOMAIN";
+	  }
+		
+	  return ($rcode, \@ans, \@auth, \@add);
   }
 
   my $ns = Net::DNS::Nameserver->new(
-      LocalPort    => 5353,
-      ReplyHandler => \&reply_handler,
-      Verbose      => 1
+	  LocalPort	   => 5353,
+	  ReplyHandler => \&reply_handler,
+	  Verbose	   => 1
   );
   
   if ($ns) {
-      $ns->main_loop;
+	  $ns->main_loop;
   }
   else {
-      die "couldn't create nameserver object\n";
+	  die "couldn't create nameserver object\n";
   }
 
 =head1 BUGS
@@ -357,7 +357,7 @@ Net::DNS::Nameserver objects can handle only one query at a time.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2000 Michael Fuhr.  All rights reserved.  This program
+Copyright (c) 2000-2002 Michael Fuhr.  All rights reserved.	This program
 is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.
 

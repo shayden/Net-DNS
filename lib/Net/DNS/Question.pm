@@ -6,7 +6,7 @@ use vars qw($VERSION $AUTOLOAD);
 use Carp;
 use Net::DNS;
 
-# $Id: Question.pm,v 1.7 2001/02/07 05:14:27 mfuhr Exp mfuhr $
+# $Id: Question.pm,v 1.3 2002/05/14 10:51:23 ctriv Exp $
 $VERSION = $Net::DNS::VERSION;
 
 =head1 NAME
@@ -165,7 +165,7 @@ sub data {
 
 =head1 COPYRIGHT
 
-Copyright (c) 1997-2000 Michael Fuhr.  All rights reserved.  This
+Copyright (c) 1997-2002 Michael Fuhr.  All rights reserved.  This
 program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself. 
 

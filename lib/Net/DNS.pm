@@ -1,7 +1,5 @@
 package Net::DNS;
-# $Id: DNS.pm,v 1.20 2001/02/07 05:12:43 mfuhr Exp mfuhr $
-
-require 5.6.0;
+# $Id: DNS.pm,v 1.4 2002/05/15 00:09:50 ctriv Exp $
 
 use strict;
 use vars qw(
@@ -18,7 +16,7 @@ use vars qw(
 	%rcodesbyval
 );
 
-$VERSION = "0.19";
+$VERSION = "0.20";
 
 use Net::DNS::Resolver;
 use Net::DNS::Packet;
@@ -26,7 +24,6 @@ use Net::DNS::Update;
 use Net::DNS::Header;
 use Net::DNS::Question;
 use Net::DNS::RR;
-use Net::DNS::Nameserver;
 
 require Exporter;
 @ISA = qw(Exporter);
@@ -56,30 +53,23 @@ require Exporter;
 	"RT"		=> 21,		# RFC 1183, Section 3.3
 	"NSAP"		=> 22,		# RFC 1706, Section 5
 	"NSAP_PTR"	=> 23,		# RFC 1348 (obsolete)
-	"SIG"		=> 24,		# RFC 2535
-	"KEY"		=> 25,		# RFC 2535
-	"PX"		=> 26,		# RFC 2163
+	"SIG"		=> 24,		# RFC 2065, Section 4.1
+	"KEY"		=> 25,		# RFC 2065, Section 3.1
+	"PX"		=> 26,		# RFC 1664, Section 4
 	"GPOS"		=> 27,		# RFC 1712 (obsolete)
 	"AAAA"		=> 28,		# RFC 1886, Section 2.1
 	"LOC"		=> 29,		# RFC 1876
-	"NXT"		=> 30,		# RFC 2535
+	"NXT"		=> 30,		# RFC 2065, Section 5.2
 	"EID"		=> 31,		# draft-ietf-nimrod-dns-xx.txt
 	"NIMLOC"	=> 32,		# draft-ietf-nimrod-dns-xx.txt
-	"SRV"		=> 33,		# RFC 2782
-	"ATMA"		=> 34,		# [Dobrowski]
-	"NAPTR"		=> 35,		# RFC 2168, 2915
-	"KX"		=> 36,		# RFC 2230
-	"CERT"		=> 37,		# RFC 2358
-	"A6"		=> 38,		# RFC 2874
-	"DNAME"		=> 39,		# RFC 2672
-	"SINK"		=> 40,		# [Eastlake]
-	"OPT"		=> 41,		# RFC 2671
-	"UINFO"		=> 100,		# [IANA-Reserved]
-	"UID"		=> 101,		# [IANA-Reserved]
-	"GID"		=> 102,		# [IANA-Reserved]
-	"UNSPEC"	=> 103,		# [IANA-Reserved]
-	"TKEY"		=> 249,		# RFC 2930
-	"TSIG"		=> 250,		# RFC 2845
+	"SRV"		=> 33,		# RFC 2052
+	"ATMA"		=> 34,		# ???
+	"NAPTR"		=> 35,		# RFC 2168
+	"TSIG"		=> 36,		# draft-ietf-dnsind-tsig-xx.txt
+	"UINFO"		=> 100,		# non-standard
+	"UID"		=> 101,		# non-standard
+	"GID"		=> 102,		# non-standard
+	"UNSPEC"	=> 103,		# non-standard
 	"IXFR"		=> 251,		# RFC 1995
 	"AXFR"		=> 252,		# RFC 1035
 	"MAILB"		=> 253,		# RFC 1035 (MB, MG, MR)
@@ -96,17 +86,15 @@ require Exporter;
 	"ANY"		=> 255,		# RFC 1035
 );
 %classesbyval = map { ($classesbyname{$_} => $_) } keys %classesbyname;
-$classesbyname{"CHAOS"} = $classesbyname{"CH"};
 
 %opcodesbyname = (
 	"QUERY"		=> 0,		# RFC 1035
 	"IQUERY"	=> 1,		# RFC 1035
 	"STATUS"	=> 2,		# RFC 1035
-	"NOTIFY"	=> 4,		# RFC 1996
+	"NS_NOTIFY_OP"	=> 4,		# RFC 1996
 	"UPDATE"	=> 5,		# RFC 2136
 );
 %opcodesbyval = map { ($opcodesbyname{$_} => $_) } keys %opcodesbyname;
-$opcodesbyname{"NS_NOTIFY_OP"} = $opcodesbyname{"NOTIFY"};
 
 %rcodesbyname = (
 	"NOERROR"	=> 0,		# RFC 1035
@@ -120,15 +108,8 @@ $opcodesbyname{"NS_NOTIFY_OP"} = $opcodesbyname{"NOTIFY"};
 	"NXRRSET"	=> 8,		# RFC 2136
 	"NOTAUTH"	=> 9,		# RFC 2136
 	"NOTZONE"	=> 10,		# RFC 2136
-	"BADSIG"	=> 16,		# RFC 2845 (also BADVERS, RFC 2671)
-	"BADKEY"	=> 17,		# RFC 2845
-	"BADTIME"	=> 18,		# RFC 2845
-	"BADMODE"	=> 19,		# RFC 2930
-	"BADNAME"	=> 20,		# RFC 2930
-	"BADALG"	=> 21,		# RFC 2930
 );
 %rcodesbyval = map { ($rcodesbyname{$_} => $_) } keys %rcodesbyname;
-$rcodesbyname{"BADVERS"} = 16;
 
 sub version	{ $VERSION; }
 sub PACKETSZ	{ 512; }
@@ -199,18 +180,14 @@ C<use Net::DNS;>
 
 =head1 DESCRIPTION
 
-Net::DNS is a collection of Perl modules that acts as a Domain Name
-System (DNS) resolver.  It allows the programmer to perform DNS
-queries that are beyond the capabilities of C<gethostbyname> and
-C<gethostbyaddr>.
+Net::DNS is a collection of Perl modules that act as a Domain
+Name System (DNS) resolver.  It allows the programmer to perform
+DNS queries that are beyond the capabilities of C<gethostbyname>
+and C<gethostbyaddr>.
 
-The programmer should be familiar with the format of a DNS packet
-and its various sections.  See RFC 1035 or I<DNS and BIND> (Albitz
-& Liu) for details.
-
-Programmers interested in using Net::DNS to perform dynamic updates
-should be familiar with RFC 2136.  Those interested in performing
-signed (TSIG) transactions should be familiar with RFC 2845.
+The programmer should be somewhat familiar with the format of
+a DNS packet and its various sections.  See RFC 1035 or
+I<DNS and BIND> (Albitz & Liu) for details.
 
 =head2 Resolver Objects
 
@@ -281,12 +258,12 @@ Returns the version of Net::DNS.
 
     # Use a default resolver -- can't get an error string this way.
     use Net::DNS;
-    @mx = mx("example.com");
+    @mx = mx("foo.com");
 
     # Use your own resolver object.
     use Net::DNS;
-    $res = Net::DNS::Resolver->new;
-    @mx = mx($res, "example.com");
+    $res = new Net::DNS::Resolver;
+    @mx = mx($res, "foo.com");
 
 Returns a list of C<Net::DNS::RR::MX> objects representing the MX
 records for the specified name; the list will be sorted by preference.
@@ -304,13 +281,13 @@ update packet.  There are two forms, value-independent and
 value-dependent:
 
     # RRset exists (value-independent)
-    $packet->push("pre", yxrrset("foo.example.com A"));
+    $packet->push("pre", yxrrset("foo.bar.com A"));
 
 Meaning:  At least one RR with the specified name and type must
 exist.
 
     # RRset exists (value-dependent)
-    $packet->push("pre", yxrrset("foo.example.com A 10.1.2.3"));
+    $packet->push("pre", yxrrset("foo.bar.com A 10.1.2.3"));
 
 Meaning:  At least one RR with the specified name and type must
 exist and must have matching data.
@@ -323,7 +300,7 @@ be created.
 Use this method to add an "RRset does not exist" prerequisite to
 a dynamic update packet.
 
-    $packet->push("pre", nxrrset("foo.example.com A"));
+    $packet->push("pre", nxrrset("foo.bar.com A"));
 
 Meaning:  No RRs with the specified name and type can exist.
 
@@ -335,7 +312,7 @@ be created.
 Use this method to add a "name is in use" prerequisite to a dynamic
 update packet.
 
-    $packet->push("pre", yxdomain("foo.example.com"));
+    $packet->push("pre", yxdomain("foo.bar.com"));
 
 Meaning:  At least one RR with the specified name must exist.
 
@@ -347,7 +324,7 @@ be created.
 Use this method to add a "name is not in use" prerequisite to a
 dynamic update packet.
 
-    $packet->push("pre", nxdomain("foo.example.com"));
+    $packet->push("pre", nxdomain("foo.bar.com"));
 
 Meaning:  No RR with the specified name can exist.
 
@@ -358,7 +335,7 @@ be created.
 
 Use this method to add RRs to a zone.
 
-    $packet->push("update", rr_add("foo.example.com A 10.1.2.3"));
+    $packet->push("update", rr_add("foo.bar.com A 10.1.2.3"));
 
 Meaning:  Add this RR to the zone.
 
@@ -375,17 +352,17 @@ Use this method to delete RRs from a zone.  There are three forms:
 delete an RRset, delete all RRsets, and delete an RR.
 
     # Delete an RRset.
-    $packet->push("update", rr_del("foo.example.com A"));
+    $packet->push("update", rr_del("foo.bar.com A"));
 
 Meaning:  Delete all RRs having the specified name and type.
 
     # Delete all RRsets.
-    $packet->push("update", rr_del("foo.example.com"));
+    $packet->push("update", rr_del("foo.bar.com"));
 
 Meaning:  Delete all RRs having the specified name.
 
     # Delete an RR.
-    $packet->push("update", rr_del("foo.example.com A 10.1.2.3"));
+    $packet->push("update", rr_del("foo.bar.com A 10.1.2.3"));
 
 Meaning:  Delete all RRs having the specified name, type, and data.
 
@@ -401,23 +378,14 @@ The following examples show how to use the C<Net::DNS> modules.
 See the other manual pages and the demo scripts included with the
 source code for additional examples.
 
-Many of the examples are intentionally simple and don't do things
-like follow CNAME records.  Such code is left as an exercise for
-the reader.
+See the C<Net::DNS::Update> manual page for an example of performing
+dynamic updates.
 
-See the C<Net::DNS::Update> manual page for examples of performing
-dynamic updates.  RFC 2136 describes dynamic updates.
+=head2 Look up a host's addresses.
 
-See the C<Net::DNS::Packet> and C<Net::DNS::Update> manual pages
-for examples of performing signed queries and updates.  RFC 2845
-describes signing DNS transactions with TSIG records.
-
-=head2 Look up a host's address from its name.
-
-  #!/usr/bin/perl -w
   use Net::DNS;
-  $res = Net::DNS::Resolver->new;
-  $query = $res->search("foo.example.com");
+  $res = new Net::DNS::Resolver;
+  $query = $res->search("foo.bar.com");
   if ($query) {
       foreach $rr ($query->answer) {
           next unless $rr->type eq "A";
@@ -428,28 +396,11 @@ describes signing DNS transactions with TSIG records.
       print "query failed: ", $res->errorstring, "\n";
   }
 
-=head2 Look up a host's name from its address.
-
-  #!/usr/bin/perl -w
-  use Net::DNS;
-  $res = Net::DNS::Resolver->new;
-  $query = $res->query("10.1.2.3");
-  if ($query) {
-      foreach $rr ($query->answer) {
-	  next unless $rr->type eq "PTR";
-	  print $rr->ptrdname, "\n";
-      }
-  }
-  else {
-      print "query failed: ", $res->errorstring, "\n";
-  }
-
 =head2 Find the nameservers for a domain.
 
-  #!/usr/bin/perl -w
   use Net::DNS;
-  $res = Net::DNS::Resolver->new;
-  $query = $res->query("example.com", "NS");
+  $res = new Net::DNS::Resolver;
+  $query = $res->query("foo.com", "NS");
   if ($query) {
       foreach $rr ($query->answer) {
           next unless $rr->type eq "NS";
@@ -462,10 +413,9 @@ describes signing DNS transactions with TSIG records.
 
 =head2 Find the MX records for a domain.
 
-  #!/usr/bin/perl -w
   use Net::DNS;
-  $name = "example.com";
-  $res = Net::DNS::Resolver->new;
+  $name = "foo.com";
+  $res = new Net::DNS::Resolver;
   @mx = mx($res, $name);
   if (@mx) {
       foreach $rr (@mx) {
@@ -479,10 +429,9 @@ describes signing DNS transactions with TSIG records.
 
 =head2 Print a domain's SOA record in zone file format.
 
-  #!/usr/bin/perl -w
   use Net::DNS;
-  $res = Net::DNS::Resolver->new;
-  $query = $res->query("example.com", "SOA");
+  $res = new Net::DNS::Resolver;
+  $query = $res->query("foo.com", "SOA");
   if ($query) {
       ($query->answer)[0]->print;
   }
@@ -492,21 +441,20 @@ describes signing DNS transactions with TSIG records.
 
 =head2 Perform a zone transfer and print all the records.
 
-  #!/usr/bin/perl -w
   use Net::DNS;
-  $res = Net::DNS::Resolver->new;
-  $res->nameservers("ns.example.com");
-  @zone = $res->axfr("example.com");
+  $res = new Net::DNS::Resolver;
+  $res->nameservers("ns.foo.com");
+  @zone = $res->axfr("foo.com");
   foreach $rr (@zone) {
       $rr->print;
   }
 
-=head2 Perform a background query and do some other work while waiting for the answer.
+=head2 Perform a background query and do some other work while waiting
+for the answer.
 
-  #!/usr/bin/perl -w
   use Net::DNS;
-  $res = Net::DNS::Resolver->new;
-  $socket = $res->bgsend("foo.example.com");
+  $res = new Net::DNS::Resolver;
+  $socket = $res->bgsend("foo.bar.com");
   until ($res->bgisready($socket)) {
       # do some work here while waiting for the answer
       # ...and some more here
@@ -515,15 +463,15 @@ describes signing DNS transactions with TSIG records.
   $packet->print;
 
 
-=head2 Send a background query and use select to determine when the answer has arrived.
+=head2 Send a background query and use select to determine when the answer
+has arrived.
 
-  #!/usr/bin/perl -w
   use Net::DNS;
   use IO::Select;
   $timeout = 5;
-  $res = Net::DNS::Resolver->new;
-  $bgsock = $res->bgsend("foo.example.com");
-  $sel = IO::Select($bgsock)->new;
+  $res = new Net::DNS::Resolver;
+  $bgsock = $res->bgsend("foo.bar.com");
+  $sel = new IO::Select($bgsock);
   # Add more sockets to $sel if desired.
   @ready = $sel->can_read($timeout);
   if (@ready) {
@@ -546,32 +494,32 @@ describes signing DNS transactions with TSIG records.
 
 C<Net::DNS> is slow.  Real slow.
 
-C<Net::DNS> is crippled on Microsoft systems because Win32 Perl has
-only a limited socket implementation.  UDP queries seem to be
-problematic so TCP is the defualt.  TCP timeouts may not work.
-
-On some systems, TCP queries result in the error "Resource temporarily
-unavailable."  Setting $res->tcp_timeout(undef) seems to work around
-this problem.
-
-For other known issues, please see the TODO file included with the
-source distribution.
+For other items to be fixed, please see the TODO file included with
+the source distribution.
 
 =head1 COPYRIGHT
 
-Copyright (c) 1997-2000 Michael Fuhr.  All rights reserved.  This
-program is free software; you can redistribute it and/or modify it
-under the same terms as Perl itself. 
+Copyright (c) 1997-2002 Michael Fuhr.  All rights reserved.  This program 
+is free software; you can redistribute it and/or modify it under the same 
+terms as Perl itself. 
 
 =head1 AUTHOR INFORMATION
 
-Michael Fuhr <mike@fuhr.org>
-http://www.fuhr.org/~mfuhr/perldns/
+Net::DNS is currently maintained by a group, led by:
+	Chris Reinhardt
+	ctriv@net-dns.org
+
+Net::DNS was created by:
+	Michael Fuhr
+	mike@fuhr.org
+
+For more information see:
+	http://www.net-dns.org/
 
 =head1 SEE ALSO
  
 L<perl(1)>, L<Net::DNS::Resolver>, L<Net::DNS::Packet>, L<Net::DNS::Update>,
 L<Net::DNS::Header>, L<Net::DNS::Question>, L<Net::DNS::RR>, RFC 1035,
-RFC 2136, RFC 2845, I<DNS and BIND> by Paul Albitz & Cricket Liu
+I<DNS and BIND> by Paul Albitz & Cricket Liu
 
 =cut

@@ -1,13 +1,15 @@
-# $Id: 01-resolver.t,v 1.3 2000/11/19 06:10:00 mfuhr Exp mfuhr $
+# $Id: 01-resolver.t,v 1.3 2002/02/26 04:21:06 ctriv Exp $
 
-BEGIN { $| = 1; print "1..2\n"; }
-END {print "not ok 1\n" unless $loaded;}
 
-use Net::DNS;
+use Test::More tests => 3;
+use strict;
 
-$loaded = 1;
-print "ok 1\n";
+BEGIN { use_ok('Net::DNS'); }
 
-$res = Net::DNS::Resolver->new;
-print "not " unless defined($res);
-print "ok 2\n";
+my $res = Net::DNS::Resolver->new;
+
+ok($res,                "new() returned something");
+ok($res->nameservers,   "nameservers() works");
+
+ 
+ 

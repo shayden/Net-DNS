@@ -7,11 +7,9 @@ File			Contributor
 ------			-----------
 check_zone		Dennis Glatting <dennis.glatting@software-munitions.com>
 DNSHash.pm		Dave Hayes <dave@jetcafe.org>
-dnslookup.pl		Kent Hamilton <KHamilton@Hunter.COM>
 dnswalk			Dave Barr <barr@cis.ohio-state.edu>
 loc2earth.fcgi		Christopher Davis <ckd@kei.com>
 loclist.pl		Christopher Davis <ckd@kei.com>
-dssl			Paul Phillips <paulp@go2net.com>
 
 ---
-$Id: README,v 1.2 2000/11/10 15:58:39 mfuhr Exp mfuhr $
+$Id: README,v 1.1.1.1 2002/02/02 03:48:15 ctriv Exp $
