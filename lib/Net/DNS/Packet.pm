@@ -8,7 +8,7 @@ use Net::DNS;
 use Net::DNS::Question;
 use Net::DNS::RR;
 
-# $Id: Packet.pm,v 1.3 1997/03/28 01:22:15 mfuhr Exp $
+# $Id: Packet.pm,v 1.4 1997/05/29 17:37:48 mfuhr Exp $
 $VERSION = $Net::DNS::VERSION;
 
 =head1 NAME
@@ -28,14 +28,25 @@ A C<Net::DNS::Packet> object represents a DNS packet.
 =head2 new
 
     $packet = new Net::DNS::Packet(\$data);
+    $packet = new Net::DNS::Packet(\$data, 1);  # set debugging
     $packet = new Net::DNS::Packet("foo.com", "MX", "IN");
 
+    ($packet, $err) = new Net::DNS::Packet(\$data);
+
 If passed a reference to a scalar containing DNS packet data,
-C<new> creates a packet object from that data.
+C<new> creates a packet object from that data.  A second argument
+can be passed to turn on debugging output for packet parsing.
 
 If passed a domain, type, and class, C<new> creates a packet
 object appropriate for making a DNS query for the requested
 information.
+
+If called in array context, returns a packet object and an
+error string.  The error string will only be defined if the
+packet object is undefined (i.e., couldn't be created).
+
+Returns B<undef> if unable to create a packet object (e.g., if
+the packet data is truncated).
 
 =cut
 
@@ -43,38 +54,119 @@ sub new {
 	my $class = shift;
 	my %self;
 
-	if (@_ == 1) {
+	if ((@_ == 1) || (@_ == 2)) {
 		my $data = shift;
+		my $debug = @_ ? shift : 0;
+
+		if ($debug) {
+			print ";; HEADER SECTION\n";
+		}
+
 		$self{"header"} = new Net::DNS::Header($data);
 
+		unless (defined $self{"header"}) {
+			return wantarray
+			       ? (undef, "header section incomplete")
+			       : undef;
+		}
+
+		$self{"header"}->print if $debug;
+
 		my $offset = &Net::DNS::HFIXEDSZ;
+
+		if ($debug) {
+			print "\n";
+			print ";; QUESTION SECTION (",
+			      $self{"header"}->qdcount, " record",
+			      $self{"header"}->qdcount == 1 ? "" : "s",
+			      ")\n";
+		}
 
 		$self{"question"} = [];
 		foreach (1 .. $self{"header"}->qdcount) {
 			my $qobj;
 			($qobj, $offset) = parse_question($data, $offset);
+
+			unless (defined $qobj) {
+				return wantarray
+				       ? (undef, "question section incomplete")
+				       : undef;
+			}
+
 			push(@{$self{"question"}}, $qobj);
+			if ($debug) {
+				print ";; ";
+				$qobj->print;
+			}
 		}
 			
+		if ($debug) {
+			print "\n";
+			print ";; ANSWER SECTION (",
+			      $self{"header"}->ancount, " record",
+			      $self{"header"}->ancount == 1 ? "" : "s",
+			      ")\n";
+		}
+
 		$self{"answer"} = [];
 		foreach (1 .. $self{"header"}->ancount) {
 			my $rrobj;
 			($rrobj, $offset) = parse_rr($data, $offset);
+
+			unless (defined $rrobj) {
+				return wantarray
+				       ? (undef, "answer section incomplete")
+				       : undef;
+			}
+
 			push(@{$self{"answer"}}, $rrobj);
+			$rrobj->print if $debug;
+		}
+
+		if ($debug) {
+			print "\n";
+			print ";; AUTHORITY SECTION (",
+			      $self{"header"}->nscount, " record",
+			      $self{"header"}->nscount == 1 ? "" : "s",
+			      ")\n";
 		}
 
 		$self{"authority"} = [];
 		foreach (1 .. $self{"header"}->nscount) {
 			my $rrobj;
 			($rrobj, $offset) = parse_rr($data, $offset);
+
+			unless (defined $rrobj) {
+				return wantarray
+				       ? (undef, "authority section incomplete")
+				       : undef;
+			}
+
 			push(@{$self{"authority"}}, $rrobj);
+			$rrobj->print if $debug;
+		}
+
+		if ($debug) {
+			print "\n";
+			print ";; ADDITIONAL SECTION (",
+			      $self{"header"}->adcount, " record",
+			      $self{"header"}->adcount == 1 ? "" : "s",
+			      ")\n";
 		}
 
 		$self{"additional"} = [];
 		foreach (1 .. $self{"header"}->arcount) {
 			my $rrobj;
 			($rrobj, $offset) = parse_rr($data, $offset);
+
+			unless (defined $rrobj) {
+				return wantarray
+				       ? (undef, "additional section incomplete")
+				       : undef;
+			}
+
 			push(@{$self{"additional"}}, $rrobj);
+			$rrobj->print if $debug;
 		}
 	}
 	elsif (@_ == 3) {
@@ -92,7 +184,9 @@ sub new {
 		Carp::confess("wrong number of arguments");
 	}
 
-	return bless \%self, $class;
+	return wantarray
+		? ((bless \%self, $class), undef)
+		: bless \%self, $class;
 }
 
 =head2 data
@@ -279,6 +373,8 @@ domain name is stored.
 Returns the domain name and the offset of the next location
 in the packet.
 
+Returns B<(undef, undef)> if the domain name couldn't be expanded.
+
 =cut
 
 sub dn_expand {
@@ -287,26 +383,40 @@ sub dn_expand {
 	my $len;
 
 	while (1) {
+		return (undef, undef) if length($$packet) < ($offset + 1);
+
 		$len = unpack("\@$offset C", $$packet);
+
 		if ($len == 0) {
 			$offset++;
 			last;
 		}
 		elsif (($len & 0xc0) == 0xc0) {
+			return (undef, undef)
+				if length($$packet) < ($offset + &Net::DNS::INT16SZ);
+
 			my $ptr = unpack("\@$offset n", $$packet);
 			$ptr &= 0x3fff;
 			my($name2) = dn_expand($packet, $ptr);
+
+			return (undef, undef) unless defined $name2;
+
 			$name .= $name2;
 			$offset += &Net::DNS::INT16SZ;
 			last;
 		}
 		else {
 			$offset++;
-			my $elem = unpack("\@$offset a$len", $$packet);
+
+			return (undef, undef)
+				if length($$packet) < ($offset + $len);
+
+			my $elem = substr($$packet, $offset, $len);
 			$name .= "$elem.";
 			$offset += $len;
 		}
 	}
+
 	$name =~ s/\.$//;
 	return ($name, $offset);
 }
@@ -323,16 +433,27 @@ sub dn_expand {
 #
 # Returns a Net::DNS::Question object and the offset of the next location
 # in the packet.
+#
+# Returns (undef, undef) if the question object couldn't be created (e.g.,
+# if there isn't enough data).
 #------------------------------------------------------------------------------
 
 sub parse_question {
 	my ($data, $offset) = @_;
 	my $qname;
+
 	($qname, $offset) = dn_expand($data, $offset);
+	return (undef, undef) unless defined $qname;
+
+	return (undef, undef)
+		if length($$data) < ($offset + 2 * &Net::DNS::INT16SZ);
+
 	my ($qtype, $qclass) = unpack("\@$offset n2", $$data);
 	$offset += 2 * &Net::DNS::INT16SZ;
-	$qtype = $Net::DNS::typesbyval{$qtype};
+
+	$qtype  = $Net::DNS::typesbyval{$qtype};
 	$qclass = $Net::DNS::classesbyval{$qclass};
+
 	return (new Net::DNS::Question($qname, $qtype, $qclass), $offset);
 }
 
@@ -355,12 +476,19 @@ sub parse_rr {
 	my $name;
 
 	($name, $offset) = dn_expand($data, $offset);
+	return (undef, undef) unless defined $name;
+
+	return (undef, undef)
+		if length($$data) < ($offset + &Net::DNS::RRFIXEDSZ);
 
 	my ($type, $class, $ttl, $rdlength) = unpack("\@$offset n2 N n", $$data);
-	$type = $Net::DNS::typesbyval{$type};
+	$type  = $Net::DNS::typesbyval{$type};
 	$class = $Net::DNS::classesbyval{$class};
 
 	$offset += &Net::DNS::RRFIXEDSZ;
+
+	return (undef, undef)
+		if length($$data) < ($offset + $rdlength);
 
 	my $rrobj = new Net::DNS::RR($name,
 				     $type,
@@ -369,6 +497,8 @@ sub parse_rr {
 				     $rdlength, 
 				     $data,
 				     $offset);
+
+	return (undef, undef) unless defined $rrobj;
 
 	$offset += $rdlength;
 	return ($rrobj, $offset);

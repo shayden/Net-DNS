@@ -1,6 +1,6 @@
 package Net::DNS::RR::X25;
 
-# $Id: X25.pm,v 1.2 1997/02/02 08:31:25 mfuhr Exp $
+# $Id: X25.pm,v 1.3 1997/05/29 17:40:37 mfuhr Exp $
 
 use strict;
 use vars qw(@ISA);
@@ -15,7 +15,7 @@ sub new {
 
 	($len) = unpack("\@$offset C", $$data);
 	++$offset;
-	($psdn) = unpack("\@$offset a$len", $$data);
+	$psdn = substr($$data, $offset, $len);
 	$offset += $len;
 
 	$self->{"psdn"} = $psdn;

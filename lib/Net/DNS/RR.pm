@@ -5,7 +5,7 @@ use vars qw($VERSION $AUTOLOAD);
 
 use Net::DNS;
 
-# $Id: RR.pm,v 1.6 1997/05/13 15:03:29 mfuhr Exp $
+# $Id: RR.pm,v 1.8 1997/05/29 17:38:03 mfuhr Exp $
 $VERSION = $Net::DNS::VERSION;
 
 =head1 NAME
@@ -25,25 +25,28 @@ See also the manual pages for each RR type.
 
 =cut
 
+my %RR;
+
 # Need to figure out a good way to autoload these.
-use Net::DNS::RR::A;
-use Net::DNS::RR::AFSDB;
-use Net::DNS::RR::CNAME;
-use Net::DNS::RR::HINFO;
-use Net::DNS::RR::ISDN;
-use Net::DNS::RR::LOC;
-use Net::DNS::RR::MG;
-use Net::DNS::RR::MINFO;
-use Net::DNS::RR::MR;
-use Net::DNS::RR::MX;
-use Net::DNS::RR::NS;
-use Net::DNS::RR::PTR;
-use Net::DNS::RR::RP;
-use Net::DNS::RR::RT;
-use Net::DNS::RR::SOA;
-use Net::DNS::RR::SRV;
-use Net::DNS::RR::TXT;
-use Net::DNS::RR::X25;
+use Net::DNS::RR::A;		$RR{"A"}	= 1;
+use Net::DNS::RR::AFSDB;	$RR{"AFSDB"}	= 1;
+use Net::DNS::RR::CNAME;	$RR{"CNAME"}	= 1;
+use Net::DNS::RR::HINFO;	$RR{"HINFO"}	= 1;
+use Net::DNS::RR::ISDN;		$RR{"ISDN"}	= 1;
+use Net::DNS::RR::LOC;		$RR{"LOC"}	= 1;
+use Net::DNS::RR::MG;		$RR{"MG"}	= 1;
+use Net::DNS::RR::MINFO;	$RR{"MINFO"}	= 1;
+use Net::DNS::RR::MR;		$RR{"MR"}	= 1;
+use Net::DNS::RR::MX;		$RR{"MX"}	= 1;
+use Net::DNS::RR::NAPTR;	$RR{"NAPTR"}	= 1;
+use Net::DNS::RR::NS;		$RR{"NS"}	= 1;
+use Net::DNS::RR::PTR;		$RR{"PTR"}	= 1;
+use Net::DNS::RR::RP;		$RR{"RP"}	= 1;
+use Net::DNS::RR::RT;		$RR{"RT"}	= 1;
+use Net::DNS::RR::SOA;		$RR{"SOA"}	= 1;
+use Net::DNS::RR::SRV;		$RR{"SRV"}	= 1;
+use Net::DNS::RR::TXT;		$RR{"TXT"}	= 1;
+use Net::DNS::RR::X25;		$RR{"X25"}	= 1;
 
 sub new {
 	my $class = shift;
@@ -59,8 +62,11 @@ sub new {
 	);
 
 	my $subclass = $class . "::" . $rrtype;
-	eval "\$retval = new $subclass(\\\%self, \$data, \$offset)";
-	if ($@) {
+
+	if ($RR{$rrtype}) {
+		$retval = new $subclass(\%self, $data, $offset);
+	}
+	else {
 		$retval = bless \%self, $class;
 	}
 

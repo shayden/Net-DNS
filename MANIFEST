@@ -4,6 +4,7 @@ Makefile.PL
 README
 TODO
 demo/README
+demo/axfr
 demo/check_soa
 demo/check_zone
 demo/mx
@@ -23,6 +24,7 @@ lib/Net/DNS/RR/MG.pm
 lib/Net/DNS/RR/MINFO.pm
 lib/Net/DNS/RR/MR.pm
 lib/Net/DNS/RR/MX.pm
+lib/Net/DNS/RR/NAPTR.pm
 lib/Net/DNS/RR/NS.pm
 lib/Net/DNS/RR/PTR.pm
 lib/Net/DNS/RR/RP.pm

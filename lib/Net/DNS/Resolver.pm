@@ -66,7 +66,7 @@ use IO::Socket;
 use Net::DNS;
 use Net::DNS::Packet;
 
-# $Id: Resolver.pm,v 1.8 1997/04/19 17:48:49 mfuhr Exp $
+# $Id: Resolver.pm,v 1.9 1997/05/29 17:38:45 mfuhr Exp $
 $VERSION = $Net::DNS::VERSION;
 
 #------------------------------------------------------------------------------
@@ -82,7 +82,7 @@ $dotfile     = ".resolv.conf";
 );
 
 %default = (
-	"nameservers"	=> [],
+	"nameservers"	=> ["127.0.0.1"],
 	"port"		=> "domain(53)",
 	"domain"	=> "",
 	"searchlist"	=> [],
@@ -522,9 +522,13 @@ sub send {
 						      $ns2->peerport, " : ",
 						      length($buf), " bytes\n"
 							if $self->{"debug"};
-						my $ans = new Net::DNS::Packet(\$buf);
-						$ans->print if $self->{"debug"};
-						$self->errorstring($ans->header->rcode);
+						my ($ans, $err) = new Net::DNS::Packet(\$buf, $self->{"debug"});
+						if (defined $ans) {
+							$self->errorstring($ans->header->rcode);
+						}
+						elsif (defined $err) {
+							$self->errorstring($err);
+						}
 						return $ans;
 					}
 					else {
@@ -617,9 +621,13 @@ sub bgread {
 		print ";; answer from ", $sock->peerhost, ":",
 		      $sock->peerport, " : ", length($buf), " bytes\n"
 			if $self->{"debug"};
-		my $ans = new Net::DNS::Packet(\$buf);
-		$ans->print if $self->{"debug"};
-		$self->errorstring($ans->header->rcode);
+		my ($ans, $err) = new Net::DNS::Packet(\$buf, $self->{"debug"});
+		if (defined $ans) {
+			$self->errorstring($ans->header->rcode);
+		}
+		elsif (defined $err) {
+			$self->errorstring($err);
+		}
 		return $ans;
 	}
 	else {
@@ -759,16 +767,22 @@ sub axfr {
 		Carp::confess "expected $len bytes, received " . length($buf)
 			if length($buf) != $len;
 
-		my $ans = new Net::DNS::Packet(\$buf);
+		my ($ans, $err) = new Net::DNS::Packet(\$buf, $self->{"debug"});
 
-		if ($ans->header->ancount < 1) {
-			$self->errorstring($ans->header->rcode);
+		if (defined $ans) {
+			if ($ans->header->ancount < 1) {
+				$self->errorstring($ans->header->rcode);
+				last;
+			}
+		}
+		elsif (defined $err) {
+			$self->errorstring($err);
 			last;
 		}
 
 		foreach ($ans->answer) {
 			push @zone, $_;
-			$_->print if $self->{"debug"};
+			# $_->print if $self->{"debug"};
 			++$soa_count if $_->type eq "SOA";
 		}
 
@@ -838,9 +852,9 @@ apply the search list.  The default is true.
     print "debug flag: ", $res->debug, "\n";
     $res->debug(1);
 
-Get or set the debug flag.  If this is true, calls to B<search>,
-B<query>, and B<send> will print debugging information on the standard
-output.  The default is false.
+Get or set the debug flag.  If set, calls to B<search>, B<query>,
+and B<send> will print debugging information on the standard output.
+The default is false.
 
 =head2 usevc (not yet implemented)
 

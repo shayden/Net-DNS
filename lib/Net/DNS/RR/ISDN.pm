@@ -1,6 +1,6 @@
 package Net::DNS::RR::ISDN;
 
-# $Id: ISDN.pm,v 1.3 1997/03/28 01:20:55 mfuhr Exp $
+# $Id: ISDN.pm,v 1.4 1997/05/29 17:40:19 mfuhr Exp $
 
 use strict;
 use vars qw(@ISA);
@@ -16,13 +16,13 @@ sub new {
 
 	($len) = unpack("\@$offset C", $$data);
 	++$offset;
-	($address) = unpack("\@$offset a$len", $$data);
+	$address = substr($$data, $offset, $len);
 	$offset += $len;
 
 	if ($len + 1 < $self->{"rdlength"}) {
 		($len) = unpack("\@$offset C", $$data);
 		++$offset;
-		($sa) = unpack("\@$offset a$len", $$data);
+		$sa = substr($$data, $offset, $len);
 		$offset += $len;
 	}
 	else {

@@ -1,6 +1,6 @@
 package Net::DNS::RR::HINFO;
 
-# $Id: HINFO.pm,v 1.2 1997/02/02 08:31:25 mfuhr Exp $
+# $Id: HINFO.pm,v 1.3 1997/05/29 17:39:57 mfuhr Exp $
 
 use strict;
 use vars qw(@ISA);
@@ -16,12 +16,12 @@ sub new {
 
 	($len) = unpack("\@$offset C", $$data);
 	++$offset;
-	($cpu) = unpack("\@$offset a$len", $$data);
+	$cpu = substr($$data, $offset, $len);
 	$offset += $len;
 
 	($len) = unpack("\@$offset C", $$data);
 	++$offset;
-	($os) = unpack("\@$offset a$len", $$data);
+	$os = substr($$data, $offset, $len);
 	$offset += $len;
 
 	$self->{"cpu"} = $cpu;

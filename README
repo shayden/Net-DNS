@@ -13,27 +13,29 @@ Please see the BUGS section for more information.
 DESCRIPTION
 ===========
 
-Net::DNS is a Perl interface to the DNS resolver.  It allows the 
-programmer to perform any type of DNS query.  For details, see the
-Net::DNS manual page.
+Net::DNS is a Perl interface to the DNS resolver.  It allows the
+programmer to perform any type of DNS query from a Perl script.  For
+details and examples, please read the Net::DNS manual page.
 
-To read about the latest features, see the Changes file.  To see
+To read about the latest features, see the Changes file.  To find out
 what's planned for future versions, see the TODO file.
 
 As of version 0.02, Net::DNS is written entirely in Perl.  Version 0.01
-was written mostly in C and used the system's resolver.  The Perl version
-runs quite a bit slower, but considering that the network can be a serious
-bottleneck when making DNS queries, the speed difference may not really
-matter in most cases.  However, future versions may contain some C for those
-who wish to link against libresolv.
+was written mostly in C and used the system's resolver.  The Perl
+version runs quite a bit slower, but considering that the network can
+be a serious bottleneck when making DNS queries, the speed difference
+may not really matter in most cases.  However, future versions may
+contain some C for those who wish to link against libresolv or libbind.
 
 The author invites feedback on the module, particularly at this early
 stage of its development.  If there's something you'd like to have added,
-please let me know.
+please let me know.  If you find a bug, please send me the information
+described in the BUGS section below.
 
-You can get the latest version of Net::DNS from one of the following sites:
+You can get the latest version of Net::DNS from one of the following
+sites:
 
-    http://www.perl.com/CPAN/modules/by-module/Net/
+    http://www.perl.org/CPAN/modules/by-module/Net/
     http://www.dimensional.com/~mfuhr/perldns/
 
 
@@ -46,11 +48,21 @@ Net::DNS requires the following:
     IO-1.15
 
 Net::DNS may work with earlier versions of the above, but the author
-hasn't tested this.
+hasn't tested this.  The latest versions can be obtained from the
+Comprehensive Perl Archive Network (CPAN):
+
+    http://www.perl.org/CPAN/
+
+Some of the demonstration scripts may require additional modules.  See
+demo/README for details.
 
 
 INSTALLATION
 ============
+
+Please install any modules mentioned in the REQUIREMENTS section above.
+If you don't, Net::DNS won't work.  When you run "perl Makefile.PL",
+Perl should complain if any of the required modules are missing.
 
 To build this module, run the following commands:
 
@@ -63,13 +75,15 @@ To build this module, run the following commands:
 RUNNING TESTS
 =============
 
-There aren't many tests in this version.  Part of the problem is creating
-a test suite to work on systems both with and without Internet connectivity.
-Future versions of this module will have more tests but will probably
-require some site-specific configuration before running them.
+There aren't many tests in this version.  Part of the problem is
+creating a test suite to work on systems both with and without
+Internet connectivity.  Future versions of this module will have
+more tests but will probably require some site-specific configuration
+before running them.
 
-The author does run additional tests against customized zone data on a
-private nameserver, but these tests aren't included in the distribution.
+The author does run additional tests against customized zone data
+on a private nameserver, but these tests aren't included in the
+distribution.
 
 
 DEMONSTRATION SCRIPTS
@@ -78,17 +92,17 @@ DEMONSTRATION SCRIPTS
 There are a few demonstration scripts in the demo/ directory.  See
 demo/README for more info.
 
-The author would be happy to include any contributed scripts in future
-versions of this module.  All I ask is that they be documented (preferably
-using POD) and that the contributor's name and contact information be
-mentioned somewhere.
+The author would be happy to include any contributed scripts in
+future versions of this module.  All I ask is that they be documented
+(preferably using POD) and that the contributor's name and contact
+information be mentioned somewhere.
 
 
 BUGS
 ====
 
-The module is still in its early stages and is sure to contain a few
-bugs.  See the TODO and Changes files for more info.
+The module is still in its early stages and is sure to contain a
+few bugs.  See the TODO and Changes files for more info.
 
 If you find a bug, please report it to the author along with the
 following information:
@@ -104,8 +118,8 @@ following information:
       to Internet nameservers
 
 If I don't have access to a system similar to yours, I may ask you
-to insert some debugging lines and report back on the results.  The
-more help and information you can provide, the better.
+to insert some debugging lines and report back on the results.
+The more help and information you can provide, the better.
 
 
 AUTHOR
@@ -115,4 +129,4 @@ Michael Fuhr
 mfuhr@dimensional.com
 http://www.dimensional.com/~mfuhr/
 
-$Id: README,v 1.5 1997/04/03 06:27:38 mfuhr Exp $
+$Id: README,v 1.6 1997/05/29 21:49:20 mfuhr Exp $

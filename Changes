@@ -1,9 +1,46 @@
 Revision history for Net::DNS
 =============================
 
+*** 0.09  29 May 1997
+
+Net::DNS is now being developed under Perl 5.004.  I'll try to keep
+it compatible with earlier versions of Perl, at least for a while.
+
+Got rid of an eval in RR.pm and replaced unpack with substr in
+several places.  After all other changes in this version, a simple
+benchmark of a zone transfer showed the new code using about 25%
+less CPU time than the old code.  Mileage will vary based on the
+program, of course, and programmers probably shouldn't expect to
+see much improvement.
+
+Debugging is now printed during packet parsing instead of after
+the entire packet has been parsed.  This can be useful for examining
+corrupt packets.
+
+Added support for NAPTR RRs.  Thanks to Ryan Moats for contributing
+the necessary code.
+
+Wrote demo/axfr to demonstrate how to save a zone transfer to a
+disk file and read it back later.  Requires the Storable module.
+
+BUG FIX:  If no "nameserver" lines are found in the resolver config
+files, queries should go to the nameserver running on the local
+host.  Previous behavior left the nameserver list empty, causing
+all queries to fail with the error "no nameservers".  Problem noted
+by Dr Eberhard W Lisse.
+
+BUG FIX:  Added checks for missing data in packets - this should
+eliminate the "@ outside of string" errors that can happen if the
+packet is corrupt.  In these cases, queries will return undef and an
+explanation of the error (e.g., "answer section incomplete") will be
+present in $res->errorstring.  Problem noted by Martin Lichtin and
+Stephen Hebditch.
+
+
 *** 0.08  13 May 1997
 
-Added support for LOC RRs.
+Added support for LOC RRs.  Thanks to Christopher Davis for his
+help and contributing some of the code.
 
 
 *** 0.07  19 Apr 1997
@@ -82,4 +119,4 @@ memory management.
 
 ---
 Michael Fuhr <mfuhr@dimensional.com>
-$Id: Changes,v 1.7 1997/05/13 15:06:30 mfuhr Exp $
+$Id: Changes,v 1.8 1997/05/29 21:52:32 mfuhr Exp $

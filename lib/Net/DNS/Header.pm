@@ -5,7 +5,7 @@ use vars qw($VERSION $AUTOLOAD);
 
 use Net::DNS;
 
-# $Id: Header.pm,v 1.4 1997/04/19 17:48:07 mfuhr Exp $
+# $Id: Header.pm,v 1.5 1997/05/29 17:37:02 mfuhr Exp $
 $VERSION = $Net::DNS::VERSION;
 
 =head1 NAME
@@ -34,6 +34,9 @@ for making a DNS query.
 If C<new> is passed a reference to a scalar containing DNS packet
 data, it creates a header object from that data.
 
+Returns B<undef> if unable to create a header object (e.g., if
+the data is incomplete).
+
 =cut
 
 sub new {
@@ -42,6 +45,11 @@ sub new {
 
 	if (@_) {
 		my $data = shift;
+
+		if (length($$data) < &Net::DNS::HFIXEDSZ) {
+			return undef;
+		}
+
 		my @a = unpack("n C2 n4", $$data);
 		%self = (
 			"id"		=> $a[0],

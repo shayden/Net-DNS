@@ -1,6 +1,6 @@
 package Net::DNS::RR::TXT;
 
-# $Id: TXT.pm,v 1.2 1997/02/02 08:31:25 mfuhr Exp $
+# $Id: TXT.pm,v 1.3 1997/05/29 17:40:37 mfuhr Exp $
 
 use strict;
 use vars qw(@ISA);
@@ -15,7 +15,7 @@ sub new {
 
 	($len) = unpack("\@$offset C", $$data);
 	++$offset;
-	($txtdata) = unpack("\@$offset a$len", $$data);
+	$txtdata = substr($$data, $offset, $len);
 	$offset += $len;
 
 	$self->{"txtdata"} = $txtdata;

@@ -4,6 +4,10 @@ package Net::DNS;
 
 Net::DNS - Perl interface to the DNS resolver
 
+=head1 SYNOPSIS
+
+C<use Net::DNS;>
+
 =head1 DESCRIPTION
 
 Net::DNS is a collection of Perl modules to interface with the Domain
@@ -195,8 +199,8 @@ use Net::DNS::Header;
 use Net::DNS::Question;
 use Net::DNS::RR;
 
-# $Id: DNS.pm,v 1.10 1997/05/13 15:02:47 mfuhr Exp $
-$VERSION = "0.08";
+# $Id: DNS.pm,v 1.11 1997/05/29 21:48:25 mfuhr Exp $
+$VERSION = "0.09";
 
 %typesbyname= (
 	"A"		=> 1,		# RFC 1035, Section 3.4.1
@@ -279,12 +283,12 @@ $VERSION = "0.08";
 );
 %rcodesbyval = map { ($rcodesbyname{$_} => $_) } keys %rcodesbyname;
 
-sub version   { $VERSION; }
-sub PACKETSZ  { 512; }
-sub HFIXEDSZ  {  12; }
-sub QFIXEDSZ  {   4; }
-sub RRFIXEDSZ {  10; }
-sub INT32SZ   {   4; }
-sub INT16SZ   {   2; }
+sub version	{ $VERSION; }
+sub PACKETSZ	{ 512; }
+sub HFIXEDSZ	{  12; }
+sub QFIXEDSZ	{   4; }
+sub RRFIXEDSZ	{  10; }
+sub INT32SZ	{   4; }
+sub INT16SZ	{   2; }
 
 1;
