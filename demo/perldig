@@ -1,5 +1,5 @@
 #!/usr/local/bin/perl -w
-# $Id: perldig,v 1.2 1997/02/08 21:05:15 mfuhr Exp $
+# $Id: perldig,v 1.3 1997/02/13 23:22:35 mfuhr Exp $
 
 =head1 NAME
 
@@ -7,7 +7,7 @@ perldig - Perl script to perform DNS queries
 
 =head1 SYNOPSIS
 
-C<perldig> I<name> [ I<type> [ I<class> ] ]
+C<perldig> [ C<@>I<nameserver> ] I<name> [ I<type> [ I<class> ] ]
 
 =head1 DESCRIPTION
 
@@ -30,9 +30,37 @@ use strict;
 use File::Basename;
 use Net::DNS;
 
-die "Usage: ", basename($0), " name [ type [ class ] ]\n"
+my $res = new Net::DNS::Resolver;
+if (@ARGV && ($ARGV[0] =~ /^@/)) {
+	my $nameserver = shift;
+	$nameserver =~ s/^@//;
+	$res->nameservers($nameserver);
+}
+
+die "Usage: ", basename($0), " [ \@nameserver ] name [ type [ class ] ]\n"
 	unless (@ARGV >= 1) && (@ARGV <= 3);
 
-my $res = new Net::DNS::Resolver;
-my $answer = $res->send(@ARGV);
-$answer->print if defined($answer);
+my ($name, $type, $class) = @ARGV;
+$type  ||= "A";
+$class ||= "IN";
+
+if (uc($type) eq "AXFR") {
+	my @zone = $res->axfr($name, $class);
+	if (defined(@zone) && @zone) {
+		foreach (@zone) {
+			$_->print;
+		}
+	}
+	else {
+		print "zone transfer failed: ", $res->errorstring, "\n";
+	}
+}
+else {
+	my $answer = $res->send($name, $type, $class);
+	if (defined($answer)) {
+		$answer->print;
+	}
+	else {
+		print "query failed: ", $res->errorstring, "\n";
+	}
+}

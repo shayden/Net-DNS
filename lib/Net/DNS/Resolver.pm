@@ -66,7 +66,7 @@ use IO::Socket;
 use Net::DNS;
 use Net::DNS::Packet;
 
-# $Id: Resolver.pm,v 1.4 1997/02/08 21:20:03 mfuhr Exp $
+# $Id: Resolver.pm,v 1.5 1997/02/13 23:24:58 mfuhr Exp $
 $VERSION = $Net::DNS::VERSION;
 
 #------------------------------------------------------------------------------
@@ -428,33 +428,11 @@ sub send {
 	my $retrans = $self->{"retrans"};
 	my $timeout = $retrans;
 	my ($ns, @ns);
-	my $rin = "";
-	my $rout;
 	my ($i, $j);
-	my $packet;
 
 	$self->errorstring($default{"errorstring"});
 
-	if (ref($_[0]) eq "Net::DNS::Packet") {
-		$packet = shift;
-	}
-	else {
-		my ($name, $type, $class) = @_;
-
-		$type  = "A"  unless defined($type);
-		$class = "IN" unless defined($class);
-
-		# If the name looks like an IP address then do an appropriate
-		# PTR query.
-		if ($name =~ /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/) {
-			$name = "$4.$3.$2.$1.in-addr.arpa.";
-			$type = "PTR";
-		}
-
-		$packet = new Net::DNS::Packet($name, $type, $class);
-	}
-
-	$packet->header->rd($self->{"recurse"});
+	my $packet = $self->make_query_packet(@_);
 
 	@ns = map {
 		IO::Socket::INET->new(PeerAddr => $_,
@@ -479,11 +457,11 @@ sub send {
 			print ";; send(", $ns->peerhost, ":", $ns->peerport, ")\n"
 				if $self->{"debug"};
 
-			$rin = select_list(@ns);
-
-			# Failure needs to be more graceful.
+			# Failure here needs to be more graceful.
+			my $rin = $self->select_vec(@ns);
 			$ns->send($packet->data) or Carp::confess "send: $!";
 
+			my $rout;
 			select($rout=$rin, undef, undef, $timeout);
 
 			# If one of the nameservers answered, which was it?
@@ -527,7 +505,137 @@ sub send {
 	return undef;
 }
 
-sub select_list {
+=head2 bgsend
+
+    $socket = $res->bgsend($packet_object);
+    $socket = $res->bgsend("mailhost.foo.com");
+    $socket = $res->bgsend("foo.com", "MX");
+    $socket = $res->bgsend("user.passwd.foo.com", "TXT", "HS");
+
+Performs a background DNS query for the given name, i.e., sends a
+query packet to the first nameserver listed in C<$res>->C<nameservers>
+and returns immediately without waiting for a response.  The program
+can then perform other tasks while waiting for a response from the 
+nameserver.
+
+The argument list can be either a C<Net::DNS::Packet> object or a list
+of strings.  The record type and class can be omitted; they default to
+A and IN.  If the name looks like an IP address (4 dot-separated numbers),
+then an appropriate PTR query will be performed.
+
+Returns an C<IO::Socket> object.  The program must determine when
+the socket is ready for reading and call C<$res>->C<bgread> to get
+the response packet.  You can use C<$res>->C<bgisready> to find out
+if the socket is ready, or you can use C<vec> and the socket's C<fileno>
+method to add the socket's file descriptor to a bitmask for C<select>.
+
+=cut
+
+sub bgsend {
+	my $self = shift;
+
+	$self->errorstring($default{"errorstring"});
+	my $packet = $self->make_query_packet(@_);
+	my $ns = $self->{"nameservers"}->[0];
+
+	my $sock = IO::Socket::INET->new(PeerAddr => $ns,
+					 PeerPort => $self->{"port"},
+					 Proto    => "udp");
+
+	print ";; bgsend(", $ns->peerhost, ":", $ns->peerport, ")\n"
+		if $self->{"debug"};
+
+	# Failure here needs to be more graceful.
+	$sock->send($packet->data) or Carp::confess "send: $!";
+	return $sock;
+}
+
+=head2 bgread
+
+    $packet = $res->bgread($socket);
+
+Reads the answer from a background query (see L</bgsend>).  The argument
+is an C<IO::Socket> object returned by C<bgsend>.
+
+Returns a C<Net::DNS::Packet> object or C<undef> on error.
+
+=cut
+
+sub bgread {
+	my $self = shift;
+	my $sock = shift;
+
+	my $buf = "";
+
+	if ($sock->recv($buf, &Net::DNS::PACKETSZ)) {
+		print ";; answer from ", $sock->peerhost, ":",
+		      $sock->peerport, " : ", length($buf), " bytes\n"
+			if $self->{"debug"};
+		my $ans = new Net::DNS::Packet(\$buf);
+		$ans->print if $self->{"debug"};
+		$self->errorstring($ans->header->rcode);
+		return $ans;
+	}
+	else {
+		$self->errorstring($!);
+		return undef;
+	}
+}
+
+=head2 bgisready
+
+    $socket = $res->bgsend("foo.bar.com");
+    until ($res->bgisready($socket)) {
+	# do some other processing
+    }
+    $packet = $res->bgread($socket);
+
+Determines whether a socket is ready for reading.  The argument is
+an C<IO::Socket> object returned by C<$res>->C<bgsend>.
+
+Returns true if the socket is ready, false if not.
+
+=cut
+
+sub bgisready {
+	my $self = shift;
+	my $rin = $self->select_vec(@_);
+	my $rout;
+	my $nfound = select($rout=$rin, undef, undef, 0.0);
+	return $nfound > 0;
+}
+
+sub make_query_packet {
+	my $self = shift;
+	my $packet;
+
+	if (ref($_[0]) eq "Net::DNS::Packet") {
+		$packet = shift;
+	}
+	else {
+		my ($name, $type, $class) = @_;
+
+		$type  = "A"  unless defined($type);
+		$class = "IN" unless defined($class);
+
+		# If the name looks like an IP address then do an appropriate
+		# PTR query.
+		if ($name =~ /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/) {
+			$name = "$4.$3.$2.$1.in-addr.arpa.";
+			$type = "PTR";
+		}
+
+		$packet = new Net::DNS::Packet($name, $type, $class);
+	}
+
+	$packet->header->rd($self->{"recurse"});
+
+	return $packet;
+}
+
+sub select_vec {
+	my $self = shift;
+
 	my $retval = "";
 	foreach (@_) {
 		vec($retval, $_->fileno, 1) = 1;
@@ -590,6 +698,7 @@ sub axfr {
 	$sock->send($data)   or Carp::confess "send: $!";
 
 	my @zone;
+	my $soa_count = 0;
 	while (1) {
 		my $buf = read_tcp($sock, &Net::DNS::INT16SZ);
 		last unless length($buf);
@@ -597,7 +706,13 @@ sub axfr {
 		last unless $len;
 
 		$buf = read_tcp($sock, $len);
-		# need to error here if length($buf) != $len
+
+		print ";; received ", length($buf), " bytes\n"
+			if $self->{"debug"};
+
+		Carp::confess "expected $len bytes, received " . length($buf)
+			if length($buf) != $len;
+
 		my $ans = new Net::DNS::Packet(\$buf);
 
 		if ($ans->header->ancount < 1) {
@@ -607,7 +722,11 @@ sub axfr {
 
 		foreach ($ans->answer) {
 			push @zone, $_;
+			$_->print if $self->{"debug"};
+			++$soa_count if $_->type eq "SOA";
 		}
+
+		last if $soa_count >= 2;
 	}
 
 	return @zone;

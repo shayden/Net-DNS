@@ -74,7 +74,9 @@ See the manual pages listed above for class-specific methods.
 
 These examples show how to use the DNS modules:
 
+  #
   # Look up a host's addresses.
+  #
   use Net::DNS;
   $res = new Net::DNS::Resolver;
   $query = $res->search("foo.bar.com");
@@ -82,7 +84,9 @@ These examples show how to use the DNS modules:
       print $record->address, "\n";
   }
 
+  #
   # Find the nameservers for a domain.
+  #
   use Net::DNS;
   $res = new Net::DNS::Resolver;
   $query = $res->query("foo.com", "NS");
@@ -90,7 +94,9 @@ These examples show how to use the DNS modules:
       print $nameserver->nsdname, "\n";
   }
 
+  #
   # Find the MX records for a domain.
+  #
   use Net::DNS;
   $res = new Net::DNS::Resolver;
   $query = $res->query("foo.com", "MX");
@@ -98,16 +104,61 @@ These examples show how to use the DNS modules:
       print $mxhost->preference, " ", $mxhost->exchange, "\n";
   }
 
+  #
   # Print a domain's SOA record in zone file format.
+  #
   use Net::DNS;
   $res = new Net::DNS::Resolver;
   $query = $res->query("foo.com", "SOA");
   ($query->answer)[0]->print;
 
-=head1 BUGS
+  #
+  # Perform a zone transfer and print all the records.
+  #
+  use Net::DNS;
+  $res = new Net::DNS::Resolver;
+  $res->nameservers("ns.foo.com");
+  @zone = $res->axfr("foo.com");
+  foreach $rr (@zone) {
+      $rr->print;
+  }
 
-TCP transfers are not yet implemented.  Zone transfers won't be
-possible until they are.
+  #
+  # Send a background query and do some other processing while
+  # waiting for the answer.
+  #
+  use Net::DNS;
+  $res = new Net::DNS::Resolver;
+  $socket = $res->bgsend("foo.bar.com");
+  until ($res->bgisready($socket)) {
+      # do some work here
+      # ...and some more here
+  }
+  $packet = $res->bgread($socket);
+  $packet->print;
+
+  #
+  # Send a background query and use select() to determine when the answer
+  # has arrived.
+  #
+  use Net::DNS;
+  $res = new Net::DNS::Resolver;
+  $socket = $res->bgsend("foo.bar.com");
+  $rin = "";
+  vec($rin, $socket->fileno, 1) = 1;
+  # Add more descriptors to $rin if desired.
+  $timeout = 5;
+  $nfound = select($rout=$rin, undef, undef, $timeout);
+  if ($nfound < 1) {
+      print "timed out after $timeout seconds\n";
+  }
+  elsif (vec($rout, $socket->fileno, 1) == 1) {
+      $packet = $res->bgread($socket);
+      $packet->print;
+  }
+  else {
+      # Check for the other descriptors.
+  }
 
 =head1 COPYRIGHT
 
@@ -141,8 +192,8 @@ use Net::DNS::Header;
 use Net::DNS::Question;
 use Net::DNS::RR;
 
-# $Id: DNS.pm,v 1.5 1997/02/08 21:18:52 mfuhr Exp $
-$VERSION = "0.03";
+# $Id: DNS.pm,v 1.6 1997/02/13 23:23:47 mfuhr Exp $
+$VERSION = "0.04";
 
 %typesbyname= (
 	"A"		=> 1,		# RFC 1035, Section 3.4.1
@@ -196,6 +247,7 @@ $VERSION = "0.03";
 	"IN"		=> 1,
 	"CH"		=> 3,
 	"HS"		=> 4,
+	"NONE"		=> 254,
 	"ANY"		=> 255,
 );
 %classesbyval = map { ($classesbyname{$_} => $_) } keys %classesbyname;
@@ -205,6 +257,7 @@ $VERSION = "0.03";
 	"IQUERY"	=> 1,
 	"STATUS"	=> 2,
 	"NS_NOTIFY_OP"	=> 4,
+	"UPDATE"	=> 5,
 );
 %opcodesbyval = map { ($opcodesbyname{$_} => $_) } keys %opcodesbyname;
 
@@ -215,6 +268,11 @@ $VERSION = "0.03";
 	"NXDOMAIN"	=> 3,
 	"NOTIMP"	=> 4,
 	"REFUSED"	=> 5,
+	"YXDOMAIN"	=> 6,
+	"YXRRSET"	=> 7,
+	"NXRRSET"	=> 8,
+	"NOTAUTH"	=> 9,
+	"NOTZONE"	=> 10,
 );
 %rcodesbyval = map { ($rcodesbyname{$_} => $_) } keys %rcodesbyname;
 

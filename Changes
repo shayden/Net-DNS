@@ -1,22 +1,38 @@
 Revision history for Net::DNS
 =============================
 
-*** 0.03  8 Feb 1996
+*** 0.04  13 Feb 1997
+
+Added background queries.  See the examples in the Net::DNS and
+Net::DNS::Resolver manpages.
+
+Added zone transfers and some error reporting to demo/perldig.  Also
+added the ability to query a specific nameserver.
+
+Added a check to end zone transfers when we receive a second SOA RR
+(would block waiting for more input when doing zone transfers from
+certain nameservers).  Also added some additional output if debugging
+is turned on.
+
+
+*** 0.03  8 Feb 1997
 
 Added zone transfers.  Wrote demo/check_zone.  Minor corrections and
 additions to the documentation.
 
-*** 0.02  2 Feb 1996
+
+*** 0.02  2 Feb 1997
 
 Rewritten to be entirely Perl.  No longer uses the system's resolver
 library or the resparse library.  Net::Resolver needs some work
 on error reporting and needs to implement TCP queries.
 
-*** 0.01  26 Jan 1996
+
+*** 0.01  26 Jan 1997
 
 Initial release for testing.  Still some bugs, particularly in
 memory management.
 
 ---
 Michael Fuhr <mfuhr@dimensional.com>
-$Id: Changes,v 1.2 1997/02/08 21:24:14 mfuhr Exp $
+$Id: Changes,v 1.3 1997/02/13 23:22:05 mfuhr Exp $

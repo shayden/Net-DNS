@@ -17,6 +17,9 @@ Net::DNS is a Perl interface to the DNS resolver.  It allows the
 programmer to perform any type of DNS query.  For details, see the
 Net::DNS manual page.
 
+To read about the latest features, see the Changes file.  To see
+what's planned for future versions, see the TODO file.
+
 As of version 0.02, Net::DNS is written entirely in Perl.  Version 0.01
 was written mostly in C and used the system's resolver.  The Perl version
 runs quite a bit slower, but considering that the network can be a serious
@@ -25,7 +28,8 @@ matter in most cases.  However, future versions may contain some C for those
 who wish to link against libresolv.
 
 The author invites feedback on the module, particularly at this early
-stage of its development.
+stage of its development.  If there's something you'd like to have added,
+please let me know.
 
 
 INSTALLATION
@@ -67,8 +71,21 @@ mentioned somewhere.
 BUGS
 ====
 
-The module isn't complete yet and is sure to contain a few bugs.  See
-the TODO and Changes files for more info.
+The module is still in its early stages and is sure to contain a few
+bugs.  See the TODO and Changes files for more info.
+
+If you find a bug, please report it to the author along with the
+following information:
+
+    * version of Perl
+    * version of Net::DNS
+    * version of IO
+    * operating system type and version
+    * version of nameserver (if known)
+
+If I don't have access to a system similar to yours, I may ask you
+to insert some debugging lines and report back on the results.  The
+more help and information you can provide, the better.
 
 
 AUTHOR
@@ -78,4 +95,4 @@ Michael Fuhr
 mfuhr@dimensional.com
 http://www.dimensional.com/~mfuhr/
 
-$Id: README,v 1.3 1997/02/08 21:21:30 mfuhr Exp $
+$Id: README,v 1.4 1997/02/13 23:20:32 mfuhr Exp $
