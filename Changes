@@ -1,0 +1,16 @@
+Revision history Net::DNS
+
+*** 0.02  2 Feb 1996
+
+Rewritten to be entirely Perl.  No longer uses the system's resolver
+library or the resparse library.  Net::Resolver needs some work
+on error reporting and needs to implement TCP queries.
+
+*** 0.01  26 Jan 1996
+
+Initial release for testing.  Still some bugs, particularly in
+memory management.
+
+---
+Michael Fuhr <mfuhr@dimensional.com>
+$Id: Changes,v 1.1 1997/02/02 07:49:29 mfuhr Exp $

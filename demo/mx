@@ -1,0 +1,44 @@
+#!/usr/local/bin/perl -w
+# $Id: mx,v 1.1 1997/02/03 05:18:13 mfuhr Exp $
+
+=head1 NAME
+
+mx - Print a domain's MX records
+
+=head1 SYNOPSIS
+
+C<mx> I<domain>
+
+=head1 DESCRIPTION
+
+C<mx> prints a domain's MX records, sorted by preference.
+
+=head1 AUTHOR
+
+Michael Fuhr <mfuhr@dimensional.com>
+
+=head1 SEE ALSO
+
+L<perl(1)>, L<check_soa>, L<perldig>, L<Net::DNS>
+
+=cut
+
+use strict;
+use File::Basename;
+use Net::DNS;
+
+die "Usage: ", basename($0), " domain\n" unless (@ARGV == 1);
+
+my $dname = $ARGV[0];
+my $res = new Net::DNS::Resolver;
+my $ans = $res->query($dname, "MX");
+
+if (defined($ans)) {
+	my $mx;
+	foreach $mx (sort {$a->preference <=> $b->preference} $ans->answer) {
+		print $mx->preference, "\t", $mx->exchange, "\n";
+	}
+}
+else {
+	print "Can't find MX hosts for $dname: ", $res->errorstring, "\n";
+}

@@ -1,0 +1,38 @@
+#!/usr/local/bin/perl -w
+# $Id: perldig,v 1.1 1997/02/03 05:18:31 mfuhr Exp $
+
+=head1 NAME
+
+perldig - Perl script to perform DNS queries
+
+=head1 SYNOPSIS
+
+C<perldig> I<name> [ I<type> [ I<class> ] ]
+
+=head1 DESCRIPTION
+
+Performs a DNS query on the given name.  The record type
+and class can also be specified; if left blank they default
+to A and IN.
+
+=head1 AUTHOR
+
+Michael Fuhr <mfuhr@dimensional.com>
+
+=head1 SEE ALSO
+
+L<perl(1)>, L<check_soa>, L<mx>, L<Net::DNS>
+
+=cut
+
+use strict;
+
+use File::Basename;
+use Net::DNS;
+
+die "Usage: ", basename($0), " name [ type [ class ] ]\n"
+	unless (@ARGV >= 1) && (@ARGV <= 3);
+
+my $res = new Net::DNS::Resolver;
+my $answer = $res->send(@ARGV);
+$answer->print if defined($answer);
