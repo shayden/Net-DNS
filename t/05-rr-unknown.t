@@ -1,4 +1,4 @@
-# $Id: 05-rr-unknown.t 101 2004-08-12 05:12:05Z ctriv $
+# $Id: 05-rr-unknown.t 215 2005-03-02 15:48:44Z olaf $
 #
 # RFC 3597 Unknown typecode implemntation test code.
 # O.M. Kolkman RIPE NCC.

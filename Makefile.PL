@@ -1,4 +1,4 @@
-# $Id: Makefile.PL 101 2004-08-12 05:12:05Z ctriv $
+# $Id: Makefile.PL 219 2005-03-03 14:18:10Z olaf $
 
 use strict;
 $^W = 1;
@@ -33,7 +33,7 @@ my ($use_xs, $online_tests);
 GetOptions(
 	'xs!'           => \$use_xs,
 	'pm'            => sub { 
-		warn qq/\n\tWARNING: Use of "--pm" is deprecated.  Use "--no-xs" instead.\n\n/;
+		warn qq/\n\tWARNING: Use of "--pm" is deprecated.  Use "--noxs" instead.\n\n/;
 		$use_xs = 0;
 	},
 	'online-tests!' => \$online_tests,
@@ -67,7 +67,7 @@ if ($^O eq 'darwin' and $Config{'osvers'} =~ m/^7\./) {
 }
 
 if ($] >= 5.005) {
-	$Makefile{'AUTHOR'}   = 'Chris Reinhardt <ctriv@net-dns.org>';
+	$Makefile{'AUTHOR'}   = 'Olaf Kolkman <olaf@net-dns.org>';
 	$Makefile{'ABSTRACT'} = 'Perl DNS resolver module';
 }
 
@@ -132,6 +132,10 @@ if ($online_tests) {
 
 WriteMakefile(%Makefile);
 
+
+
+
+
 sub test_cc {
 	#
 	# The perl/C checking voodoo is stolen from Graham Barr's
@@ -181,4 +185,12 @@ test_cover : pure_all
 	HARNESS_PERL_SWITCHES=-MDevel::Cover $(MAKE) test
 	cover
 END_O_MAKE
+}
+
+
+
+sub MY::libscan {
+    my $path = $_[1];
+    return '' if $path =~ /\B\.svn\b/;
+    return $path;
 }

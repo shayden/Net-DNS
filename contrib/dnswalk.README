@@ -1,4 +1,4 @@
-$Id: dnswalk.README 101 2004-08-12 05:12:05Z ctriv $
+$Id: dnswalk.README 215 2005-03-02 15:48:44Z olaf $
 
 Dave Barr's dnswalk now uses Net::DNS.  You can get a copy from:
 

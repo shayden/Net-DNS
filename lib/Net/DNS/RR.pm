@@ -1,6 +1,6 @@
 package Net::DNS::RR;
 #
-# $Id: RR.pm 102 2004-08-12 05:16:06Z ctriv $
+# $Id: RR.pm 220 2005-03-03 16:56:51Z olaf $
 #
 use strict;
 use vars qw($VERSION $AUTOLOAD);
@@ -9,7 +9,7 @@ use Carp;
 use Net::DNS;
 use Net::DNS::RR::Unknown;
 
-$VERSION = (qw$LastChangedRevision: 102 $)[1];
+$VERSION = (qw$LastChangedRevision: 220 $)[1];
 
 =head1 NAME
 
@@ -77,14 +77,17 @@ BEGIN {
 	);
 
 	#  Only load DNSSEC if available
-	# 
 
-	eval { require Net::DNS::RR::SIG; };
-
+	eval { 	    
+	    local $SIG{'__DIE__'} = 'DEFAULT';
+	    require Net::DNS::RR::SIG; 
+	};
 	unless ($@) {
 		$RR{'SIG'} = 1;
-	
-		eval { require Net::DNS::RR::NXT; };
+		eval { 	    
+		    local $SIG{'__DIE__'} = 'DEFAULT';
+		    require Net::DNS::RR::NXT; 
+		};
 		
 		unless ($@) {
 		    $RR{'NXT'}	= 1;
@@ -92,7 +95,10 @@ BEGIN {
 		    die $@;
 		}
 		
-		eval { require Net::DNS::RR::KEY; };
+		eval { 
+		    local $SIG{'__DIE__'} = 'DEFAULT';
+		    require Net::DNS::RR::KEY; 
+		};
 		
 		unless ($@) {
 		    $RR{'KEY'} = 1;
@@ -100,7 +106,10 @@ BEGIN {
 		    die $@;
 		}
 
-	 	eval { require Net::DNS::RR::DS; };
+	 	eval { 
+		    local $SIG{'__DIE__'} = 'DEFAULT';
+		    require Net::DNS::RR::DS; 
+		};
 
 	 	unless ($@) {
 		    $RR{'DS'} = 1;
@@ -109,18 +118,28 @@ BEGIN {
 		    die $@;
 		}
 
-	 	eval { require Net::DNS::RR::RRSIG; };
+	 	eval { 
+		    local $SIG{'__DIE__'} = 'DEFAULT';
+		    require Net::DNS::RR::RRSIG; 
+		};
 
 	 	unless ($@) {
 		    $RR{'RRSIG'} = 1;
 		    # If RRSIG is available so should the other DNSSEC types
-		    eval { require Net::DNS::RR::NSEC; };
+		    eval {		    
+			local $SIG{'__DIE__'} = 'DEFAULT';
+			require Net::DNS::RR::NSEC; 
+		    };
 		    unless ($@) {
 		      $RR{'NSEC'} = 1;
 		    } else {
 		    die $@;
 		  }
-		    eval { require Net::DNS::RR::DNSKEY; };
+		    eval { 
+			local $SIG{'__DIE__'} = 'DEFAULT';
+			require Net::DNS::RR::DNSKEY; 
+		    };
+
 		    unless ($@) {
 		      $RR{'DNSKEY'} = 1;
 		    } else {
@@ -249,9 +268,11 @@ sub new_from_string {
 	my ($class, $rrstring, $update_type) = @_;
 
 	build_regex() unless $RR_REGEX;
-	
+
 	# strip out comments
-	$rrstring   =~ s/;.*//g;
+	# Test for non escaped ";" by means of the look-behind assertion
+	# (the backslash is escaped)
+	$rrstring   =~ s/(?<!\\);.*//g;
 	
 	($rrstring =~ m/$RR_REGEX/xso) || 
 		confess qq|qInternal Error: "$rrstring" did not match RR pat.\nPlease report this to the author!\n|;
@@ -266,6 +287,9 @@ sub new_from_string {
 
 	$rdata =~ s/\s+$// if $rdata;
 	$name  =~ s/\.$//  if $name;
+
+	
+
 
 
 	# RFC3597 tweaks
@@ -776,6 +800,8 @@ RR objects.
 Copyright (c) 1997-2002 Michael Fuhr. 
 
 Portions Copyright (c) 2002-2004 Chris Reinhardt.
+
+Portions Copyright (c) 2005 Olaf Kolkman 
 
 All rights reserved.  This program is free software; you may redistribute
 it and/or modify it under the same terms as Perl itself.

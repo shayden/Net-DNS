@@ -1,4 +1,4 @@
-# $Id: 06-update.t 101 2004-08-12 05:12:05Z ctriv $
+# $Id: 06-update.t 215 2005-03-02 15:48:44Z olaf $
 
 use Test::More tests => 72;
 use strict;

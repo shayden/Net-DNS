@@ -1,6 +1,6 @@
 package Net::DNS;
 #
-# $Id: DNS.pm 114 2004-08-13 00:23:41Z ctriv $
+# $Id: DNS.pm 225 2005-03-04 09:46:35Z olaf $
 #
 use strict;
 use vars qw(
@@ -30,21 +30,33 @@ BEGIN {
     require Exporter;
     
     @ISA     = qw(Exporter DynaLoader);
-    $VERSION = '0.48';
-    $HAVE_XS = eval { __PACKAGE__->bootstrap(); 1 } ? 1 : 0;
+    $VERSION = '0.48_01';
+    $HAVE_XS = eval { 
+	local $SIG{'__DIE__'} = 'DEFAULT';
+	__PACKAGE__->bootstrap(); 1 
+	} ? 1 : 0;
 }
+
+BEGIN {
+
+    $DNSSEC = eval { 
+	    local $SIG{'__DIE__'} = 'DEFAULT';
+	    require Net::DNS::SEC; 
+	    1 
+	    } ? 1 : 0;
+
+}
+
 
 use Net::DNS::Resolver;
 use Net::DNS::Packet;
 use Net::DNS::Update;
 use Net::DNS::Header;
 use Net::DNS::Question;
-use Net::DNS::RR;
+use Net::DNS::RR;   # use only after $Net::DNS::DNSSEC has been evaluated
 
-BEGIN {
-    $DNSSEC = eval { require Net::DNS::RR::SIG; 1 } ? 1 : 0;
-}
- 
+
+
 
 
 @EXPORT = qw(mx yxrrset nxrrset yxdomain nxdomain rr_add rr_del);
@@ -687,18 +699,26 @@ Copyright (c) 1997-2002 Michael Fuhr.
 
 Portions Copyright (c) 2002-2004 Chris Reinhardt.
 
+Portions Copyright (c) 2005 Olaf Kolkman (RIPE NCC)
+
 All rights reserved.  This program is free software; you may redistribute
 it and/or modify it under the same terms as Perl itself.
 
 =head1 AUTHOR INFORMATION
 
-Net::DNS is currently maintained by a group, led by:
-    Chris Reinhardt
-    ctriv@net-dns.org
+Net::DNS is currently maintained by:
+        Olaf Kolkman
+	olaf@net-dns.org
+
+Between 2002 and 2004 Net::DNS was maintained by:
+       Chris Reinhardt
+
 
 Net::DNS was created by:
-    Michael Fuhr
-    mike@fuhr.org
+	Michael Fuhr
+	mike@fuhr.org 
+
+
 
 For more information see:
     http://www.net-dns.org/
