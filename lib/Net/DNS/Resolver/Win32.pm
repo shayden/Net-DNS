@@ -9,7 +9,7 @@ use vars qw(@ISA $VERSION);
 use Net::DNS::Resolver::Base ();
 
 @ISA     = qw(Net::DNS::Resolver::Base);
-$VERSION = (qw$LastChangedRevision: 215 $)[1];
+$VERSION = (qw$LastChangedRevision: 247 $)[1];
 
 use Win32::Registry;
 
@@ -21,6 +21,7 @@ sub init {
 	my ($resobj, %keys);
 
 	my $root = 'SYSTEM\CurrentControlSet\Services\Tcpip\Parameters';
+
 	unless ($main::HKEY_LOCAL_MACHINE->Open($root, $resobj)) {
 		# Didn't work, maybe we are on 95/98/Me?
 		$root = 'SYSTEM\CurrentControlSet\Services\VxD\MSTCP';
@@ -46,29 +47,43 @@ sub init {
 	# NameServer overrides DhcpNameServer if both exist
 	my $nt4nameservers = $keys{'NameServer'}->[2] || $keys{'DhcpNameServer'}->[2];
 	my $nameservers = "";
-	#
-	# but on W2K/XP the registry layout is more advanced due to dynamically
-	# appearing connections. So we attempt to handle them, too...
-	# opt to silently fail if something isn't ok (maybe we're on NT4)
-	# drop any duplicates later, but must ignore NT4 style entries if in 2K/XP
-	my $dnsadapters;
-	$resobj->Open("DNSRegisteredAdapters", $dnsadapters);
-	if ($dnsadapters) {
-		my @adapters;
-		$dnsadapters->GetKeys(\@adapters);
-		foreach my $adapter (@adapters) {
-			my $regadapter;
-			$dnsadapters->Open($adapter, $regadapter);
-			if ($regadapter) {
-				my($type,$ns);
-				$regadapter->QueryValueEx("DNSServerAddresses", $type, $ns);
-				while (length($ns) >= 4) {
-					my $addr = join('.', unpack("C4", substr($ns,0,4,"")));
-					$nameservers .= " $addr";
-				}
-			}
-		}
-	}
+
+
+
+#
+#
+#  This code is agued to be broken see ticket rt.cpan.org ticket 11931
+#  There seems to be sufficient reason to remove this code
+#
+#  For details see https://rt.cpan.org/Ticket/Display.html?id=11931
+#
+#
+#	#
+#	# but on W2K/XP the registry layout is more advanced due to dynamically
+#	# appearing connections. So we attempt to handle them, too...
+#	# opt to silently fail if something isn't ok (maybe we're on NT4)
+#	# drop any duplicates later, but must ignore NT4 style entries if in 2K/XP
+#	my $dnsadapters;
+#	$resobj->Open("DNSRegisteredAdapters", $dnsadapters);
+#	if ($dnsadapters) {
+#		my @adapters;
+#		$dnsadapters->GetKeys(\@adapters);
+#		foreach my $adapter (@adapters) {
+#			my $regadapter;
+#			$dnsadapters->Open($adapter, $regadapter);
+#			if ($regadapter) {
+#				my($type,$ns);
+#				$regadapter->QueryValueEx("DNSServerAddresses", $type, $ns);
+#				while (length($ns) >= 4) {
+#					my $addr = join('.', unpack("C4", substr($ns,0,4,"")));
+#					$nameservers .= " $addr";
+#				}
+#			}
+#		}
+#	}
+
+
+
 
 	my $interfaces;
 	$resobj->Open("Interfaces", $interfaces);
@@ -100,20 +115,20 @@ sub init {
 	my $usedevolution = $keys{'UseDomainNameDevolution'}->[2];
 	if ($searchlist) {
 		# fix devolution if configured, and simultaneously make sure no dups (but keep the order)
-		my $i = 0;
+		my @a;
 		my %h;
 		foreach my $entry (split(m/[\s,]+/, $searchlist)) {
-			$h{$entry} = $i++;
+			push(@a, $entry) unless $h{$entry};
+			$h{$entry} = 1;
 			if ($usedevolution) {
 				# as long there's more than two pieces, cut
 				while ($entry =~ m#\..+\.#) {
 					$entry =~ s#^[^\.]+\.(.+)$#$1#;
-					$h{$entry} = $i++;
+					push(@a, $entry) unless $h{$entry};
+					$h{$entry} = 1;
 					}
 				}
 			}
-		my @a;
-		$a[$h{$_}] = $_ foreach (keys %h);
 		$defaults->{'searchlist'} = \@a;
 	}
 

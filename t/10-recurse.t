@@ -1,4 +1,4 @@
-# $Id: 10-recurse.t 226 2005-03-04 10:06:37Z olaf $
+# $Id: 10-recurse.t 244 2005-03-18 13:02:31Z olaf $
 
 use Test::More;
 use strict;
@@ -45,8 +45,8 @@ BEGIN { use_ok('Net::DNS::Resolver::Recurse'); }
 
 # test the callback
 {
-	my $res = Net::DNS::Resolver::Recurse->new;
-
+	my $res = Net::DNS::Resolver::Recurse->new ;
+	
 	my $count;
 
 	$res->recursion_callback(sub {

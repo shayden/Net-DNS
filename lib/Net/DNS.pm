@@ -1,6 +1,6 @@
 package Net::DNS;
 #
-# $Id: DNS.pm 238 2005-03-14 20:43:21Z olaf $
+# $Id: DNS.pm 248 2005-03-22 15:41:50Z olaf $
 #
 use strict;
 use vars qw(
@@ -30,7 +30,7 @@ BEGIN {
     require Exporter;
     
     @ISA     = qw(Exporter DynaLoader);
-    $VERSION = '0.48_02';
+    $VERSION = '0.48_03';
     $HAVE_XS = eval { 
 	local $SIG{'__DIE__'} = 'DEFAULT';
 	__PACKAGE__->bootstrap(); 1 
@@ -172,7 +172,7 @@ sub typesbyval {
         $val =~ m/^\s*\d+\s*$/;  
     
     $val =~ s/\s*//g; 
-    $val =~ s/^0*//; 
+    $val =~ s/^0*([0-9]+)/$1/;    #remove leading zeros 
     
     return $typesbyval{$val} if $typesbyval{$val};
     
@@ -228,7 +228,7 @@ sub classesbyval {
         $val=~/^\s*\d+\s*$/;
     
     $val =~ s/\s*//g;
-    $val =~ s/^0*//;
+    $val =~ s/^0*([0-9]+)/$1/;    #remove leading zeros 
     
     return $classesbyval{$val} if $classesbyval{$val};
     
