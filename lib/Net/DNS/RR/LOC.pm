@@ -1,6 +1,6 @@
 package Net::DNS::RR::LOC;
 
-# $Id: LOC.pm,v 1.2 1997/05/13 15:04:24 mfuhr Exp $
+# $Id: LOC.pm,v 1.3 1997/06/13 03:34:54 mfuhr Exp $
 
 use strict;
 use vars qw(@ISA @EXPORT @EXPORT_OK @poweroften $reference_alt
@@ -33,42 +33,44 @@ $conv_deg = 60 * $conv_min;
 sub new {
 	my ($class, $self, $data, $offset) = @_;
 
-	my ($version) = unpack("\@$offset C", $$data);
-	++$offset;
-
-	$self->{"version"} = $version;
-
-	if ($version == 0) {
-		my ($size) = unpack("\@$offset C", $$data);
-		$size = precsize_ntoval($size);
+	if ($self->{"rdlength"} > 0) {
+		my ($version) = unpack("\@$offset C", $$data);
 		++$offset;
-
-		my ($horiz_pre) = unpack("\@$offset C", $$data);
-		$horiz_pre = precsize_ntoval($horiz_pre);
-		++$offset;
-
-		my ($vert_pre) = unpack("\@$offset C", $$data);
-		$vert_pre = precsize_ntoval($vert_pre);
-		++$offset;
-
-		my ($latitude) = unpack("\@$offset N", $$data);
-		$offset += &Net::DNS::INT32SZ;
-
-		my ($longitude) = unpack("\@$offset N", $$data);
-		$offset += &Net::DNS::INT32SZ;
-
-		my ($altitude) = unpack("\@$offset N", $$data);
-		$offset += &Net::DNS::INT32SZ;
-
-		$self->{"size"}      = $size;
-		$self->{"horiz_pre"} = $horiz_pre;
-		$self->{"vert_pre"}  = $vert_pre;
-		$self->{"latitude"}  = $latitude;
-		$self->{"longitude"} = $longitude;
-		$self->{"altitude"}  = $altitude;
-	}
-	else {
-		# What to do for unsupported versions?
+	
+		$self->{"version"} = $version;
+	
+		if ($version == 0) {
+			my ($size) = unpack("\@$offset C", $$data);
+			$size = precsize_ntoval($size);
+			++$offset;
+	
+			my ($horiz_pre) = unpack("\@$offset C", $$data);
+			$horiz_pre = precsize_ntoval($horiz_pre);
+			++$offset;
+	
+			my ($vert_pre) = unpack("\@$offset C", $$data);
+			$vert_pre = precsize_ntoval($vert_pre);
+			++$offset;
+	
+			my ($latitude) = unpack("\@$offset N", $$data);
+			$offset += &Net::DNS::INT32SZ;
+	
+			my ($longitude) = unpack("\@$offset N", $$data);
+			$offset += &Net::DNS::INT32SZ;
+	
+			my ($altitude) = unpack("\@$offset N", $$data);
+			$offset += &Net::DNS::INT32SZ;
+	
+			$self->{"size"}      = $size;
+			$self->{"horiz_pre"} = $horiz_pre;
+			$self->{"vert_pre"}  = $vert_pre;
+			$self->{"latitude"}  = $latitude;
+			$self->{"longitude"} = $longitude;
+			$self->{"altitude"}  = $altitude;
+		}
+		else {
+			# What to do for unsupported versions?
+		}
 	}
 
 	return bless $self, $class;
@@ -76,34 +78,39 @@ sub new {
 
 sub rdatastr {
 	my $self = shift;
-	my $retval;
+	my $rdatastr;
 
-	if ($self->{"version"} == 0) {
-		my $lat       = $self->{"latitude"};
-		my $lon       = $self->{"longitude"};
-		my $altitude  = $self->{"altitude"};
-		my $size      = $self->{"size"};
-		my $horiz_pre = $self->{"horiz_pre"};
-		my $vert_pre  = $self->{"vert_pre"};
-
-		$altitude   = ($altitude - $reference_alt) / 100;
-		$size      /= 100;
-		$horiz_pre /= 100;
-		$vert_pre  /= 100;
-
-		$retval = latlon2dms($lat, "NS")       . " " .
-		          latlon2dms($lon, "EW")       . " " .
-		          sprintf("%.2fm", $altitude)  . " " .
-		          sprintf("%.2fm", $size)      . " " .
-		          sprintf("%.2fm", $horiz_pre) . " " .
-		          sprintf("%.2fm", $vert_pre);
+	if (exists $self->{"version"}) {
+		if ($self->{"version"} == 0) {
+			my $lat       = $self->{"latitude"};
+			my $lon       = $self->{"longitude"};
+			my $altitude  = $self->{"altitude"};
+			my $size      = $self->{"size"};
+			my $horiz_pre = $self->{"horiz_pre"};
+			my $vert_pre  = $self->{"vert_pre"};
+	
+			$altitude   = ($altitude - $reference_alt) / 100;
+			$size      /= 100;
+			$horiz_pre /= 100;
+			$vert_pre  /= 100;
+	
+			$rdatastr = latlon2dms($lat, "NS")       . " " .
+			            latlon2dms($lon, "EW")       . " " .
+			            sprintf("%.2fm", $altitude)  . " " .
+			            sprintf("%.2fm", $size)      . " " .
+			            sprintf("%.2fm", $horiz_pre) . " " .
+			            sprintf("%.2fm", $vert_pre);
+		}
+		else {
+			$rdatastr = "; version " . $self->{"version"} . 
+				    " not supported";
+		}
 	}
 	else {
-		$retval = "; version " . $self->{"version"} . 
-			  " not supported";
+		$rdatastr = "; no data";
 	}
 
-	return $retval;
+	return $rdatastr;
 }
 
 sub precsize_ntoval {

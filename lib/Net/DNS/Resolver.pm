@@ -66,7 +66,7 @@ use IO::Socket;
 use Net::DNS;
 use Net::DNS::Packet;
 
-# $Id: Resolver.pm,v 1.9 1997/05/29 17:38:45 mfuhr Exp $
+# $Id: Resolver.pm,v 1.10 1997/06/13 03:41:16 mfuhr Exp $
 $VERSION = $Net::DNS::VERSION;
 
 #------------------------------------------------------------------------------
@@ -76,10 +76,8 @@ $VERSION = $Net::DNS::VERSION;
 $resolv_conf = "/etc/resolv.conf";
 $dotfile     = ".resolv.conf";
 
-@confpath    = (
-	$ENV{HOME},
-	".",
-);
+push(@confpath, $ENV{"HOME"}) if exists $ENV{"HOME"};
+push(@confpath, ".");
 
 %default = (
 	"nameservers"	=> ["127.0.0.1"],
@@ -186,7 +184,8 @@ sub read_env {
 	$default{"searchlist"} = [ split(" ", $ENV{"RES_SEARCHLIST"}) ]
 		if exists $ENV{"RES_SEARCHLIST"};
 	
-	$default{"domain"} = $ENV{"LOCALDOMAIN"} if exists $ENV{"LOCALDOMAIN"};
+	$default{"domain"} = $ENV{"LOCALDOMAIN"}
+		if exists $ENV{"LOCALDOMAIN"};
 
 	if (exists $ENV{"RES_OPTIONS"}) {
 		my @env = split(" ", $ENV{"RES_OPTIONS"});
@@ -208,17 +207,34 @@ Prints the resolver state on the standard output.
 
 sub print {
 	my $self = shift;
+	print $self->string;
+}
 
-	print ";; RESOLVER state:\n";
-	print ";;  domain      = $self->{domain}\n";
-	print ";;  searchlist  = @{$self->{searchlist}}\n";
-	print ";;  nameservers = @{$self->{nameservers}}\n";
-	print ";;  port        = $self->{port}\n";
-	print ";;  retrans  = $self->{retrans}  retry    = $self->{retry}\n";
-	print ";;  usevc    = $self->{usevc}  stayopen = $self->{stayopen}",
-	      "    igntc = $self->{igntc}\n";
-	print ";;  defnames = $self->{defnames}  dnsrch   = $self->{dnsrch}\n";
-	print ";;  recurse  = $self->{recurse}  debug    = $self->{debug}\n";
+=head2 string
+
+    print $res->string;
+
+Returns a string representation of the resolver state.
+
+=cut
+
+sub string {
+	my $self = shift;
+
+	return	";; RESOLVER state:\n"				.
+		";;  domain      = $self->{domain}\n"		.
+		";;  searchlist  = @{$self->{searchlist}}\n"	.
+		";;  nameservers = @{$self->{nameservers}}\n"	.
+		";;  port        = $self->{port}\n"		.
+		";;  retrans  = $self->{retrans}  "		.
+		"retry    = $self->{retry}\n"			.
+		";;  usevc    = $self->{usevc}  "		.
+		"stayopen = $self->{stayopen}    "		.
+		"igntc = $self->{igntc}\n"			.
+		";;  defnames = $self->{defnames}  "		.
+		"dnsrch   = $self->{dnsrch}\n"			.
+		";;  recurse  = $self->{recurse}  "		.
+		"debug    = $self->{debug}\n";
 }
 
 sub nextid {
@@ -479,6 +495,12 @@ sub send {
 	$self->errorstring($default{"errorstring"});
 
 	my $packet = $self->make_query_packet(@_);
+	my $packet_data = $packet->data;
+
+	if (length $packet_data > &Net::DNS::PACKETSZ) {
+		$self->errorstring("request packet too large");
+		return undef;
+	}
 
 	@ns = map {
 		IO::Socket::INET->new(PeerAddr => $_,
@@ -505,7 +527,7 @@ sub send {
 
 			# Failure here needs to be more graceful.
 			my $rin = $self->select_vec(@ns);
-			$ns->send($packet->data) or Carp::confess "send: $!";
+			$ns->send($packet_data) or Carp::confess "send: $!";
 
 			my $rout;
 			select($rout=$rin, undef, undef, $timeout);
@@ -524,6 +546,8 @@ sub send {
 							if $self->{"debug"};
 						my ($ans, $err) = new Net::DNS::Packet(\$buf, $self->{"debug"});
 						if (defined $ans) {
+							next unless $ans->header->qr == 1;
+							next unless $ans->header->id == $packet->header->id;
 							$self->errorstring($ans->header->rcode);
 						}
 						elsif (defined $err) {
@@ -731,7 +755,7 @@ sub axfr {
 
 	# IO::Socket carps on errors if Perl's -w flag is turned on.
 	# Uncomment the next two lines and the line following the "new"
-	# call to # turn off these messages.
+	# call to turn off these messages.
 
 	# my $old_wflag = $^W;
 	# $^W = 0;
@@ -956,9 +980,9 @@ Perl itself.
 
 =head1 SEE ALSO
 
-L<perl(1)>, L<Net::DNS>, L<Net::DNS::Packet>, L<Net::DNS::Header>,
-L<Net::DNS::Question>, L<Net::DNS::RR>, L<resolver(5)>,
-RFC 1035
+L<perl(1)>, L<Net::DNS>, L<Net::DNS::Packet>, L<Net::DNS::Update>,
+L<Net::DNS::Header>, L<Net::DNS::Question>, L<Net::DNS::RR>,
+L<resolver(5)>, RFC 1035
 
 =cut
 

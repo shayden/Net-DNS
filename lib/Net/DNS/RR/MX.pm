@@ -1,6 +1,6 @@
 package Net::DNS::RR::MX;
 
-# $Id: MX.pm,v 1.2 1997/02/02 08:31:25 mfuhr Exp $
+# $Id: MX.pm,v 1.3 1997/06/13 03:33:54 mfuhr Exp $
 
 use strict;
 use vars qw(@ISA);
@@ -13,18 +13,39 @@ use Net::DNS::Packet;
 sub new {
 	my ($class, $self, $data, $offset) = @_;
 
-	my ($preference) = unpack("\@$offset n", $$data);
-	$offset += &Net::DNS::INT16SZ;
-	my($exchange) = Net::DNS::Packet::dn_expand($data, $offset);
-	$self->{"preference"} = $preference;
-	$self->{"exchange"} = $exchange;
+	if ($self->{"rdlength"} > 0) {
+		my ($preference) = unpack("\@$offset n", $$data);
+		$offset += &Net::DNS::INT16SZ;
+		my ($exchange) = Net::DNS::Packet::dn_expand($data, $offset);
+
+		$self->{"preference"} = $preference;
+		$self->{"exchange"} = $exchange;
+	}
+
 	return bless $self, $class;
 }
 
 sub rdatastr {
 	my $self = shift;
-	return "$self->{preference} $self->{exchange}.";
+
+	return exists $self->{"preference"}
+	       ? "$self->{preference} $self->{exchange}."
+	       : "; no data";
 }
+
+sub rr_rdata {
+	my ($self, $packet, $offset) = @_;
+	my $rdata = "";
+
+	if (exists $self->{"preference"}) {
+		$rdata .= pack("n", $self->{"preference"});
+		$rdata .= $packet->dn_comp($self->{"exchange"},
+					   $offset + length $rdata);
+	}
+
+	return $rdata;
+}
+
 1;
 __END__
 

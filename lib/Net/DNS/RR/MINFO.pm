@@ -1,6 +1,6 @@
 package Net::DNS::RR::MINFO;
 
-# $Id: MINFO.pm,v 1.2 1997/02/02 08:31:25 mfuhr Exp $
+# $Id: MINFO.pm,v 1.3 1997/06/13 03:33:54 mfuhr Exp $
 
 use strict;
 use vars qw(@ISA);
@@ -12,18 +12,39 @@ use Net::DNS::Packet;
 sub new {
 	my ($class, $self, $data, $offset) = @_;
 
-	my ($rmailbx, $emailbx);
-	($rmailbx, $offset) = Net::DNS::Packet::dn_expand($data, $offset);
-	($emailbx, $offset) = Net::DNS::Packet::dn_expand($data, $offset);
-	$self->{"rmailbx"} = $rmailbx;
-	$self->{"emailbx"} = $emailbx;
+	if ($self->{"rdlength"} > 0) {
+		my ($rmailbx, $emailbx);
+		($rmailbx, $offset) = Net::DNS::Packet::dn_expand($data, $offset);
+		($emailbx, $offset) = Net::DNS::Packet::dn_expand($data, $offset);
+		$self->{"rmailbx"} = $rmailbx;
+		$self->{"emailbx"} = $emailbx;
+	}
+
 	return bless $self, $class;
 }
 
 sub rdatastr {
 	my $self = shift;
-	return "$self->{rmailbx}. $self->{emailbx}.";
+
+	return exists $self->{"rmailbx"}
+	       ? "$self->{rmailbx}. $self->{emailbx}."
+	       : "; no data";
 }
+
+sub rr_rdata {
+	my ($self, $packet, $offset) = @_;
+	my $rdata = "";
+
+	if (exists $self->{"rmailbx"}) {
+		$rdata .= $packet->dn_comp($self->{"rmailbx"}, $offset);
+
+		$rdata .= $packet->dn_comp($self->{"emailbx"},
+					   $offset + length $rdata);
+	}
+
+	return $rdata;
+}
+
 1;
 __END__
 

@@ -1,11 +1,10 @@
-package Net::DNS::RR::A;
+package Net::DNS::RR::AAAA;
 
-# $Id: A.pm,v 1.3 1997/06/13 03:33:54 mfuhr Exp $
+# $Id: AAAA.pm,v 1.3 1997/06/13 03:33:54 mfuhr Exp $
 
 use strict;
 use vars qw(@ISA);
 
-use Socket;
 use Net::DNS;
 
 @ISA = qw(Net::DNS::RR);
@@ -14,10 +13,9 @@ sub new {
 	my ($class, $self, $data, $offset) = @_;
 
 	if ($self->{"rdlength"} > 0) {
-		my $addr = inet_ntoa(substr($$data, $offset, 4));
-		$self->{"address"} = $addr;
+		my @addr = unpack("\@$offset n8", $$data);
+		$self->{"address"} = sprintf("%x:%x:%x:%x:%x:%x:%x:%x", @addr);
 	}
-
 	return bless $self, $class;
 }
 
@@ -31,10 +29,12 @@ sub rdatastr {
 
 sub rr_rdata {
 	my $self = shift;
+	my $rdata = "";
 
-	my $rdata = exists $self->{"address"}
-		  ? inet_aton($self->{"address"})
-		  : "";
+	if (exists $self->{"address"}) {
+		my @addr = split(/:/, $self->{"address"});
+		$rdata .= pack("n8", map { hex $_ } @addr);
+	}
 
 	return $rdata;
 }
@@ -44,7 +44,7 @@ __END__
 
 =head1 NAME
 
-Net::DNS::RR::A - DNS A resource record
+Net::DNS::RR::AAAA - DNS AAAA resource record
 
 =head1 SYNOPSIS
 
@@ -52,7 +52,7 @@ C<use Net::DNS::RR>;
 
 =head1 DESCRIPTION
 
-Class for DNS Address (A) resource records.
+Class for DNS IPv6 Address (AAAA) resource records.
 
 =head1 METHODS
 
@@ -61,6 +61,11 @@ Class for DNS Address (A) resource records.
     print "address = ", $rr->address, "\n";
 
 Returns the RR's address field.
+
+=head1 BUGS
+
+Only the preferred method of address representation ("x:x:x:x:x:x:x:x",
+documented in RFC 1884, Section 2.2, Para 1) is supported.
 
 =head1 COPYRIGHT
 
@@ -72,6 +77,6 @@ Perl itself.
 
 L<perl(1)>, L<Net::DNS>, L<Net::DNS::Resolver>, L<Net::DNS::Packet>,
 L<Net::DNS::Header>, L<Net::DNS::Question>, L<Net::DNS::RR>,
-RFC 1035 Section 3.4.1
+RFC 1886 Section 2, RFC 1884 Section 2.2
 
 =cut

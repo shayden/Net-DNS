@@ -1,6 +1,6 @@
 package Net::DNS::RR::HINFO;
 
-# $Id: HINFO.pm,v 1.3 1997/05/29 17:39:57 mfuhr Exp $
+# $Id: HINFO.pm,v 1.4 1997/06/13 03:33:54 mfuhr Exp $
 
 use strict;
 use vars qw(@ISA);
@@ -12,28 +12,49 @@ use Net::DNS::Packet;
 sub new {
 	my ($class, $self, $data, $offset) = @_;
 
-	my ($cpu, $os, $len);
+	if ($self->{"rdlength"} > 0) {
+		my ($cpu, $os, $len);
 
-	($len) = unpack("\@$offset C", $$data);
-	++$offset;
-	$cpu = substr($$data, $offset, $len);
-	$offset += $len;
+		($len) = unpack("\@$offset C", $$data);
+		++$offset;
+		$cpu = substr($$data, $offset, $len);
+		$offset += $len;
 
-	($len) = unpack("\@$offset C", $$data);
-	++$offset;
-	$os = substr($$data, $offset, $len);
-	$offset += $len;
+		($len) = unpack("\@$offset C", $$data);
+		++$offset;
+		$os = substr($$data, $offset, $len);
+		$offset += $len;
 
-	$self->{"cpu"} = $cpu;
-	$self->{"os"}  = $os;
+		$self->{"cpu"} = $cpu;
+		$self->{"os"}  = $os;
+	}
 
 	return bless $self, $class;
 }
 
 sub rdatastr {
 	my $self = shift;
-	return qq("$self->{cpu}" "$self->{os}");
+
+	return exists $self->{"cpu"}
+	       ? qq("$self->{cpu}" "$self->{os}")
+	       : "; no data";
 }
+
+sub rr_rdata {
+	my $self = shift;
+	my $rdata = "";
+
+	if (exists $self->{"cpu"}) {
+		$rdata .= pack("C", length $self->{"cpu"});
+		$rdata .= $self->{"cpu"};
+
+		$rdata .= pack("C", length $self->{"os"});
+		$rdata .= $self->{"os"};
+	}
+
+	return $rdata;
+}
+
 1;
 __END__
 

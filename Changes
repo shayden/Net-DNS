@@ -1,6 +1,70 @@
 Revision history for Net::DNS
 =============================
 
+*** 0.10  12 Jun 1997
+
+Added an index and some more information to README.
+
+Documented the rdlength method and added the rdata method to the
+Net::DNS::RR base class.
+
+Added a check for packet size to Net::DNS::Resolver->send.  Net::DNS
+currently supports only UDP queries, which have a packet size limit of
+512 octets (RFC 1035, Section 2.3.4).
+
+Added lines to Net::DNS::Resolver->send to ignore any packets whose
+query response code isn't set to 1, or whose query ID doesn't match
+the one we sent in our request packet.
+
+Added the "string" method to the Resolver, Packet, Header, and Question
+classes.
+
+Added code to Net::DNS::Question->new to check if the caller reversed
+the type and class arguments.  Inspired by a question from Robert Yoder.
+
+Added support for dynamic updates (RFC 2136); see README and the
+Net::DNS::Update manual page for more information and an example.
+Here are some of the changes:
+
+  * Added the push method to the Net::DNS::Packet class.
+
+  * Wrote the Net::DNS::Update module as a front-end to Net::DNS::Packet
+    for creating dynamic update packets.
+
+  * Changed Net::DNS::RR->new to allow the programmer to create RR objects.
+
+  * Added test cases for creating RRs and pushing them into the
+    various packet sections.
+
+  * Changed Net::DNS::RR->AUTOLOAD to allow the programmer to change
+    the value of an RR's fields.
+
+  * Wrote Net::DNS::Packet->dn_comp to compress domain names (opposite
+    of dn_expand).
+
+  * Changed Net::DNS::Question->data to require a packet object and
+    an offset as arguments.  We need this information to handle
+    compressed domain names.
+
+  * Added the rr_rdata method to RR subclasses to provide a binary
+    representation of the RRs RDATA section.
+
+Added support for the following RR types:
+
+    AAAA
+    EID
+    MB
+    NIMLOC
+    NSAP
+    NULL
+    PX
+
+Checked for the existence of $ENV{"HOME"} in Resolver.pm -- previous
+behavior caused a "Use of uninitialized value" error to appear in
+HTTP server log files if Net::DNS was being used in a CGI program
+and HOME wasn't defined.
+
+
 *** 0.09  29 May 1997
 
 Net::DNS is now being developed under Perl 5.004.  I'll try to keep
@@ -119,4 +183,4 @@ memory management.
 
 ---
 Michael Fuhr <mfuhr@dimensional.com>
-$Id: Changes,v 1.8 1997/05/29 21:52:32 mfuhr Exp $
+$Id: Changes,v 1.9 1997/06/13 03:50:19 mfuhr Exp $

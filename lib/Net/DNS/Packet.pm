@@ -1,5 +1,9 @@
 package Net::DNS::Packet;
 
+require Exporter;
+@ISA = qw(Exporter);
+@EXPORT_OK = qw(dn_expand);
+
 use strict;
 use vars qw($VERSION $AUTOLOAD);
 
@@ -8,7 +12,7 @@ use Net::DNS;
 use Net::DNS::Question;
 use Net::DNS::RR;
 
-# $Id: Packet.pm,v 1.4 1997/05/29 17:37:48 mfuhr Exp $
+# $Id: Packet.pm,v 1.5 1997/06/13 03:37:51 mfuhr Exp $
 $VERSION = $Net::DNS::VERSION;
 
 =head1 NAME
@@ -29,6 +33,8 @@ A C<Net::DNS::Packet> object represents a DNS packet.
 
     $packet = new Net::DNS::Packet(\$data);
     $packet = new Net::DNS::Packet(\$data, 1);  # set debugging
+
+    $packet = new Net::DNS::Packet("foo.com");
     $packet = new Net::DNS::Packet("foo.com", "MX", "IN");
 
     ($packet, $err) = new Net::DNS::Packet(\$data);
@@ -39,7 +45,8 @@ can be passed to turn on debugging output for packet parsing.
 
 If passed a domain, type, and class, C<new> creates a packet
 object appropriate for making a DNS query for the requested
-information.
+information.  The type and class can be omitted; they default
+to A and IN.
 
 If called in array context, returns a packet object and an
 error string.  The error string will only be defined if the
@@ -54,7 +61,9 @@ sub new {
 	my $class = shift;
 	my %self;
 
-	if ((@_ == 1) || (@_ == 2)) {
+	$self{"compnames"} = {};
+
+	if (ref($_[0])) {
 		my $data = shift;
 		my $debug = @_ ? shift : 0;
 
@@ -76,7 +85,10 @@ sub new {
 
 		if ($debug) {
 			print "\n";
-			print ";; QUESTION SECTION (",
+			my $section = ($self{"header"}->opcode eq "UPDATE")
+			            ? "ZONE"
+				    : "QUESTION";
+			print ";; $section SECTION (",
 			      $self{"header"}->qdcount, " record",
 			      $self{"header"}->qdcount == 1 ? "" : "s",
 			      ")\n";
@@ -102,7 +114,10 @@ sub new {
 			
 		if ($debug) {
 			print "\n";
-			print ";; ANSWER SECTION (",
+			my $section = ($self{"header"}->opcode eq "UPDATE")
+				    ? "PREREQUISITE"
+			            : "ANSWER";
+			print ";; $section SECTION (",
 			      $self{"header"}->ancount, " record",
 			      $self{"header"}->ancount == 1 ? "" : "s",
 			      ")\n";
@@ -125,7 +140,10 @@ sub new {
 
 		if ($debug) {
 			print "\n";
-			print ";; AUTHORITY SECTION (",
+			my $section = ($self{"header"}->opcode eq "UPDATE")
+			            ? "UPDATE"
+				    : "AUTHORITY";
+			print ";; $section SECTION (",
 			      $self{"header"}->nscount, " record",
 			      $self{"header"}->nscount == 1 ? "" : "s",
 			      ")\n";
@@ -169,19 +187,20 @@ sub new {
 			$rrobj->print if $debug;
 		}
 	}
-	elsif (@_ == 3) {
+	else {
 		my ($qname, $qtype, $qclass) = @_;
+
+		$qtype  = "A"  unless defined $qtype;
+		$qclass = "IN" unless defined $qclass;
+
 		$self{"header"} = new Net::DNS::Header;
 		$self{"header"}->qdcount(1);
 		$self{"question"} = [ new Net::DNS::Question($qname,
 							     $qtype,
 							     $qclass) ];
-		$self{"answer"} = [];
-		$self{"authority"} = [];
+		$self{"answer"}     = [];
+		$self{"authority"}  = [];
 		$self{"additional"} = [];
-	}
-	else {
-		Carp::confess("wrong number of arguments");
 	}
 
 	return wantarray
@@ -200,12 +219,24 @@ a nameserver.
 
 sub data {
 	my $self = shift;
-	my $data = "";
-	my $question;
+	my ($data, $question, $rr);
 
-	$data .= $self->{"header"}->data;
+	$data = $self->{"header"}->data;
+
 	foreach $question (@{$self->{"question"}}) {
-		$data .= $question->data;
+		$data .= $question->data($self, length $data);
+	}
+
+	foreach $rr (@{$self->{"answer"}}) {
+		$data .= $rr->data($self, length $data);
+	}
+
+	foreach $rr (@{$self->{"authority"}}) {
+		$data .= $rr->data($self, length $data);
+	}
+
+	foreach $rr (@{$self->{"additional"}}) {
+		$data .= $rr->data($self, length $data);
 	}
 
 	return $data;
@@ -255,8 +286,8 @@ Returns a list of C<Net::DNS::RR> objects representing the answer
 section of the packet.
 
 In dynamic update packets, this section is known as C<pre> or
-C<prerequisite> and specifies the RRs or RRsets which must (not)
-preexist.
+C<prerequisite> and specifies the RRs or RRsets which must or
+must not preexist.
 
 =cut
 
@@ -322,56 +353,154 @@ similar to that used in DNS zone files.
 
 sub print {
 	my $self = shift;
+	print $self->string;
+}
+
+=head2 string
+
+    print $packet->string;
+
+Returns a string representation of the packet.
+
+=cut
+
+sub string {
+	my $self = shift;
 	my ($qr, $rr, $section);
+	my $retval = "";
 
-	print ";; HEADER SECTION\n";
-	$self->header->print;
+	$retval .= ";; HEADER SECTION\n";
+	$retval .= $self->header->string;
 
-	print "\n";
+	$retval .= "\n";
 	$section = ($self->header->opcode eq "UPDATE") ? "ZONE" : "QUESTION";
-	print ";; $section SECTION (", $self->header->qdcount, " record",
-	      $self->header->qdcount == 1 ? "" : "s", ")\n";
+	$retval .= ";; $section SECTION (" . $self->header->qdcount     . 
+		   " record" . ($self->header->qdcount == 1 ? "" : "s") .
+		   ")\n";
 	foreach $qr ($self->question) {
-		print ";; ";
-		$qr->print;
+		$retval .= ";; " . $qr->string . "\n";
 	}
 
-	print "\n";
+	$retval .= "\n";
 	$section = ($self->header->opcode eq "UPDATE") ? "PREREQUISITE" : "ANSWER";
-	print ";; $section SECTION (", $self->header->ancount, " record",
-	      $self->header->ancount == 1 ? "" : "s", ")\n";
+	$retval .= ";; $section SECTION (" . $self->header->ancount     .
+		   " record" . ($self->header->ancount == 1 ? "" : "s") .
+		   ")\n";
 	foreach $rr ($self->answer) {
-		$rr->print;
+		$retval .= $rr->string . "\n";
 	}
 
-	print "\n";
+	$retval .= "\n";
 	$section = ($self->header->opcode eq "UPDATE") ? "UPDATE" : "AUTHORITY";
-	print ";; $section SECTION (", $self->header->nscount, " record",
-	      $self->header->nscount == 1 ? "" : "s", ")\n";
+	$retval .= ";; $section SECTION (" . $self->header->nscount     .
+		  " record" . ($self->header->nscount == 1 ? "" : "s") .
+		  ")\n";
 	foreach $rr ($self->authority) {
-		$rr->print;
+		$retval .= $rr->string . "\n";
 	}
 
-	print "\n";
-	print ";; ADDITIONAL SECTION (", $self->header->arcount, " record",
-	      $self->header->arcount == 1 ? "" : "s", ")\n";
+	$retval .= "\n";
+	$retval .= ";; ADDITIONAL SECTION (" . $self->header->arcount   .
+		   " record" . ($self->header->arcount == 1 ? "" : "s") .
+		   ")\n";
 	foreach $rr ($self->additional) {
-		$rr->print;
+		$retval .= $rr->string . "\n";
 	}
+
+	return $retval;
+}
+
+=head2 push
+
+    $packet->push("pre", $rr);
+    $packet->push("update", $rr);
+    $packet->push("additional", $rr);
+
+    $packet->push("update", $rr1, $rr2, $rr3);
+    $packet->push("update", @rr);
+
+Adds RRs to the specified section of the packet.
+
+=cut
+
+sub push {
+	my $self = shift;
+	my ($section, @rr) = @_;
+
+	$section = lc($section);
+
+	if ($section eq "answer" || $section eq "pre" ||
+	    $section eq "prerequisite") {
+		push(@{$self->{"answer"}}, @rr);
+		my $ancount = $self->{"header"}->ancount;
+		$self->{"header"}->ancount($ancount + @rr);
+	}
+	elsif ($section eq "authority" || $section eq "update") {
+		push(@{$self->{"authority"}}, @rr);
+		my $nscount = $self->{"header"}->nscount;
+		$self->{"header"}->nscount($nscount + @rr);
+	}
+	elsif ($section eq "additional") {
+		push(@{$self->{"additional"}}, @rr);
+		my $adcount = $self->{"header"}->adcount;
+		$self->{"header"}->adcount($adcount + @rr);
+	}
+	else {
+		Carp::confess(qq(invalid section "$section"\n));
+	}
+}
+
+=head2 dn_comp
+
+    $compname = $packet->dn_comp("foo.bar.com", $offset);
+
+Returns a domain name compressed for a particular packet object, to
+be stored beginning at the given offset within the packet data.  The
+name will be added to a running list of compressed domain names for
+future use.
+
+=cut
+
+sub dn_comp {
+	my ($self, $name, $offset) = @_;
+
+	my $compname = "";
+	my @names = split(/\./, $name);
+
+	while (@names) {
+		my $dname = join(".", @names);
+
+		if (exists $self->{"compnames"}->{$dname}) {
+			my $pointer = $self->{"compnames"}->{$dname};
+			$compname .= pack("n", 0xc000 | $pointer);
+			last;
+		}
+
+		$self->{"compnames"}->{$dname} = $offset;
+		my $first  = shift @names;
+		my $length = length $first;
+		$compname .= pack("C a*", $length, $first);
+		$offset   += $length + 1;
+	}
+
+	$compname .= pack("C", 0) unless @names;
+	return $compname;
 }
 
 =head2 dn_expand
 
+    use Net::DNS::Packet qw(dn_expand);
     ($name, $nextoffset) = dn_expand(\$data, $offset);
 
-Expands the domain name stored at a particular location in a
-DNS packet.  The first argument is a reference to a
-scalar containing the packet data.  The second argument is
-the offset within the packet where the (possibly compressed)
-domain name is stored.
+    ($name, $nextoffset) = Net::DNS::Packet::dn_expand(\$data, $offset);
 
-Returns the domain name and the offset of the next location
-in the packet.
+Expands the domain name stored at a particular location in a DNS
+packet.  The first argument is a reference to a scalar containing
+the packet data.  The second argument is the offset within the
+packet where the (possibly compressed) domain name is stored.
+
+Returns the domain name and the offset of the next location in the
+packet.
 
 Returns B<(undef, undef)> if the domain name couldn't be expanded.
 
@@ -512,9 +641,9 @@ Perl itself.
 
 =head1 SEE ALSO
 
-L<perl(1)>, L<Net::DNS>, L<Net::DNS::Resolver>, L<Net::DNS::Header>,
-L<Net::DNS::Question>, L<Net::DNS::RR>,
-RFC 1035 Section 4.1
+L<perl(1)>, L<Net::DNS>, L<Net::DNS::Resolver>, L<Net::DNS::Update>,
+L<Net::DNS::Header>, L<Net::DNS::Question>, L<Net::DNS::RR>,
+RFC 1035 Section 4.1, RFC 2136 Section 2
 
 =cut
 

@@ -1,5 +1,7 @@
 package Net::DNS;
 
+# $Id: DNS.pm,v 1.12 1997/06/13 03:43:44 mfuhr Exp $
+
 =head1 NAME
 
 Net::DNS - Perl interface to the DNS resolver
@@ -51,6 +53,9 @@ The additional section, a list of C<Net::DNS::RR> objects.
 
 =back
 
+The C<Net::DNS::Update> package is a front-end to C<Net::DNS::Packet>
+for creating packet objects to be used in dynamic updates.
+
 =head2 Header Objects
 
 C<Net::DNS::Header> objects represent the header section of a DNS packet.
@@ -80,6 +85,9 @@ The following examples show how to use the DNS modules.  Please note
 that most of the examples are simple and expect a successful query
 and certain record types.  See the demo scripts included with the
 source code for examples of more robust code.
+
+See the C<Net::DNS::Update> manual page for an example of performing
+dynamic updates.
 
   #
   # Look up a host's addresses.
@@ -167,6 +175,13 @@ source code for examples of more robust code.
       # Check for the other descriptors.
   }
 
+=head1 BUGS
+
+C<Net::DNS> is slow.  Real slow.
+
+For other items to be fixed, please see the TODO file included with
+the source distribution.
+
 =head1 COPYRIGHT
 
 Copyright (c) 1997 Michael Fuhr.  All rights reserved.  This program is free
@@ -175,9 +190,8 @@ Perl itself.
 
 =head1 SEE ALSO
 
-L<perl(1)>, L<Net::DNS::Resolver>, L<Net::DNS::Packet>, L<Net::DNS::Header>,
-L<Net::DNS::Question>, L<Net::DNS::RR>,
-RFC 1035
+L<perl(1)>, L<Net::DNS::Resolver>, L<Net::DNS::Packet>, L<Net::DNS::Update>,
+L<Net::DNS::Header>, L<Net::DNS::Question>, L<Net::DNS::RR>, RFC 1035
 
 =cut
 
@@ -195,25 +209,25 @@ use vars qw(
 
 use Net::DNS::Resolver;
 use Net::DNS::Packet;
+use Net::DNS::Update;
 use Net::DNS::Header;
 use Net::DNS::Question;
 use Net::DNS::RR;
 
-# $Id: DNS.pm,v 1.11 1997/05/29 21:48:25 mfuhr Exp $
-$VERSION = "0.09";
+$VERSION = "0.10";
 
 %typesbyname= (
 	"A"		=> 1,		# RFC 1035, Section 3.4.1
 	"NS"		=> 2,		# RFC 1035, Section 3.3.11
-	"MD"		=> 3,		# RFC 1035, Section 3.3.4
-	"MF"		=> 4,		# RFC 1035, Section 3.3.5
+	"MD"		=> 3,		# RFC 1035, Section 3.3.4 (obsolete)
+	"MF"		=> 4,		# RFC 1035, Section 3.3.5 (obsolete)
 	"CNAME"		=> 5,		# RFC 1035, Section 3.3.1
 	"SOA"		=> 6,		# RFC 1035, Section 3.3.13
 	"MB"		=> 7,		# RFC 1035, Section 3.3.3
 	"MG"		=> 8,		# RFC 1035, Section 3.3.6
 	"MR"		=> 9,		# RFC 1035, Section 3.3.8
 	"NULL"		=> 10,		# RFC 1035, Section 3.3.10
-	"WKS"		=> 11,		# RFC 1035, Section 3.4.2
+	"WKS"		=> 11,		# RFC 1035, Section 3.4.2 (deprecated)
 	"PTR"		=> 12,		# RFC 1035, Section 3.3.12
 	"HINFO"		=> 13,		# RFC 1035, Section 3.3.2
 	"MINFO" 	=> 14,		# RFC 1035, Section 3.3.7
@@ -225,61 +239,61 @@ $VERSION = "0.09";
 	"ISDN"		=> 20,		# RFC 1183, Section 3.2
 	"RT"		=> 21,		# RFC 1183, Section 3.3
 	"NSAP"		=> 22,		# RFC 1706, Section 5
-	"NSAP_PTR"	=> 23,
-	"SIG"		=> 24,
-	"KEY"		=> 25,
+	"NSAP_PTR"	=> 23,		# RFC 1348 (obsolete)
+	"SIG"		=> 24,		# RFC 2065, Section 4.1
+	"KEY"		=> 25,		# RFC 2065, Section 3.1
 	"PX"		=> 26,		# RFC 1664, Section 4
-	"GPOS"		=> 27,
+	"GPOS"		=> 27,		# RFC 1712 (obsolete)
 	"AAAA"		=> 28,		# RFC 1886, Section 2.1
 	"LOC"		=> 29,		# RFC 1876
-	"NXT"		=> 30,
-	"EID"		=> 31,
-	"NIMLOC"	=> 32,
+	"NXT"		=> 30,		# RFC 2065, Section 5.2
+	"EID"		=> 31,		# draft-ietf-nimrod-dns-xx.txt
+	"NIMLOC"	=> 32,		# draft-ietf-nimrod-dns-xx.txt
 	"SRV"		=> 33,		# RFC 2052
-	"ATMA"		=> 34,
-	"NAPTR"		=> 35,
+	"ATMA"		=> 34,		# ???
+	"NAPTR"		=> 35,		# draft-ietf-urn-naptr-xx.txt
 	"UINFO"		=> 100,		# non-standard
 	"UID"		=> 101,		# non-standard
 	"GID"		=> 102,		# non-standard
 	"UNSPEC"	=> 103,		# non-standard
-	"IXFR"		=> 251,
-	"AXFR"		=> 252,
-	"MAILB"		=> 253,
-	"MAILA"		=> 254,
-	"ANY"		=> 255,
+	"IXFR"		=> 251,		# RFC 1995
+	"AXFR"		=> 252,		# RFC 1035
+	"MAILB"		=> 253,		# RFC 1035 (MB, MG, MR)
+	"MAILA"		=> 254,		# RFC 1035 (obsolete - see MX)
+	"ANY"		=> 255,		# RFC 1035
 );
 %typesbyval = map { ($typesbyname{$_} => $_) } keys %typesbyname;
 
 %classesbyname = (
-	"IN"		=> 1,
-	"CH"		=> 3,
-	"HS"		=> 4,
-	"NONE"		=> 254,
-	"ANY"		=> 255,
+	"IN"		=> 1,		# RFC 1035
+	"CH"		=> 3,		# RFC 1035
+	"HS"		=> 4,		# RFC 1035
+	"NONE"		=> 254,		# RFC 2136
+	"ANY"		=> 255,		# RFC 1035
 );
 %classesbyval = map { ($classesbyname{$_} => $_) } keys %classesbyname;
 
 %opcodesbyname = (
-	"QUERY"		=> 0,
-	"IQUERY"	=> 1,
-	"STATUS"	=> 2,
-	"NS_NOTIFY_OP"	=> 4,
-	"UPDATE"	=> 5,
+	"QUERY"		=> 0,		# RFC 1035
+	"IQUERY"	=> 1,		# RFC 1035
+	"STATUS"	=> 2,		# RFC 1035
+	"NS_NOTIFY_OP"	=> 4,		# RFC 1996
+	"UPDATE"	=> 5,		# RFC 2136
 );
 %opcodesbyval = map { ($opcodesbyname{$_} => $_) } keys %opcodesbyname;
 
 %rcodesbyname = (
-	"NOERROR"	=> 0,
-	"FORMERR"	=> 1,
-	"SERVFAIL"	=> 2,
-	"NXDOMAIN"	=> 3,
-	"NOTIMP"	=> 4,
-	"REFUSED"	=> 5,
-	"YXDOMAIN"	=> 6,
-	"YXRRSET"	=> 7,
-	"NXRRSET"	=> 8,
-	"NOTAUTH"	=> 9,
-	"NOTZONE"	=> 10,
+	"NOERROR"	=> 0,		# RFC 1035
+	"FORMERR"	=> 1,		# RFC 1035
+	"SERVFAIL"	=> 2,		# RFC 1035
+	"NXDOMAIN"	=> 3,		# RFC 1035
+	"NOTIMP"	=> 4,		# RFC 1035
+	"REFUSED"	=> 5,		# RFC 1035
+	"YXDOMAIN"	=> 6,		# RFC 2136
+	"YXRRSET"	=> 7,		# RFC 2136
+	"NXRRSET"	=> 8,		# RFC 2136
+	"NOTAUTH"	=> 9,		# RFC 2136
+	"NOTZONE"	=> 10,		# RFC 2136
 );
 %rcodesbyval = map { ($rcodesbyname{$_} => $_) } keys %rcodesbyname;
 

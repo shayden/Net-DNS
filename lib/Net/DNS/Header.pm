@@ -5,7 +5,7 @@ use vars qw($VERSION $AUTOLOAD);
 
 use Net::DNS;
 
-# $Id: Header.pm,v 1.5 1997/05/29 17:37:02 mfuhr Exp $
+# $Id: Header.pm,v 1.6 1997/06/13 03:36:06 mfuhr Exp $
 $VERSION = $Net::DNS::VERSION;
 
 =head1 NAME
@@ -107,29 +107,47 @@ Dumps the header data to the standard output.
 
 sub print {
 	my $self = shift;
+	print $self->string;
+}
 
-	print ";; id = $self->{id}\n";
+=head2 string
 
-	print ";; qr = $self->{qr}    ",
-	      "opcode = $self->{opcode}    ",
-	      "aa = $self->{aa}    ",
-	      "tc = $self->{tc}    ",
-	      "rd = $self->{rd}\n";
+    print $header->string;
 
-	print ";; ra = $self->{ra}    ",
-	      "rcode  = $self->{rcode}\n";
+Returns a string representation of the header object.
+
+=cut
+
+sub string {
+	my $self = shift;
+	my $retval = "";
+
+	$retval .= ";; id = $self->{id}\n";
 
 	if ($self->{"opcode"} eq "UPDATE") {
-		print ";; zocount = ", $self->zocount, "  ";
-		print "prcount = ",    $self->prcount, "  ";
-		print "upcount = ",    $self->upcount, "  ";
-		print "adcount = ",    $self->adcount, "\n";
+		$retval .= ";; qr = $self->{qr}    "      .
+		           "opcode = $self->{opcode}    " .
+		           "rcode = $self->{rcode}\n";
+
+		$retval .= ";; zocount = $self->{qdcount}  " .
+		           "prcount = $self->{ancount}  "    .
+		           "upcount = $self->{nscount}  "    .
+		           "adcount = $self->{arcount}\n";
 	}
 	else {
-		print ";; qdcount = $self->{qdcount}  ";
-		print "ancount = $self->{ancount}  ";
-		print "nscount = $self->{nscount}  ";
-		print "arcount = $self->{arcount}\n";
+		$retval .= ";; qr = $self->{qr}    "      .
+		           "opcode = $self->{opcode}    " .
+		           "aa = $self->{aa}    "         .
+		           "tc = $self->{tc}    "         .
+		           "rd = $self->{rd}\n";
+
+		$retval .= ";; ra = $self->{ra}    " .
+		           "rcode  = $self->{rcode}\n";
+
+		$retval .= ";; qdcount = $self->{qdcount}  " .
+		           "ancount = $self->{ancount}  "    .
+		           "nscount = $self->{nscount}  "    .
+		           "arcount = $self->{arcount}\n";
 	}
 }
 
@@ -285,7 +303,7 @@ Perl itself.
 =head1 SEE ALSO
 
 L<perl(1)>, L<Net::DNS>, L<Net::DNS::Resolver>, L<Net::DNS::Packet>,
-L<Net::DNS::Question>, L<Net::DNS::RR>,
+L<Net::DNS::Update>, L<Net::DNS::Question>, L<Net::DNS::RR>,
 RFC 1035 Section 4.1.1
 
 =cut

@@ -1,6 +1,6 @@
 package Net::DNS::RR::MG;
 
-# $Id: MG.pm,v 1.2 1997/02/02 08:31:25 mfuhr Exp $
+# $Id: MG.pm,v 1.3 1997/06/13 03:33:54 mfuhr Exp $
 
 use strict;
 use vars qw(@ISA);
@@ -12,15 +12,32 @@ use Net::DNS::Packet;
 sub new {
 	my ($class, $self, $data, $offset) = @_;
 
-	my($mgmname) = Net::DNS::Packet::dn_expand($data, $offset);
-	$self->{"mgmname"} = $mgmname;
+	if ($self->{"rdlength"} > 0) {
+		my ($mgmname) = Net::DNS::Packet::dn_expand($data, $offset);
+		$self->{"mgmname"} = $mgmname;
+	}
 	return bless $self, $class;
 }
 
 sub rdatastr {
 	my $self = shift;
-	return "$self->{mgmname}.";
+
+	return exists $self->{"mgmname"}
+	       ? "$self->{mgmname}."
+	       : "; no data";
 }
+
+sub rr_rdata {
+	my ($self, $packet, $offset) = @_;
+	my $rdata = "";
+
+	if (exists $self->{"mgmname"}) {
+		$rdata .= $packet->dn_comp($self->{"mgmname"}, $offset);
+	}
+
+	return $rdata;
+}
+
 1;
 __END__
 

@@ -1,12 +1,11 @@
-package Net::DNS::RR::A;
+package Net::DNS::RR::MB;
 
-# $Id: A.pm,v 1.3 1997/06/13 03:33:54 mfuhr Exp $
+# $Id: MB.pm,v 1.2 1997/06/13 03:33:54 mfuhr Exp $
 
 use strict;
 use vars qw(@ISA);
 
-use Socket;
-use Net::DNS;
+use Net::DNS::Packet;
 
 @ISA = qw(Net::DNS::RR);
 
@@ -14,8 +13,8 @@ sub new {
 	my ($class, $self, $data, $offset) = @_;
 
 	if ($self->{"rdlength"} > 0) {
-		my $addr = inet_ntoa(substr($$data, $offset, 4));
-		$self->{"address"} = $addr;
+		my($madname) = Net::DNS::Packet::dn_expand($data, $offset);
+		$self->{"madname"} = $madname;
 	}
 
 	return bless $self, $class;
@@ -24,17 +23,18 @@ sub new {
 sub rdatastr {
 	my $self = shift;
 
-	return exists $self->{"address"} && $self->{"address"}
-	       ? $self->{"address"}
+	return exists $self->{"madname"}
+	       ? "$self->{madname}."
 	       : "; no data";
 }
 
 sub rr_rdata {
-	my $self = shift;
+	my ($self, $packet, $offset) = @_;
+	my $rdata = "";
 
-	my $rdata = exists $self->{"address"}
-		  ? inet_aton($self->{"address"})
-		  : "";
+	if (exists $self->{"madname"}) {
+		$rdata .= $packet->dn_comp($self->{"madname"}, $offset);
+	}
 
 	return $rdata;
 }
@@ -44,7 +44,7 @@ __END__
 
 =head1 NAME
 
-Net::DNS::RR::A - DNS A resource record
+Net::DNS::RR::MB - DNS MB resource record
 
 =head1 SYNOPSIS
 
@@ -52,15 +52,15 @@ C<use Net::DNS::RR>;
 
 =head1 DESCRIPTION
 
-Class for DNS Address (A) resource records.
+Class for DNS Mailbox (MB) resource records.
 
 =head1 METHODS
 
-=head2 address
+=head2 madname
 
-    print "address = ", $rr->address, "\n";
+    print "madname = ", $rr->madname, "\n";
 
-Returns the RR's address field.
+Returns the domain name of the host which has the specified mailbox.
 
 =head1 COPYRIGHT
 
@@ -72,6 +72,6 @@ Perl itself.
 
 L<perl(1)>, L<Net::DNS>, L<Net::DNS::Resolver>, L<Net::DNS::Packet>,
 L<Net::DNS::Header>, L<Net::DNS::Question>, L<Net::DNS::RR>,
-RFC 1035 Section 3.4.1
+RFC 1035 Section 3.3.3
 
 =cut

@@ -1,6 +1,6 @@
 package Net::DNS::RR::RP;
 
-# $Id: RP.pm,v 1.2 1997/02/02 08:31:25 mfuhr Exp $
+# $Id: RP.pm,v 1.3 1997/06/13 03:33:54 mfuhr Exp $
 
 use strict;
 use vars qw(@ISA);
@@ -12,18 +12,38 @@ use Net::DNS::Packet;
 sub new {
 	my ($class, $self, $data, $offset) = @_;
 
-	my ($mbox, $txtdname);
-	($mbox, $offset) = Net::DNS::Packet::dn_expand($data, $offset);
-	($txtdname, $offset) = Net::DNS::Packet::dn_expand($data, $offset);
-	$self->{"mbox"} = $mbox;
-	$self->{"txtdname"} = $txtdname;
+	if ($self->{"rdlength"} > 0) {
+		my ($mbox, $txtdname);
+		($mbox, $offset) = Net::DNS::Packet::dn_expand($data, $offset);
+		($txtdname, $offset) = Net::DNS::Packet::dn_expand($data, $offset);
+		$self->{"mbox"} = $mbox;
+		$self->{"txtdname"} = $txtdname;
+	}
+
 	return bless $self, $class;
 }
 
 sub rdatastr {
 	my $self = shift;
-	return "$self->{mbox}. $self->{txtdname}.";
+
+	return exists $self->{"mbox"}
+	       ? "$self->{mbox}. $self->{txtdname}."
+	       : "; no data";
 }
+
+sub rr_rdata {
+	my ($self, $packet, $offset) = @_;
+	my $rdata = "";
+
+	if (exists $self->{"mbox"}) {
+		$rdata .= $packet->dn_comp($self->{"mbox"}, $offset);
+		$rdata .= $packet->dn_comp($self->{"txtdname"},
+					   $offset + length $rdata);
+	}
+
+	return $rdata;
+}
+
 1;
 __END__
 

@@ -1,6 +1,6 @@
 package Net::DNS::RR::SOA;
 
-# $Id: SOA.pm,v 1.2 1997/02/02 08:31:25 mfuhr Exp $
+# $Id: SOA.pm,v 1.3 1997/06/13 03:33:54 mfuhr Exp $
 
 use strict;
 use vars qw(@ISA);
@@ -12,33 +12,68 @@ use Net::DNS::Packet;
 sub new {
 	my ($class, $self, $data, $offset) = @_;
 
-	my ($mname, $rname);
-	($mname, $offset) = Net::DNS::Packet::dn_expand($data, $offset);
-	($rname, $offset) = Net::DNS::Packet::dn_expand($data, $offset);
+	if ($self->{"rdlength"} > 0) {
+		my ($mname, $rname);
+		($mname, $offset) = Net::DNS::Packet::dn_expand($data, $offset);
+		($rname, $offset) = Net::DNS::Packet::dn_expand($data, $offset);
 
-	my ($serial, $refresh, $retry, $expire, $minimum)
-		= unpack("\@$offset N5", $$data);
+		my ($serial, $refresh, $retry, $expire, $minimum)
+			= unpack("\@$offset N5", $$data);
 	
-	$self->{"mname"} = $mname;
-	$self->{"rname"} = $rname;
-	$self->{"serial"} = $serial;
-	$self->{"refresh"} = $refresh;
-	$self->{"retry"} = $retry;
-	$self->{"expire"} = $expire;
-	$self->{"minimum"} = $minimum;
+		$self->{"mname"}   = $mname;
+		$self->{"rname"}   = $rname;
+		$self->{"serial"}  = $serial;
+		$self->{"refresh"} = $refresh;
+		$self->{"retry"}   = $retry;
+		$self->{"expire"}  = $expire;
+		$self->{"minimum"} = $minimum;
+	}
 
 	return bless $self, $class;
 }
 
 sub rdatastr {
 	my $self = shift;
-	my $rdatastr = "$self->{mname}. $self->{rname}. (\n";
-	$rdatastr .= "\t" x 5 . "$self->{serial}\t; Serial\n";
-	$rdatastr .= "\t" x 5 . "$self->{refresh}\t; Refresh\n";
-	$rdatastr .= "\t" x 5 . "$self->{retry}\t; Retry\n";
-	$rdatastr .= "\t" x 5 . "$self->{expire}\t; Expire\n";
-	$rdatastr .= "\t" x 5 . "$self->{minimum} )\t; Minimum TTL";
+	my $rdatastr;
+
+	if (exists $self->{"mname"}) {
+		$rdatastr  = "$self->{mname}. $self->{rname}. (\n";
+		$rdatastr .= "\t" x 5 . "$self->{serial}\t; Serial\n";
+		$rdatastr .= "\t" x 5 . "$self->{refresh}\t; Refresh\n";
+		$rdatastr .= "\t" x 5 . "$self->{retry}\t; Retry\n";
+		$rdatastr .= "\t" x 5 . "$self->{expire}\t; Expire\n";
+		$rdatastr .= "\t" x 5 . "$self->{minimum} )\t; Minimum TTL";
+	}
+	else {
+		$rdatastr = "; no data";
+	}
+
+	return $rdatastr;
 }
+
+sub rr_rdata {
+	my ($self, $packet, $offset) = @_;
+	my $rdata = "";
+
+	# Assume that if one field exists, they all exist.  Script will
+	# print a warning otherwise.
+
+	if (exists $self->{"mname"}) {
+		$rdata .= $packet->dn_comp($self->{"mname"}, $offset);
+
+		$rdata .= $packet->dn_comp($self->{"rname"},
+					   $offset + length $rdata);
+
+		$rdata .= pack("N5", $self->{"serial"},
+				     $self->{"refresh"},
+				     $self->{"retry"},
+				     $self->{"expire"},
+				     $self->{"minimum"});
+	}
+
+	return $rdata;
+}
+
 1;
 __END__
 

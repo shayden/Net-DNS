@@ -1,6 +1,6 @@
 package Net::DNS::RR::SRV;
 
-# $Id: SRV.pm,v 1.2 1997/02/02 08:31:25 mfuhr Exp $
+# $Id: SRV.pm,v 1.3 1997/06/13 03:33:54 mfuhr Exp $
 
 use strict;
 use vars qw(@ISA);
@@ -13,26 +13,49 @@ use Net::DNS::Packet;
 sub new {
 	my ($class, $self, $data, $offset) = @_;
 
-	my ($priority) = unpack("\@$offset n", $$data);
-	$offset += &Net::DNS::INT16SZ;
-	my ($weight) = unpack("\@$offset n", $$data);
-	$offset += &Net::DNS::INT16SZ;
-	my ($port) = unpack("\@$offset n", $$data);
-	$offset += &Net::DNS::INT16SZ;
-	my($target) = Net::DNS::Packet::dn_expand($data, $offset);
+	if ($self->{"rdlength"} > 0) {
+		my ($priority, $weight, $port) = unpack("\@$offset n3", $$data);
+		$offset += 3 * &Net::DNS::INT16SZ;
+		my($target) = Net::DNS::Packet::dn_expand($data, $offset);
 
-	$self->{"priority"} = $priority;
-	$self->{"weight"}   = $weight;
-	$self->{"port"}     = $port;
-	$self->{"target"}   = $target;
+		$self->{"priority"} = $priority;
+		$self->{"weight"}   = $weight;
+		$self->{"port"}     = $port;
+		$self->{"target"}   = $target;
+	}
 
 	return bless $self, $class;
 }
 
 sub rdatastr {
 	my $self = shift;
-	return "$self->{priority} $self->{weight} $self->{port} $self->{target}.";
+	my $rdatastr;
+
+	if (exists $self->{"priority"}) {
+		$rdatastr = "$self->{priority} $self->{weight} " .
+			    "$self->{port} $self->{target}.";
+	}
+	else {
+		$rdatastr = "; no data";
+	}
+
+	return $rdatastr;
 }
+
+sub rr_rdata {
+	my ($self, $packet, $offset) = @_;
+	my $rdata = "";
+
+	if (exists $self->{"priority"}) {
+		$rdata .= pack("n3", $self->{"priority"}, $self->{"weight"},
+				     $self->{"port"});
+		$rdata .= $packet->dn_comp($self->{"target"},
+					   $offset + length $rdata);
+	}
+
+	return $rdata;
+}
+
 1;
 __END__
 

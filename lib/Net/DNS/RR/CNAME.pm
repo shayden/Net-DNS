@@ -1,6 +1,6 @@
 package Net::DNS::RR::CNAME;
 
-# $Id: CNAME.pm,v 1.2 1997/02/02 08:31:25 mfuhr Exp $
+# $Id: CNAME.pm,v 1.3 1997/06/13 03:33:54 mfuhr Exp $
 
 use strict;
 use vars qw(@ISA);
@@ -12,15 +12,33 @@ use Net::DNS::Packet;
 sub new {
 	my ($class, $self, $data, $offset) = @_;
 
-	my($cname) = Net::DNS::Packet::dn_expand($data, $offset);
-	$self->{"cname"} = $cname;
+	if ($self->{"rdlength"} > 0) {
+		my($cname) = Net::DNS::Packet::dn_expand($data, $offset);
+		$self->{"cname"} = $cname;
+	}
+
 	return bless $self, $class;
 }
 
 sub rdatastr {
 	my $self = shift;
-	return "$self->{cname}.";
+
+	return exists $self->{"cname"} && $self->{"cname"}
+	       ? "$self->{cname}."
+	       : "; no data";
 }
+
+sub rr_rdata {
+	my ($self, $packet, $offset) = @_;
+	my $rdata = "";
+
+	if (exists $self->{"cname"}) {
+		$rdata = $packet->dn_comp($self->{"cname"}, $offset);
+	}
+
+	return $rdata;
+}
+
 1;
 __END__
 

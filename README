@@ -1,46 +1,59 @@
-Perl DNS Resolver Module
-========================
-
-Copyright (c) 1997 Michael Fuhr.  All rights reserved.  This program is free
-software; you can redistribute it and/or modify it under the same terms as
-Perl itself. 
-
-  *** THIS VERSION OF Net::DNS IS FOR TESTING AND STILL CONTAINS BUGS ***
-
-Please see the BUGS section for more information.
+Net::DNS - Perl DNS Resolver Module
+===================================
 
 
-DESCRIPTION
-===========
+TABLE OF CONTENTS
+-----------------
+
+1.  Description
+2.  Availability
+3.  Prerequisites
+4.  Installation
+5.  Running Tests
+6.  Demonstration Scripts
+7.  Dynamic Updates
+8.  Bugs
+9.  Copyright
+10. Author Information
+
+
+1. DESCRIPTION
+--------------
 
 Net::DNS is a Perl interface to the DNS resolver.  It allows the
-programmer to perform any type of DNS query from a Perl script.  For
-details and examples, please read the Net::DNS manual page.
+programmer to perform any type of DNS query from a Perl script.
+For details and examples, please read the Net::DNS manual page.
 
-To read about the latest features, see the Changes file.  To find out
-what's planned for future versions, see the TODO file.
+To read about the latest features, see the Changes file.  To find
+out about known bugs and to see what's planned for future versions,
+see the TODO file.
 
-As of version 0.02, Net::DNS is written entirely in Perl.  Version 0.01
-was written mostly in C and used the system's resolver.  The Perl
-version runs quite a bit slower, but considering that the network can
-be a serious bottleneck when making DNS queries, the speed difference
-may not really matter in most cases.  However, future versions may
-contain some C for those who wish to link against libresolv or libbind.
+As of version 0.02, Net::DNS is written entirely in Perl.  Version
+0.01 was written mostly in C and used the system's resolver.  The
+Perl version runs quite a bit slower, but considering that the
+network can be a serious bottleneck when making DNS queries, the
+speed difference may not really matter in most cases.  However,
+future versions may contain some C for those who wish to link
+against libresolv or libbind.
 
-The author invites feedback on the module, particularly at this early
-stage of its development.  If there's something you'd like to have added,
-please let me know.  If you find a bug, please send me the information
-described in the BUGS section below.
+The author invites feedback on the module, particularly at this
+early stage of its development.  If there's something you'd like
+to have added, please let me know.  If you find a bug, please send
+me the information described in the BUGS section below.
 
-You can get the latest version of Net::DNS from one of the following
-sites:
+
+2. AVAILABILITY
+---------------
+
+You can get the latest version of Net::DNS from the Comprehensive
+Perl Archive Network (CPAN) or from the author's homepage:
 
     http://www.perl.org/CPAN/modules/by-module/Net/
     http://www.dimensional.com/~mfuhr/perldns/
 
 
-REQUIREMENTS
-============
+3. PREREQUISITES
+----------------
 
 Net::DNS requires the following:
 
@@ -48,21 +61,21 @@ Net::DNS requires the following:
     IO-1.15
 
 Net::DNS may work with earlier versions of the above, but the author
-hasn't tested this.  The latest versions can be obtained from the
-Comprehensive Perl Archive Network (CPAN):
+hasn't tested this.  The latest versions can be obtained from CPAN:
 
     http://www.perl.org/CPAN/
 
-Some of the demonstration scripts may require additional modules.  See
-demo/README for details.
+Some of the demonstration scripts may require additional modules;
+see demo/README for details.
 
 
-INSTALLATION
-============
+4. INSTALLATION
+---------------
 
-Please install any modules mentioned in the REQUIREMENTS section above.
-If you don't, Net::DNS won't work.  When you run "perl Makefile.PL",
-Perl should complain if any of the required modules are missing.
+Please install any modules mentioned in the PREREQUISITES section
+above.  If you don't, Net::DNS won't work.  When you run "perl
+Makefile.PL", Perl should complain if any of the required modules
+are missing.
 
 To build this module, run the following commands:
 
@@ -72,25 +85,25 @@ To build this module, run the following commands:
     make install
 
 
-RUNNING TESTS
-=============
+5. RUNNING TESTS
+----------------
 
-There aren't many tests in this version.  Part of the problem is
-creating a test suite to work on systems both with and without
-Internet connectivity.  Future versions of this module will have
-more tests but will probably require some site-specific configuration
-before running them.
+There aren't many tests in this version, although there are more
+than in previous versions.  Part of the problem is creating a test
+suite to work on systems both with and without Internet connectivity.
+Future versions of this module may have more tests but will probably
+require some site-specific configuration before running them.
 
 The author does run additional tests against customized zone data
 on a private nameserver, but these tests aren't included in the
 distribution.
 
 
-DEMONSTRATION SCRIPTS
-=====================
+6. DEMONSTRATION SCRIPTS
+------------------------
 
 There are a few demonstration scripts in the demo/ directory.  See
-demo/README for more info.
+demo/README for more information.
 
 The author would be happy to include any contributed scripts in
 future versions of this module.  All I ask is that they be documented
@@ -98,11 +111,64 @@ future versions of this module.  All I ask is that they be documented
 information be mentioned somewhere.
 
 
-BUGS
-====
+7. DYNAMIC UPDATES
+------------------
 
-The module is still in its early stages and is sure to contain a
-few bugs.  See the TODO and Changes files for more info.
+   *** WARNING: THIS CODE IS NOT READY FOR PRODUCTION USE ***
+
+Net::DNS now supports DNS dynamic updates as documented in RFC 2136;
+for more information and an example, please see the Net::DNS::Update
+manual page.
+
+The dynamic update code is still under development but I've decided
+to make it available to those who'd like to try it; please see the
+TODO file for some of the things I still need to work on.  At this
+time, I recommend that you don't use Net::DNS to maintain a production
+nameserver via dynamic updates.
+
+Please note that there are some bugs in the BIND 8.1-REL nameserver
+that can cause it to dump core when receiving dynamic updates, so
+if you have problems using Net::DNS, that might be the cause.  I've
+reported these bugs to bind-bugs@isc.org and they've said they'll
+fix them in a future version of BIND.
+
+A future version of Net::DNS will simplify the creation of update
+packets, but now you'll have to create RRs yourself and push them
+into the prerequisite and update sections of the packet.  For your
+convenience, here's a summary of the update semantics (see RFC 2136
+for details):
+
+    PREREQUISITE SECTION
+                   # RRs   NAME   TTL   CLASS   TYPE   RDLENGTH   RDATA
+                   -----   ----   ---   -----   ----   --------   -----
+    yxrrset          1     name    0     ANY    type       0      empty
+    yxrrset          1+    name    0    class   type   rdlength   rdata
+    nxrrset          1     name    0     NONE   type       0      empty
+    yxdomain         1     name    0     ANY     ANY       0      empty
+    nxdomain         1     name    0     NONE    ANY       0      empty
+
+
+    UPDATE SECTION
+                   # RRs   NAME   TTL   CLASS   TYPE   RDLENGTH   RDATA
+                   -----   ----   ---   -----   ----   --------   -----
+    add RRs          1+    name   ttl   class   type   rdlength   rdata
+    del RRset        1     name    0     ANY    type       0      empty
+    del all RRsets   1     name    0     ANY     ANY       0      empty
+    del RRs          1+    name    0     NONE   type   rdlength   rdata
+
+
+8. BUGS
+-------
+
+  *** THIS VERSION OF Net::DNS IS FOR TESTING AND STILL CONTAINS BUGS ***
+
+Net::DNS is still in its early stages and is sure to contain a few
+bugs.  Please see the TODO and Changes files for more information.
+
+As mentioned in the Dynamic Updates section above, I don't recommend
+using Net::DNS to maintain a production nameserver via dynamic
+updates unless you've tested it *thoroughly*.  This author takes no
+blame if you corrupt your zone.
 
 If you find a bug, please report it to the author along with the
 following information:
@@ -122,11 +188,20 @@ to insert some debugging lines and report back on the results.
 The more help and information you can provide, the better.
 
 
-AUTHOR
-======
+9. COPYRIGHT
+------------
+
+Copyright (c) 1997 Michael Fuhr.  All rights reserved.  This program
+is free software; you can redistribute it and/or modify it under the
+same terms as Perl itself.
+
+
+10. AUTHOR INFORMATION
+----------------------
 
 Michael Fuhr
 mfuhr@dimensional.com
 http://www.dimensional.com/~mfuhr/
 
-$Id: README,v 1.6 1997/05/29 21:49:20 mfuhr Exp $
+----
+$Id: README,v 1.7 1997/06/13 03:48:07 mfuhr Exp $

@@ -1,6 +1,6 @@
 package Net::DNS::RR::ISDN;
 
-# $Id: ISDN.pm,v 1.4 1997/05/29 17:40:19 mfuhr Exp $
+# $Id: ISDN.pm,v 1.5 1997/06/13 03:33:54 mfuhr Exp $
 
 use strict;
 use vars qw(@ISA);
@@ -12,33 +12,56 @@ use Net::DNS::Packet;
 sub new {
 	my ($class, $self, $data, $offset) = @_;
 
-	my ($address, $sa, $len);
+	if ($self->{"rdlength"} > 0) {
+		my ($address, $sa, $len);
 
-	($len) = unpack("\@$offset C", $$data);
-	++$offset;
-	$address = substr($$data, $offset, $len);
-	$offset += $len;
-
-	if ($len + 1 < $self->{"rdlength"}) {
 		($len) = unpack("\@$offset C", $$data);
 		++$offset;
-		$sa = substr($$data, $offset, $len);
+		$address = substr($$data, $offset, $len);
 		$offset += $len;
-	}
-	else {
-		$sa = "";
-	}
 
-	$self->{"address"} = $address;
-	$self->{"sa"}  = $sa;
+		if ($len + 1 < $self->{"rdlength"}) {
+			($len) = unpack("\@$offset C", $$data);
+			++$offset;
+			$sa = substr($$data, $offset, $len);
+			$offset += $len;
+		}
+		else {
+			$sa = "";
+		}
+
+		$self->{"address"} = $address;
+		$self->{"sa"}  = $sa;
+	}
 
 	return bless $self, $class;
 }
 
 sub rdatastr {
 	my $self = shift;
-	return qq("$self->{address}" "$self->{sa}");
+
+	return exists $self->{"address"}
+	       ? qq("$self->{address}" "$self->{sa}")
+	       : "; no data";
 }
+
+sub rr_rdata {
+	my $self = shift;
+	my $rdata = "";
+
+	if (exists $self->{"address"}) {
+		$rdata .= pack("C", length $self->{"address"});
+		$rdata .= $self->{"address"};
+
+		if ($self->{"sa"}) {
+			$rdata .= pack("C", length $self->{"sa"});
+			$rdata .= $self->{"sa"};
+		}
+	}
+
+	return $rdata;
+}
+
 1;
 __END__
 

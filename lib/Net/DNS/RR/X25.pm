@@ -1,6 +1,6 @@
 package Net::DNS::RR::X25;
 
-# $Id: X25.pm,v 1.3 1997/05/29 17:40:37 mfuhr Exp $
+# $Id: X25.pm,v 1.4 1997/06/13 03:33:54 mfuhr Exp $
 
 use strict;
 use vars qw(@ISA);
@@ -11,22 +11,38 @@ use Net::DNS::Packet;
 
 sub new {
 	my ($class, $self, $data, $offset) = @_;
-	my ($psdn, $len);
 
-	($len) = unpack("\@$offset C", $$data);
-	++$offset;
-	$psdn = substr($$data, $offset, $len);
-	$offset += $len;
-
-	$self->{"psdn"} = $psdn;
+	if ($self->{"rdlength"} > 0) {
+		my ($len) = unpack("\@$offset C", $$data);
+		++$offset;
+		my $psdn = substr($$data, $offset, $len);
+		$offset += $len;
+		$self->{"psdn"} = $psdn;
+	}
 
 	return bless $self, $class;
 }
 
 sub rdatastr {
 	my $self = shift;
-	return qq("$self->{psdn}");
+
+	return exists $self->{"psdn"}
+	       ? qq("$self->{psdn}")
+	       : "; no data";
 }
+
+sub rr_rdata {
+	my $self = shift;
+	my $rdata = "";
+
+	if (exists $self->{"psdn"}) {
+		$rdata .= pack("C", length $self->{"psdn"});
+		$rdata .= $self->{"psdn"};
+	}
+
+	return $rdata;
+}
+
 1;
 __END__
 

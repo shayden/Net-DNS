@@ -1,6 +1,6 @@
 package Net::DNS::RR::NAPTR;
 
-# $Id: NAPTR.pm,v 1.1 1997/05/29 21:47:14 mfuhr Exp $
+# $Id: NAPTR.pm,v 1.3 1997/06/13 03:33:54 mfuhr Exp $
 
 use strict;
 use vars qw(@ISA);
@@ -13,43 +13,79 @@ use Net::DNS::Packet;
 sub new {
 	my ($class, $self, $data, $offset) = @_;
 
-	my ($order) = unpack("\@$offset n", $$data);
-	$offset += &Net::DNS::INT16SZ;
-	my ($preference) = unpack("\@$offset n", $$data);
-	$offset += &Net::DNS::INT16SZ;
-	my ($len) = unpack("\@$offset C", $$data);
-	++$offset;
-	my ($flags) = unpack("\@$offset a$len", $$data);
-	$offset += $len;
-	$len = unpack("\@$offset C", $$data);
-	++$offset;
-	my ($service) = unpack("\@$offset a$len", $$data);
-	$offset += $len;
-	$len = unpack("\@$offset C", $$data);
-	++$offset;
-	my ($regexp) = unpack("\@$offset a$len", $$data);
-	$offset += $len;
-	my($replacement) = Net::DNS::Packet::dn_expand($data, $offset);
+	if ($self->{"rdlength"} > 0) {
+		my ($order) = unpack("\@$offset n", $$data);
+		$offset += &Net::DNS::INT16SZ;
+		my ($preference) = unpack("\@$offset n", $$data);
+		$offset += &Net::DNS::INT16SZ;
+		my ($len) = unpack("\@$offset C", $$data);
+		++$offset;
+		my ($flags) = unpack("\@$offset a$len", $$data);
+		$offset += $len;
+		$len = unpack("\@$offset C", $$data);
+		++$offset;
+		my ($service) = unpack("\@$offset a$len", $$data);
+		$offset += $len;
+		$len = unpack("\@$offset C", $$data);
+		++$offset;
+		my ($regexp) = unpack("\@$offset a$len", $$data);
+		$offset += $len;
+		my($replacement) = Net::DNS::Packet::dn_expand($data, $offset);
   
-	$self->{"order"} = $order;
-	$self->{"preference"}   = $preference;
-	$self->{"flags"} = $flags;
-	$self->{"service"} = $service;
-	$self->{"regexp"} = $regexp;
-	$self->{"replacement"}   = $replacement;
+		$self->{"order"}       = $order;
+		$self->{"preference"}  = $preference;
+		$self->{"flags"}       = $flags;
+		$self->{"service"}     = $service;
+		$self->{"regexp"}      = $regexp;
+		$self->{"replacement"} = $replacement;
+	}
   
 	return bless $self, $class;
 }
 
 sub rdatastr {
 	my $self = shift;
-	return $self->{"order"}       . ' '   .
-	       $self->{"preference"}  . ' "'  .
-	       $self->{"flags"}       . '" "' .
-	       $self->{"service"}     . '" "' .
-	       $self->{"regexp"}      . '" '  .
-	       $self->{"replacement"} . '.';
+	my $rdatastr;
+
+	if (exists $self->{"order"}) {
+		$rdatastr = $self->{"order"}       . ' '   .
+		            $self->{"preference"}  . ' "'  .
+		            $self->{"flags"}       . '" "' .
+		            $self->{"service"}     . '" "' .
+		            $self->{"regexp"}      . '" '  .
+		            $self->{"replacement"} . '.';
+	}
+	else {
+		$rdatastr = "; no data";
+	}
+
+	return $rdatastr;
 }
+
+sub rr_rdata {
+	my ($self, $packet, $offset) = @_;
+	my $rdata = "";
+
+	if (exists $self->{"order"}) {
+
+		$rdata .= pack("n2", $self->{"order"}, $self->{"preference"});
+
+		$rdata .= pack("C", length $self->{"flags"});
+		$rdata .= $self->{"flags"};
+
+		$rdata .= pack("C", length $self->{"service"});
+		$rdata .= $self->{"service"};
+
+		$rdata .= pack("C", length $self->{"regexp"});
+		$rdata .= $self->{"regexp"};
+
+		$rdata .= $packet->dn_comp($self->{"replacement"},
+					   $offset + length $rdata);
+	}
+
+	return $rdata;
+}
+
 1;
 __END__
 
@@ -63,7 +99,7 @@ C<use Net::DNS::RR>;
 
 =head1 DESCRIPTION
 
-Class for DNS NAPTR resource records.
+Class for DNS Naming Authority Pointer (NAPTR) resource records.
 
 =head1 METHODS
 

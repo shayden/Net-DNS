@@ -1,6 +1,6 @@
 package Net::DNS::RR::AFSDB;
 
-# $Id: AFSDB.pm,v 1.2 1997/02/02 08:31:25 mfuhr Exp $
+# $Id: AFSDB.pm,v 1.3 1997/06/13 03:33:54 mfuhr Exp $
 
 use strict;
 use vars qw(@ISA);
@@ -13,18 +13,38 @@ use Net::DNS::Packet;
 sub new {
 	my ($class, $self, $data, $offset) = @_;
 
-	my ($subtype) = unpack("\@$offset n", $$data);
-	$offset += &Net::DNS::INT16SZ;
-	my($hostname) = Net::DNS::Packet::dn_expand($data, $offset);
-	$self->{"subtype"} = $subtype;
-	$self->{"hostname"} = $hostname;
+	if ($self->{"rdlength"} > 0) {
+		my ($subtype) = unpack("\@$offset n", $$data);
+		$offset += &Net::DNS::INT16SZ;
+		my($hostname) = Net::DNS::Packet::dn_expand($data, $offset);
+		$self->{"subtype"} = $subtype;
+		$self->{"hostname"} = $hostname;
+	}
+
 	return bless $self, $class;
 }
 
 sub rdatastr {
 	my $self = shift;
-	return "$self->{subtype} $self->{hostname}.";
+
+	return exists $self->{"subtype"}
+	       ? "$self->{subtype} $self->{hostname}."
+	       : "; no data";
 }
+
+sub rr_rdata {
+	my ($self, $packet, $offset) = @_;
+	my $rdata = "";
+
+	if (exists $self->{"subtype"}) {
+		$rdata .= pack("n", $self->{"subtype"});
+		$rdata .= $packet->dn_comp($self->{"hostname"},
+					   $offset + length $rdata);
+	}
+
+	return $rdata;
+}
+
 1;
 __END__
 

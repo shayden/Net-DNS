@@ -1,6 +1,6 @@
-package Net::DNS::RR::RT;
+package Net::DNS::RR::PX;
 
-# $Id: RT.pm,v 1.3 1997/06/13 03:33:54 mfuhr Exp $
+# $Id: PX.pm,v 1.2 1997/06/13 03:33:54 mfuhr Exp $
 
 use strict;
 use vars qw(@ISA);
@@ -14,11 +14,17 @@ sub new {
 	my ($class, $self, $data, $offset) = @_;
 
 	if ($self->{"rdlength"} > 0) {
-		my ($preference) = unpack("\@$offset n", $$data);
+		my ($preference, $map822, $mapx400);
+
+		($preference) = unpack("\@$offset n", $$data);
 		$offset += &Net::DNS::INT16SZ;
-		my ($intermediate) = Net::DNS::Packet::dn_expand($data, $offset);
+
+		($map822,  $offset) = Net::DNS::Packet::dn_expand($data, $offset);
+		($mapx400, $offset) = Net::DNS::Packet::dn_expand($data, $offset);
+
 		$self->{"preference"} = $preference;
-		$self->{"intermediate"} = $intermediate;
+		$self->{"map822"}     = $map822;
+		$self->{"mapx400"}    = $mapx400;
 	}
 
 	return bless $self, $class;
@@ -28,7 +34,7 @@ sub rdatastr {
 	my $self = shift;
 
 	return exists $self->{"preference"}
-	       ? "$self->{preference} $self->{intermediate}."
+	       ? "$self->{preference} $self->{map822}. $self->{mapx400}."
 	       : "; no data";
 }
 
@@ -38,8 +44,12 @@ sub rr_rdata {
 
 	if (exists $self->{"preference"}) {
 		$rdata .= pack("n", $self->{"preference"});
-		$rdata .= $packet->dn_comp($self->{"intermediate"},
-					   $offset + length $rdata);
+
+		$rdata .= $packet->dn_comp($self->{"map822"},
+					    $offset + length $rdata);
+
+		$rdata .= $packet->dn_comp($self->{"mapx400"},
+					    $offset + length $rdata);
 	}
 
 	return $rdata;
@@ -50,7 +60,7 @@ __END__
 
 =head1 NAME
 
-Net::DNS::RR::RT - DNS RT resource record
+Net::DNS::RR::PX - DNS PX resource record
 
 =head1 SYNOPSIS
 
@@ -58,7 +68,7 @@ C<use Net::DNS::RR>;
 
 =head1 DESCRIPTION
 
-Class for DNS Route Through (RT) resource records.
+Class for DNS X.400 Mail Mapping Information (PX) resource records.
 
 =head1 METHODS
 
@@ -66,13 +76,19 @@ Class for DNS Route Through (RT) resource records.
 
     print "preference = ", $rr->preference, "\n";
 
-Returns the preference for this route.
+Returns the preference given to this RR.
 
-=head2 intermediate
+=head2 map822
 
-    print "intermediate = ", $rr->intermediate, "\n";
+    print "map822 = ", $rr->map822, "\n";
 
-Returns the domain name of the intermediate host.
+Returns the RFC822 part of the RFC1327 mapping information.
+
+=head2 mapx400
+
+    print "mapx400 = ", $rr->mapx400, "\n";
+
+Returns the X.400 part of the RFC1327 mapping information.
 
 =head1 COPYRIGHT
 
@@ -84,6 +100,6 @@ Perl itself.
 
 L<perl(1)>, L<Net::DNS>, L<Net::DNS::Resolver>, L<Net::DNS::Packet>,
 L<Net::DNS::Header>, L<Net::DNS::Question>, L<Net::DNS::RR>,
-RFC 1183 Section 3.3
+RFC 1664 Section 4, RFC 1327
 
 =cut

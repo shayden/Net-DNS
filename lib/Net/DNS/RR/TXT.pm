@@ -1,6 +1,6 @@
 package Net::DNS::RR::TXT;
 
-# $Id: TXT.pm,v 1.3 1997/05/29 17:40:37 mfuhr Exp $
+# $Id: TXT.pm,v 1.4 1997/06/13 03:33:54 mfuhr Exp $
 
 use strict;
 use vars qw(@ISA);
@@ -11,22 +11,39 @@ use Net::DNS::Packet;
 
 sub new {
 	my ($class, $self, $data, $offset) = @_;
-	my ($txtdata, $len);
 
-	($len) = unpack("\@$offset C", $$data);
-	++$offset;
-	$txtdata = substr($$data, $offset, $len);
-	$offset += $len;
+	if ($self->{"rdlength"} > 0) {
+		my ($len) = unpack("\@$offset C", $$data);
+		++$offset;
+		my $txtdata = substr($$data, $offset, $len);
+		$offset += $len;
 
-	$self->{"txtdata"} = $txtdata;
+		$self->{"txtdata"} = $txtdata;
+	}
 
 	return bless $self, $class;
 }
 
 sub rdatastr {
 	my $self = shift;
-	return qq("$self->{txtdata}");
+
+	return exists $self->{"txtdata"}
+	       ? qq("$self->{txtdata}")
+	       : "; no data";
 }
+
+sub rr_rdata {
+	my $self = shift;
+	my $rdata = "";
+
+	if (exists $self->{"txtdata"}) {
+		$rdata .= pack("C", length $self->{"txtdata"});
+		$rdata .= $self->{"txtdata"};
+	}
+
+	return $rdata;
+}
+
 1;
 __END__
 

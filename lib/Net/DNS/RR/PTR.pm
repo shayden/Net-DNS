@@ -1,6 +1,6 @@
 package Net::DNS::RR::PTR;
 
-# $Id: PTR.pm,v 1.2 1997/02/02 08:31:25 mfuhr Exp $
+# $Id: PTR.pm,v 1.3 1997/06/13 03:33:54 mfuhr Exp $
 
 use strict;
 use vars qw(@ISA);
@@ -12,15 +12,33 @@ use Net::DNS::Packet;
 sub new {
 	my ($class, $self, $data, $offset) = @_;
 
-	my($ptrdname) = Net::DNS::Packet::dn_expand($data, $offset);
-	$self->{"ptrdname"} = $ptrdname;
+	if ($self->{"rdlength"} > 0) {
+		my($ptrdname) = Net::DNS::Packet::dn_expand($data, $offset);
+		$self->{"ptrdname"} = $ptrdname;
+	}
+
 	return bless $self, $class;
 }
 
 sub rdatastr {
 	my $self = shift;
-	return "$self->{ptrdname}.";
+
+	return exists $self->{"ptrdname"}
+	       ? "$self->{ptrdname}."
+	       : "; no data";
 }
+
+sub rr_rdata {
+	my ($self, $packet, $offset) = @_;
+	my $rdata = "";
+
+	if (exists $self->{"ptrdname"}) {
+		$rdata .= $packet->dn_comp($self->{"ptrdname"}, $offset);
+	}
+
+	return $rdata;
+}
+
 1;
 __END__
 
