@@ -1,0 +1,33 @@
+#!/usr/bin/perl -Tw
+
+use Net::DNS;
+use strict;
+      
+sub reply_handler {
+    my ($qname, $qclass, $qtype) = @_;
+    my ($rcode, @ans, @auth, @add);
+ 
+    if ($qtype eq "A") {
+      my ($ttl, $rdata) = (3600, "10.1.2.3");
+      push @ans, Net::DNS::RR->new("$qname $ttl $qclass $qtype $rdata");
+      $rcode = "NOERROR";
+    }
+    else {
+      $rcode = "NXDOMAIN";
+    }
+      
+    return ($rcode, \@ans, \@auth, \@add);
+}
+  
+my $ns = Net::DNS::Nameserver->new(
+    LocalPort    => 5353,
+    ReplyHandler => \&reply_handler,
+    Verbose      => 1
+);
+
+if ($ns) {
+    $ns->main_loop;
+}
+else {
+    die "couldn't create nameserver object\n";
+}

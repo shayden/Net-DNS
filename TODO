@@ -1,9 +1,209 @@
 To Do list for Net::DNS
 =======================
 
+* Work on Net::DNS::Nameserver.
+
+  - Write tests.
+
+  - Write a demo script.
+
+* Add an option to Net::DNS::Resolver to keep TCP sessions open.
+  Suggested by George Michaelson.
+
+* Net::DNS has problems with SOCKS; problem appears to be with the Perl
+  socket code.  Can test if we're running under a SOCKSified Perl by
+  checking $Config::Config{"usesocks"}.  Problem noted by George Michaelson.
+
+* Make sure demo/check_soa checks all IP addresses for all nameservers.
+
+* Add a "use_connected_udp" method to Net::DNS::Resolver to optionally
+  use connected UDP sockets.
+
+* Explicitly close TCP sockets when done with them.
+
+* Check code for proper use of 0.0.0.0 address.
+
+* Check for unknown types and classes.
+
+* Add documentation on use of dot-termination.
+
+* Work on TSIG support:
+
+  - Add additional documentation and examples.
+
+  - Study RFC 2845 to make sure the implementation is complete and correct.
+
+  - Add examples of checking for BADKEY, BADSIG, and BADTIME errors.
+
+  - The TSIG time_signed and other_data fields should be 48-bit unsigned
+    integers.  The current implementation ignores the upper 16 bits; this
+    will cause problems for times later than 19 Jan 2038 03:14:07 UTC.
+
+  - Add support for TSIG-signed zone transfers.
+
+  - Add code to validate TSIG-signed responses.
+
+  - Consider changing the Net::DNS::Resolver->search and query methods
+    to return an error if the server rejects a TSIG-signed query or
+    update, or if a TSIG-signed response doesn't validate.  The send
+    method should continue to be low-level enough to return the TSIG
+    record.
+
+  - Add a "-k" option to perldig and other demo programs so they can read
+    keys from a file.
+
+  - Make the installation of Digest::HMAC_MD5 and MIME::Base64 optional.
+    These are only needed for TSIG support.
+
+* Decide what to do if $res->send is called with no arguments, or if
+  $res->search or $res->query are called with a Packet object as an
+  argument.
+
+* Consider writing a Net::DNS::Examples manual page.
+
+* Consider writing a Net::DNS::FAQ manual page.
+
+* Consider adding "use strict" to the examples.
+
+* Consider changing the comment for the MINIMUM field when printing
+  SOA records.  RFC 2308 defines a new meaning for this field.
+
+* Consider writing a Net::DNS::AXFR module to handle zone transfers.
+
+* Figure out how to handle responses that come back from a different
+  address than the address to which the query was sent.  May have been
+  solved by new IO::Socket code.
+
+* Kevin DeBruhl has volunteered to help test Net::DNS on ActivePerl 5.6
+  on NT.  Need to get the development code running on Perl 5.6 &
+  ActivePerl 5.6.
+
+* Look at Mark Ferlatte's patches for Win32.
+
+* Finish demo/time-query.
+
+* Look at problems identified by various Net::DNS users via email.
+
+* Finish mresolv2.  Some things to do:
+
+  - Keep track of CNAME records so we can map the original IP address to the
+    answer.
+
+  - Add retries.
+
+* Add DNSSEC.
+
+* Find out if returning the answer in the authority section is proper
+  behavior.  Problem noted by Michael McKibben.  Example:
+
+    #!/usr/local/bin/perl -w
+    use Net::DNS;
+    use strict;
+    my $res = Net::DNS::Resolver->new;
+    $res->debug(1);
+    $res->nameservers("134.24.132.240");
+    $res->send("intel.cerf.net", "SOA");
+
+* When $res->debug(1), add some output to indicate there were no
+  nameservers.  Suggested by Neil Harkins.
+
+* Consider adding WINS support (see RFC 1002).  Suggested by
+  Philip D. Pokorny.
+
+* Add patches suggested by Graham Barr (see mail archive 19981219).
+
+* Consider randomizing query IDs.  Idea from a thread in bind-workers.
+
+* Make sure we check label length when compressing names.
+
+* Check for loops when uncompressing names.
+
+* Find out why I'm getting "no nameservers" when doing $res->query on
+  an IP address.  [Answer: IO::Socket's _sock_info subroutine refers
+  to $1 after a substitute.  If the substitute failed, $1 is still set
+  from an earlier regexp.  Workaround: surround port numbers with ()].
+
+* Specify the peer address in send() rather than in new().  This should
+  avoid a timeout when creating a UDP socket object.  Suggested by
+  Ken Neighbors.  Should look something like this:
+
+      $peer = sockaddr_in($port, inet_aton($ns));
+      $sock->send($buf, 0, $peer);
+
+  Problem: We don't seem to get errors back like "connection refused" when
+  doing this.
+
+  Solution: Add optional support for connected UDP sockets.  Not supported
+  on all platforms.
+
+* Add a way to disable reading of environment variables like RES_NAMESERVERS.
+  Suggested by Ken Neighbors.
+
+* Add examples of using dynamic updates for every RR type.
+
+* rr_add and rr_del: Check for a reference (RR).
+
+* Add to res_init_microsoft checks for DhcpDomain and DhcpNameServer
+  if Domain and NameServer aren't set.  Suggested by Petja van der Lek
+  and Peter Sorensen.  [ DONE BUT NOT TESTED ].
+
+* Add optional support for Time::HiRes to time queries.  Inspired by
+  a suggestion from Roy Alcala.
+
+* Check out the "no nameservers" weirdness when doing $res->send
+  inside a "while(/.../g".
+
+* Add Milivoj Ivkovic's changes to res_init_microsoft:
+
+    #WinNT :
+        my $root = 'SYSTEM\CurrentControlSet\Services\Tcpip\Parameters';
+    #Win95 :
+        my $root = 'SYSTEM\CurrentControlSet\Services\VxD\MSTCP';
+
+    and split on "," instead of space.
+
+* Documentation for Net::DNS::Select.
+
+* Handle emtpy search and domain fields (Net::DNS::Resolver).
+
+* After setting $res->srcport(53), $res->send returns "no nameservers"
+  if the port is already in use.
+
+* Undefined value in Question.pm (lines 47, 130) when parsing a bogus
+  packet.
+
+* Consider adding IQUERY.
+
+* When the query is a dotted quad, only assume a PTR query if no
+  type was specified.  Suggested by Jay Soffian.
+
+* Check for tc in partial packets.  Example: (microsoft.com, ANY).
+  [ 7 Apr 1998 -- can't reproduce ].
+
+* Add better private tests for TCP transfers.
+
+* Make sure Net::DNS runs with taint checks on.  Look at the patch
+  contributed by Chris Garrigues.
+
 * Work on Resolver.pm:
 
-  - Add a method to set the query source port.
+  - Check for igntc on large outgoing packets.
+
+  - Work on axfr_start & axfr_next.  Things remaining to do:
+
+    * Find out why some zone transfers (e.g., sub5.test) terminate
+      prematurely.  Tcpdump shows Net::DNS sending FIN before all of
+      the data has been read.  Debugging shows that recv sometimes
+      returns "Resource temporarily unavailable" -- this appears to
+      happen only on TCP sockets that were created with "Timeout" set,
+      and then only under certain conditions (Perl 5.004_04, IO-1.19,
+      FreeBSD 2.2.6-STABLE, BIND-8.1.2-T3A).
+
+    * Error checking (e.g., header->rcode).
+
+    * Rewrite axfr to call axfr_start & axfr_next.
+
+    * Add to the Changes file.
 
   - Add an optional argument to Net::DNS::Resolver->new to read a
     specific configuration file instead of using the default files.
@@ -14,11 +214,13 @@ To Do list for Net::DNS
 
   - Work on a way to use the same socket for background queries.
 
-  - Write $res->axfr_start, $res->axfr_next.
+  - Add callbacks.
 
   - Document $res->errorstring messages.
 
   - Work on efficiency of IO::Socket handling.
+
+  - Add an IXFR method (see RFC 1995).
 
   - Implement AAONLY queries.  Here's a code fragment to set the
     nameserver list to the hosts returned in the authority section:
@@ -37,6 +239,9 @@ To Do list for Net::DNS
     by John Line.
 
   - Add manual pages for individual RR types to the homepage.
+
+  - Consider putting all POD after an __END__ line in each file.  Will
+    this speed up initial loading?  Need to research.
 
 * Consider using function prototypes.
 
@@ -65,7 +270,8 @@ To Do list for Net::DNS
 
   - Add an "update" method to the resolver class to send the update
     packet to the zone's authoritative nameservers (see also RFC
-    2136, Section 4).
+    2136, Section 4).  Or consider sending update packets to
+    only the first nameserver listed in the resolver configuration.
 
   - Do case-insensitive comparisons in Net::DNS::Packet->dn_comp.
 
@@ -104,12 +310,27 @@ To Do list for Net::DNS
     MF		RFC 1035 (obsolete)
     WKS		RFC 1035
     NSAP_PTR	RFC 1348 (deprecated)
+    SIG		RFC 2535
+    KEY		RFC 2535
     GPOS	RFC 1712 (withdrawn)
-    KEY		RFC 2065
-    NXT		RFC 2065
-    SIG		RFC 2065
-    ATMA	???
-    TSIG	draft-ietf-dnsind-tsig-xx.txt
+    NXT		RFC 2535
+    EID		[Patton] (was draft-ietf-nimrod-dns-xx.txt)
+    NIMLOC	[Patton] (was draft-ietf-nimrod-dns-xx.txt)
+    ATMA	[Dobrowski] (ftp://ftp.atmforum.com/pub/approved-specs/af-saa-0069.000.pdf)
+    KX		RFC 2230
+    CERT	RFC 2358
+    A6		RFC 2874
+    DNAME	RFC 2672
+    SINK	[Eastlake]
+    OPT		RFC 2671
+    UINFO	[IANA-Reserved]
+    UID		[IANA-Reserved]
+    GID		[IANA-Reserved]
+    UNSPEC	[IANA-Reserved]
+    TKEY	RFC 2930
+    IXFR	RFC 1995
+    MAILB	RFC 1035
+    MAILA	RFC 1035
 
 * Fix the TXT RR to handle more than 1 string in the RDATA section
   (RFC 1035, Section 3.3.14).
@@ -177,4 +398,4 @@ To Do list for Net::DNS
   or possibly going back to using Dave Shield's resparse library.
 
 ---
-$Id: TODO,v 1.12 1997/10/02 05:35:14 mfuhr Exp $
+$Id: TODO,v 1.17 2001/02/07 05:10:53 mfuhr Exp mfuhr $

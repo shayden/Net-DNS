@@ -1,4 +1,4 @@
-# $Id: 03-question.t,v 1.2 1997/03/28 02:34:57 mfuhr Exp $
+# $Id: 03-question.t,v 1.3 2000/11/19 06:10:19 mfuhr Exp mfuhr $
 
 BEGIN { $| = 1; print "1..5\n"; }
 END {print "not ok 1\n" unless $loaded;}
@@ -8,11 +8,11 @@ use Net::DNS;
 $loaded = 1;
 print "ok 1\n";
 
-$domain = "foo.com";
+$domain = "example.com";
 $type   = "MX";
 $class  = "IN";
 
-$question = new Net::DNS::Question($domain, $type, $class);
+$question = Net::DNS::Question->new($domain, $type, $class);
 print "not " unless defined($question);
 print "ok 2\n";
 

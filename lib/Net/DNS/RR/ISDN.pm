@@ -1,6 +1,6 @@
 package Net::DNS::RR::ISDN;
 
-# $Id: ISDN.pm,v 1.6 1997/07/06 16:31:54 mfuhr Exp $
+# $Id: ISDN.pm,v 1.7 2000/11/19 06:04:02 mfuhr Exp mfuhr $
 
 use strict;
 use vars qw(@ISA);
@@ -111,9 +111,9 @@ Returns the RR's subaddress field.
 
 =head1 COPYRIGHT
 
-Copyright (c) 1997 Michael Fuhr.  All rights reserved.  This program is free
-software; you can redistribute it and/or modify it under the same terms as
-Perl itself. 
+Copyright (c) 1997-1998 Michael Fuhr.  All rights reserved.  This
+program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself. 
 
 =head1 SEE ALSO
 

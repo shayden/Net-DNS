@@ -1,4 +1,4 @@
-# $Id: 05-rr.t,v 1.2 1997/07/06 16:41:37 mfuhr Exp $
+# $Id: 05-rr.t,v 1.3 2000/11/19 06:12:12 mfuhr Exp mfuhr $
 
 BEGIN { $| = 1; print "1..202\n"; }
 END {print "not ok 1\n" unless $loaded;}
@@ -12,7 +12,7 @@ print "ok 1\n";
 # Canned data.
 #------------------------------------------------------------------------------
 
-$name			= "foo.bar.com";
+$name			= "foo.example.com";
 $class			= "IN";
 $ttl			= 43200;
 
@@ -21,9 +21,9 @@ $a_address		= "10.0.0.1";
 $aaaa_address		= "102:304:506:708:90a:b0c:d0e:ff10";
 
 $afsdb_subtype		= 1;
-$afsdb_hostname		= "afsdb-hostname.bar.com";
+$afsdb_hostname		= "afsdb-hostname.example.com";
 
-$cname_cname		= "cname-cname.bar.com";
+$cname_cname		= "cname-cname.example.com";
 
 # EID
 
@@ -41,28 +41,28 @@ $loc_latitude		= 2001683648;
 $loc_longitude		= 1856783648;
 $loc_altitude		= 9997600;
 
-$mb_madname		= "mb-madname.bar.com";
+$mb_madname		= "mb-madname.example.com";
 
-$mg_mgmname		= "mg-mgmname.bar.com";
+$mg_mgmname		= "mg-mgmname.example.com";
 
-$minfo_rmailbx		= "minfo-rmailbx.bar.com";
-$minfo_emailbx		= "minfo-emailbx.bar.com";
+$minfo_rmailbx		= "minfo-rmailbx.example.com";
+$minfo_emailbx		= "minfo-emailbx.example.com";
 
-$mr_newname		= "mr-newname.bar.com";
+$mr_newname		= "mr-newname.example.com";
 
 $mx_preference		= 10;
-$mx_exchange		= "mx-exchange.bar.com";
+$mx_exchange		= "mx-exchange.example.com";
 
 $naptr_order		= 100;
 $naptr_preference	= 10;
 $naptr_flags		= "naptr-flags";
 $naptr_service		= "naptr-service";
 $naptr_regexp		= "naptr-regexp";
-$naptr_replacement	= "naptr-replacement.bar.com";
+$naptr_replacement	= "naptr-replacement.example.com";
 
 # NIMLOC
 
-$ns_nsdname		= "ns-nsdname.bar.com";
+$ns_nsdname		= "ns-nsdname.example.com";
 
 $nsap_afi		= "47";
 $nsap_idi		= "0005";
@@ -75,20 +75,20 @@ $nsap_sel		= "00";
 
 # NULL
 
-$ptr_ptrdname		= "ptr-ptrdname.bar.com";
+$ptr_ptrdname		= "ptr-ptrdname.example.com";
 
 $px_preference		= 10;
-$px_map822		= "px-map822.bar.com";
-$px_mapx400		= "px-mapx400.bar.com";
+$px_map822		= "px-map822.example.com";
+$px_mapx400		= "px-mapx400.example.com";
 
-$rp_mbox		= "rp-mbox.bar.com";
-$rp_txtdname		= "rp-txtdname.bar.com";
+$rp_mbox		= "rp-mbox.example.com";
+$rp_txtdname		= "rp-txtdname.example.com";
 
 $rt_preference		= 10;
-$rt_intermediate	= "rt-intermediate.bar.com";
+$rt_intermediate	= "rt-intermediate.example.com";
 
-$soa_mname		= "soa-mname.bar.com";
-$soa_rname		= "soa-rname.bar.com";
+$soa_mname		= "soa-mname.example.com";
+$soa_rname		= "soa-rname.example.com";
 $soa_serial		= 12345;
 $soa_refresh		= 7200;
 $soa_retry		= 3600;
@@ -98,7 +98,7 @@ $soa_minimum		= 86400;
 $srv_priority		= 1;
 $srv_weight		= 2;
 $srv_port		= 3;
-$srv_target		= "srv-target.bar.com";
+$srv_target		= "srv-target.example.com";
 
 $txt_txtdata		= "txt-txtdata";
 
@@ -108,26 +108,26 @@ $x25_psdn		= 123456789;
 # Create the packet.
 #------------------------------------------------------------------------------
 
-$packet = new Net::DNS::Packet($name);
+$packet = Net::DNS::Packet->new($name);
 print "not " unless defined $packet;
 print "ok 2\n";
 
 # answer[0]
-$packet->push("answer", new Net::DNS::RR(
+$packet->push("answer", Net::DNS::RR->new(
 	Name	=> $name,
 	Type	=> "A",
 	TTL	=> $ttl,
 	Address	=> $a_address));
 
 # answer[1]
-$packet->push("answer", new Net::DNS::RR(
+$packet->push("answer", Net::DNS::RR->new(
 	Name	=> $name,
 	Type	=> "AAAA",
 	TTL	=> $ttl,
 	Address	=> $aaaa_address));
 
 # answer[2]
-$packet->push("answer", new Net::DNS::RR(
+$packet->push("answer", Net::DNS::RR->new(
 	Name	 => $name,
 	Type	 => "AFSDB",
 	TTL	 => $ttl,
@@ -135,14 +135,14 @@ $packet->push("answer", new Net::DNS::RR(
 	Hostname => $afsdb_hostname));
 
 # answer[3]
-$packet->push("answer", new Net::DNS::RR(
+$packet->push("answer", Net::DNS::RR->new(
 	Name	=> $name,
 	Type	=> "CNAME",
 	TTL	=> $ttl,
 	Cname	=> $cname_cname));
 
 # answer[4]
-$packet->push("answer", new Net::DNS::RR(
+$packet->push("answer", Net::DNS::RR->new(
 	Name	=> $name,
 	Type	=> "HINFO",
 	TTL	=> $ttl,
@@ -150,7 +150,7 @@ $packet->push("answer", new Net::DNS::RR(
 	OS	=> $hinfo_os));
 
 # answer[5]
-$packet->push("answer", new Net::DNS::RR(
+$packet->push("answer", Net::DNS::RR->new(
 	Name	=> $name,
 	Type	=> "ISDN",
 	TTL	=> $ttl,
@@ -158,21 +158,21 @@ $packet->push("answer", new Net::DNS::RR(
 	SA	=> $isdn_sa));
 
 # answer[6]
-$packet->push("answer", new Net::DNS::RR(
+$packet->push("answer", Net::DNS::RR->new(
 	Name	=> $name,
 	Type	=> "MB",
 	TTL	=> $ttl,
 	Madname	=> $mb_madname));
 
 # answer[7]
-$packet->push("answer", new Net::DNS::RR(
+$packet->push("answer", Net::DNS::RR->new(
 	Name	=> $name,
 	Type	=> "MG",
 	TTL	=> $ttl,
 	Mgmname	=> $mg_mgmname));
 
 # answer[8]
-$packet->push("answer", new Net::DNS::RR(
+$packet->push("answer", Net::DNS::RR->new(
 	Name	=> $name,
 	Type	=> "MINFO",
 	TTL	=> $ttl,
@@ -180,14 +180,14 @@ $packet->push("answer", new Net::DNS::RR(
 	Emailbx	=> $minfo_emailbx));
 
 # answer[9]
-$packet->push("answer", new Net::DNS::RR(
+$packet->push("answer", Net::DNS::RR->new(
 	Name	=> $name,
 	Type	=> "MR",
 	TTL	=> $ttl,
 	Newname	=> $mr_newname));
 
 # answer[10]
-$packet->push("answer", new Net::DNS::RR(
+$packet->push("answer", Net::DNS::RR->new(
 	Name	   => $name,
 	Type	   => "MX",
 	TTL	   => $ttl,
@@ -195,7 +195,7 @@ $packet->push("answer", new Net::DNS::RR(
 	Exchange   => $mx_exchange));
 
 # answer[11]
-$packet->push("answer", new Net::DNS::RR(
+$packet->push("answer", Net::DNS::RR->new(
 	Name	    => $name,
 	Type	    => "NAPTR",
 	TTL	    => $ttl,
@@ -207,14 +207,14 @@ $packet->push("answer", new Net::DNS::RR(
 	Replacement => $naptr_replacement));
 
 # answer[12]
-$packet->push("answer", new Net::DNS::RR(
+$packet->push("answer", Net::DNS::RR->new(
 	Name	=> $name,
 	Type	=> "NS",
 	TTL	=> $ttl,
 	Nsdname	=> $ns_nsdname));
 
 # answer[13]
-$packet->push("answer", new Net::DNS::RR(
+$packet->push("answer", Net::DNS::RR->new(
 	Name	=> $name,
 	Type	=> "NSAP",
 	TTL	=> $ttl,
@@ -228,14 +228,14 @@ $packet->push("answer", new Net::DNS::RR(
 	Sel	=> $nsap_sel));
 
 # answer[14]
-$packet->push("answer", new Net::DNS::RR(
+$packet->push("answer", Net::DNS::RR->new(
 	Name	 => $name,
 	Type	 => "PTR",
 	TTL	 => $ttl,
 	Ptrdname => $ptr_ptrdname));
 
 # answer[15]
-$packet->push("answer", new Net::DNS::RR(
+$packet->push("answer", Net::DNS::RR->new(
 	Name	   => $name,
 	Type	   => "PX",
 	TTL	   => $ttl,
@@ -244,7 +244,7 @@ $packet->push("answer", new Net::DNS::RR(
 	MapX400	   => $px_mapx400));
 
 # answer[16]
-$packet->push("answer", new Net::DNS::RR(
+$packet->push("answer", Net::DNS::RR->new(
 	Name	 => $name,
 	Type	 => "RP",
 	TTL	 => $ttl,
@@ -252,7 +252,7 @@ $packet->push("answer", new Net::DNS::RR(
 	Txtdname => $rp_txtdname));
 
 # answer[17]
-$packet->push("answer", new Net::DNS::RR(
+$packet->push("answer", Net::DNS::RR->new(
 	Name	     => $name,
 	Type	     => "RT",
 	TTL	     => $ttl,
@@ -260,7 +260,7 @@ $packet->push("answer", new Net::DNS::RR(
 	Intermediate => $rt_intermediate));
 
 # answer[18]
-$packet->push("answer", new Net::DNS::RR(
+$packet->push("answer", Net::DNS::RR->new(
 	Name	=> $name,
 	Type	=> "SOA",
 	TTL	=> $ttl,
@@ -273,7 +273,7 @@ $packet->push("answer", new Net::DNS::RR(
 	Minimum	=> $soa_minimum));
 
 # answer[19]
-$packet->push("answer", new Net::DNS::RR(
+$packet->push("answer", Net::DNS::RR->new(
 	Name	 => $name,
 	Type	 => "SRV",
 	TTL	 => $ttl,
@@ -283,21 +283,21 @@ $packet->push("answer", new Net::DNS::RR(
 	Target	 => $srv_target));
 
 # answer[20]
-$packet->push("answer", new Net::DNS::RR(
+$packet->push("answer", Net::DNS::RR->new(
 	Name	=> $name,
 	Type	=> "TXT",
 	TTL	=> $ttl,
 	Txtdata	=> $txt_txtdata));
 
 # answer[21]
-$packet->push("answer", new Net::DNS::RR(
+$packet->push("answer", Net::DNS::RR->new(
 	Name	=> $name,
 	Type	=> "X25",
 	TTL	=> $ttl,
 	PSDN	=> $x25_psdn));
 
 # answer[22]
-$packet->push("answer", new Net::DNS::RR(
+$packet->push("answer", Net::DNS::RR->new(
 	Name      => $name,
 	Type      => "LOC",
 	TTL       => $ttl,
@@ -318,7 +318,7 @@ print "not " unless defined $data;
 print "ok 3\n";
 
 undef $packet;
-$packet = new Net::DNS::Packet(\$data);
+$packet = Net::DNS::Packet->new(\$data);
 print "not " unless defined $packet;
 print "ok 4\n";
 
@@ -349,7 +349,7 @@ print "ok 10\n";
 print "not " unless $rr->address eq $a_address;
 print "ok 11\n";
 
-$rr2 = new Net::DNS::RR($rr->string);
+$rr2 = Net::DNS::RR->new($rr->string);
 print "not " unless $rr2->string eq $rr->string;
 print "ok 12\n";
 
@@ -376,7 +376,7 @@ print "ok 17\n";
 print "not " unless $rr->address eq $aaaa_address;
 print "ok 18\n";
 
-$rr2 = new Net::DNS::RR($rr->string);
+$rr2 = Net::DNS::RR->new($rr->string);
 print "not " unless $rr2->string eq $rr->string;
 print "ok 19\n";
 
@@ -406,7 +406,7 @@ print "ok 25\n";
 print "not " unless $rr->hostname eq $afsdb_hostname;
 print "ok 26\n";
 
-$rr2 = new Net::DNS::RR($rr->string);
+$rr2 = Net::DNS::RR->new($rr->string);
 print "not " unless $rr2->string eq $rr->string;
 print "ok 27\n";
 
@@ -433,7 +433,7 @@ print "ok 32\n";
 print "not " unless $rr->cname eq $cname_cname;
 print "ok 33\n";
 
-$rr2 = new Net::DNS::RR($rr->string);
+$rr2 = Net::DNS::RR->new($rr->string);
 print "not " unless $rr2->string eq $rr->string;
 print "ok 34\n";
 
@@ -463,7 +463,7 @@ print "ok 40\n";
 print "not " unless $rr->os eq $hinfo_os;
 print "ok 41\n";
 
-$rr2 = new Net::DNS::RR($rr->string);
+$rr2 = Net::DNS::RR->new($rr->string);
 print "not " unless $rr2->string eq $rr->string;
 print "ok 42\n";
 
@@ -493,7 +493,7 @@ print "ok 48\n";
 print "not " unless $rr->sa eq $isdn_sa;
 print "ok 49\n";
 
-$rr2 = new Net::DNS::RR($rr->string);
+$rr2 = Net::DNS::RR->new($rr->string);
 print "not " unless $rr2->string eq $rr->string;
 print "ok 50\n";
 
@@ -520,7 +520,7 @@ print "ok 55\n";
 print "not " unless $rr->madname eq $mb_madname;
 print "ok 56\n";
 
-$rr2 = new Net::DNS::RR($rr->string);
+$rr2 = Net::DNS::RR->new($rr->string);
 print "not " unless $rr2->string eq $rr->string;
 print "ok 57\n";
 
@@ -547,7 +547,7 @@ print "ok 62\n";
 print "not " unless $rr->mgmname eq $mg_mgmname;
 print "ok 63\n";
 
-$rr2 = new Net::DNS::RR($rr->string);
+$rr2 = Net::DNS::RR->new($rr->string);
 print "not " unless $rr2->string eq $rr->string;
 print "ok 64\n";
 
@@ -577,7 +577,7 @@ print "ok 70\n";
 print "not " unless $rr->emailbx eq $minfo_emailbx;
 print "ok 71\n";
 
-$rr2 = new Net::DNS::RR($rr->string);
+$rr2 = Net::DNS::RR->new($rr->string);
 print "not " unless $rr2->string eq $rr->string;
 print "ok 72\n";
 
@@ -604,7 +604,7 @@ print "ok 77\n";
 print "not " unless $rr->newname eq $mr_newname;
 print "ok 78\n";
 
-$rr2 = new Net::DNS::RR($rr->string);
+$rr2 = Net::DNS::RR->new($rr->string);
 print "not " unless $rr2->string eq $rr->string;
 print "ok 79\n";
 
@@ -634,7 +634,7 @@ print "ok 85\n";
 print "not " unless $rr->exchange eq $mx_exchange;
 print "ok 86\n";
 
-$rr2 = new Net::DNS::RR($rr->string);
+$rr2 = Net::DNS::RR->new($rr->string);
 print "not " unless $rr2->string eq $rr->string;
 print "ok 87\n";
 
@@ -676,7 +676,7 @@ print "ok 97\n";
 print "not " unless $rr->replacement eq $naptr_replacement;
 print "ok 98\n";
 
-$rr2 = new Net::DNS::RR($rr->string);
+$rr2 = Net::DNS::RR->new($rr->string);
 print "not " unless $rr2->string eq $rr->string;
 print "ok 99\n";
 
@@ -703,7 +703,7 @@ print "ok 104\n";
 print "not " unless $rr->nsdname eq $ns_nsdname;
 print "ok 105\n";
 
-$rr2 = new Net::DNS::RR($rr->string);
+$rr2 = Net::DNS::RR->new($rr->string);
 print "not " unless $rr2->string eq $rr->string;
 print "ok 106\n";
 
@@ -751,7 +751,7 @@ print "ok 118\n";
 print "not " unless $rr->sel eq $nsap_sel;
 print "ok 119\n";
 
-# $rr2 = new Net::DNS::RR($rr->string);
+# $rr2 = Net::DNS::RR->new($rr->string);
 # print "not " unless $rr2->string eq $rr->string;
 print "ok 120\n";
 
@@ -778,7 +778,7 @@ print "ok 125\n";
 print "not " unless $rr->ptrdname eq $ptr_ptrdname;
 print "ok 126\n";
 
-$rr2 = new Net::DNS::RR($rr->string);
+$rr2 = Net::DNS::RR->new($rr->string);
 print "not " unless $rr2->string eq $rr->string;
 print "ok 127\n";
 
@@ -811,7 +811,7 @@ print "ok 134\n";
 print "not " unless $rr->mapx400 eq $px_mapx400;
 print "ok 135\n";
 
-$rr2 = new Net::DNS::RR($rr->string);
+$rr2 = Net::DNS::RR->new($rr->string);
 print "not " unless $rr2->string eq $rr->string;
 print "ok 136\n";
 
@@ -841,7 +841,7 @@ print "ok 142\n";
 print "not " unless $rr->txtdname eq $rp_txtdname;
 print "ok 143\n";
 
-$rr2 = new Net::DNS::RR($rr->string);
+$rr2 = Net::DNS::RR->new($rr->string);
 print "not " unless $rr2->string eq $rr->string;
 print "ok 144\n";
 
@@ -871,7 +871,7 @@ print "ok 150\n";
 print "not " unless $rr->intermediate eq $rt_intermediate;
 print "ok 151\n";
 
-$rr2 = new Net::DNS::RR($rr->string);
+$rr2 = Net::DNS::RR->new($rr->string);
 print "not " unless $rr2->string eq $rr->string;
 print "ok 152\n";
 
@@ -916,7 +916,7 @@ print "ok 163\n";
 print "not " unless $rr->minimum == $soa_minimum;
 print "ok 164\n";
 
-$rr2 = new Net::DNS::RR($rr->string);
+$rr2 = Net::DNS::RR->new($rr->string);
 print "not " unless $rr2->string eq $rr->string;
 print "ok 165\n";
 
@@ -952,7 +952,7 @@ print "ok 173\n";
 print "not " unless $rr->target eq $srv_target;
 print "ok 174\n";
 
-$rr2 = new Net::DNS::RR($rr->string);
+$rr2 = Net::DNS::RR->new($rr->string);
 print "not " unless $rr2->string eq $rr->string;
 print "ok 175\n";
 
@@ -979,7 +979,7 @@ print "ok 180\n";
 print "not " unless $rr->txtdata eq $txt_txtdata;
 print "ok 181\n";
 
-$rr2 = new Net::DNS::RR($rr->string);
+$rr2 = Net::DNS::RR->new($rr->string);
 print "not " unless $rr2->string eq $rr->string;
 print "ok 182\n";
 
@@ -1006,7 +1006,7 @@ print "ok 187\n";
 print "not " unless $rr->psdn eq $x25_psdn;
 print "ok 188\n";
 
-$rr2 = new Net::DNS::RR($rr->string);
+$rr2 = Net::DNS::RR->new($rr->string);
 print "not " unless $rr2->string eq $rr->string;
 print "ok 189\n";
 
@@ -1051,6 +1051,6 @@ print "ok 200\n";
 print "not " unless $rr->altitude == $loc_altitude;
 print "ok 201\n";
 
-$rr2 = new Net::DNS::RR($rr->string);
+$rr2 = Net::DNS::RR->new($rr->string);
 print "not " unless $rr2->string eq $rr->string;
 print "ok 202\n";

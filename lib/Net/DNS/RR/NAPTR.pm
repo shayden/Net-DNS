@@ -1,6 +1,6 @@
 package Net::DNS::RR::NAPTR;
 
-# $Id: NAPTR.pm,v 1.5 1997/09/20 21:16:14 mfuhr Exp $
+# $Id: NAPTR.pm,v 1.6 2000/11/19 06:04:45 mfuhr Exp mfuhr $
 
 use strict;
 use vars qw(@ISA);
@@ -163,9 +163,9 @@ Returns the replacement field.
 
 =head1 COPYRIGHT
 
-Copyright (c) 1997 Michael Fuhr.  All rights reserved.  This program is free
-software; you can redistribute it and/or modify it under the same terms as
-Perl itself. 
+Copyright (c) 1997-1998 Michael Fuhr.  All rights reserved.  This
+program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself. 
 
 B<Net::DNS::RR::NAPTR> is based on code contributed by Ryan Moats.
 

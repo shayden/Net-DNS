@@ -1,6 +1,6 @@
 package Net::DNS::RR::TXT;
 
-# $Id: TXT.pm,v 1.5 1997/07/06 16:31:54 mfuhr Exp $
+# $Id: TXT.pm,v 1.6 2000/11/19 06:07:41 mfuhr Exp mfuhr $
 
 use strict;
 use vars qw(@ISA);
@@ -79,9 +79,9 @@ Returns the descriptive text.
 
 =head1 COPYRIGHT
 
-Copyright (c) 1997 Michael Fuhr.  All rights reserved.  This program is free
-software; you can redistribute it and/or modify it under the same terms as
-Perl itself. 
+Copyright (c) 1997-1998 Michael Fuhr.  All rights reserved.  This
+program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself. 
 
 =head1 SEE ALSO
 

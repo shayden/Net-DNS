@@ -1,0 +1,39 @@
+#!/usr/local/bin/perl -w
+# $Id: time-query,v 1.1 2000/11/10 16:05:48 mfuhr Exp mfuhr $
+
+use Net::DNS;
+use IO::Socket;
+use IO::Select;
+use Time::HiRes qw(gettimeofday);
+use Getopt::Std;
+use strict;
+
+use constant DEFAULT_TIMEOUT => 30;
+
+my %opt;
+getopts("t:", \%opt);
+die "Usage: $0 [ -t timeout ] nameserver query-name\n" unless @ARGV == 2;
+my ($nameserver, $query) = @ARGV;
+my $timeout = $opt{"t"} || DEFAULT_TIMEOUT;
+
+my $packet = Net::DNS::Packet->new($query)->data;
+
+my $sock = IO::Socket::INET->new(
+    "PeerAddr" => $nameserver,
+    "PeerPort" => "53",
+    "Proto"    => "udp",
+);
+
+my $sel = IO::Select->new($sock);
+
+my $start = gettimeofday;
+$sock->send($packet);
+my @ready = $sel->can_read($timeout);
+my $end = gettimeofday;
+
+if (@ready) {
+    printf "%.3f  %s\n", ($end - $start), $nameserver;
+}
+else {
+    print "timeout  $nameserver\n";
+}

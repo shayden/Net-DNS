@@ -1,4 +1,4 @@
-# $Id: 06-update.t,v 1.2 1997/07/05 17:47:06 mfuhr Exp $
+# $Id: 06-update.t,v 1.3 2000/11/19 06:12:50 mfuhr Exp mfuhr $
 
 BEGIN { $| = 1; print "1..65\n"; }
 END {print "not ok 1\n" unless $loaded;}
@@ -17,8 +17,8 @@ sub is_empty {
 # Canned data.
 #------------------------------------------------------------------------------
 
-$zone	= "bar.com";
-$name	= "foo.bar.com";
+$zone	= "example.com";
+$name	= "foo.example.com";
 $class	= "HS";
 $class2 = "CH";
 $type	= "A";
@@ -29,7 +29,7 @@ $rdata	= "10.1.2.3";
 # Packet creation.
 #------------------------------------------------------------------------------
 
-$packet = new Net::DNS::Update($zone, $class);
+$packet = Net::DNS::Update->new($zone, $class);
 print "not " unless $packet;
 print "ok 2\n";
 
@@ -257,7 +257,7 @@ print "ok 60\n";
 # the class is NONE or ANY.
 #------------------------------------------------------------------------------
 
-$packet = new Net::DNS::Update($zone, $class);
+$packet = Net::DNS::Update->new($zone, $class);
 print "not " unless $packet;
 print "ok 61\n";
 

@@ -1,5 +1,5 @@
 #!/usr/local/bin/perl -w
-# $Id: check_soa,v 1.5 1997/10/02 05:00:51 mfuhr Exp $
+# $Id: check_soa,v 1.7 2000/11/10 16:01:21 mfuhr Exp mfuhr $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ answer authoritatively.
 The original Bourne Shell and C versions were printed in
 I<DNS and BIND> by Paul Albitz & Cricket Liu.
 
-This Perl version was written by Michael Fuhr.
+This Perl version was written by Michael Fuhr <mike@fuhr.org>.
 
 =head1 SEE ALSO
 
@@ -32,24 +32,25 @@ L<perl(1)>, L<axfr>, L<check_zone>, L<mresolv>, L<mx>, L<perldig>, L<Net::DNS>
 use File::Basename;
 use Net::DNS::Resolver;
 use Net::DNS::RR;
+use strict;
 
 #------------------------------------------------------------------------------
 # Get the domain from the command line.
 #------------------------------------------------------------------------------
 
 die "Usage: ", basename($0), " domain\n" unless @ARGV == 1;
-($domain) = @ARGV;
+my ($domain) = @ARGV;
 
 #------------------------------------------------------------------------------
 # Find all the nameservers for the domain.
 #------------------------------------------------------------------------------
 
-$res = new Net::DNS::Resolver;
+my $res = Net::DNS::Resolver->new;
 
 $res->defnames(0);
 $res->retry(2);
 
-$ns_req = $res->query($domain, "NS");
+my $ns_req = $res->query($domain, "NS");
 die "No nameservers found for $domain: ", $res->errorstring, "\n"
 	unless defined($ns_req) and ($ns_req->header->ancount > 0);
 
@@ -60,13 +61,13 @@ die "No nameservers found for $domain: ", $res->errorstring, "\n"
 $res->recurse(0);
 $| = 1;
 
-foreach $nsrr (grep {$_->type eq "NS" } $ns_req->answer) {
+foreach my $nsrr (grep {$_->type eq "NS" } $ns_req->answer) {
 
 	#----------------------------------------------------------------------
 	# Set the resolver to query this nameserver.
 	#----------------------------------------------------------------------
 
-	$ns = $nsrr->nsdname;
+	my $ns = $nsrr->nsdname;
 	print "$ns ";
 
 	unless ($res->nameservers($ns)) {
@@ -74,12 +75,14 @@ foreach $nsrr (grep {$_->type eq "NS" } $ns_req->answer) {
 		next;
 	}
 
+	print "(", join(" ", $res->nameservers), ") ";
+
 	#----------------------------------------------------------------------
 	# Get the SOA record.
 	#----------------------------------------------------------------------
 
-	$packet = new Net::DNS::Packet($domain, "SOA", "IN");
-	$soa_req = $res->send($packet);
+	my $packet = Net::DNS::Packet->new($domain, "SOA", "IN");
+	my $soa_req = $res->send($packet);
 	unless (defined($soa_req)) {
 		warn ": ", $res->errorstring, "\n";
 		next;
@@ -90,7 +93,15 @@ foreach $nsrr (grep {$_->type eq "NS" } $ns_req->answer) {
 	#----------------------------------------------------------------------
 
 	unless ($soa_req->header->aa) {
-		warn "isn't authoritative for $domain\n";
+		print STDERR "isn't authoritative for $domain";
+
+		if ($soa_req->header->ancount >= 1 &&
+		   ($soa_req->answer)[0]->type eq "SOA") {
+			print STDERR " (has SOA, serial = ",
+		                     ($soa_req->answer)[0]->serial, ")";
+		}
+
+		print "\n";
 		next;
 	}
 
