@@ -1,6 +1,16 @@
 Revision history for Net::DNS
 =============================
 
+*** 0.07  19 Apr 1997
+
+Added an empty DESTROY method to Header.pm, Question.pm, Resolver.pm,
+and RR.pm.  A couple of users have reported that Net::DNS dies because
+AUTOLOAD gets called for DESTROY methods but doesn't handle them.
+I haven't been able to reproduce this problem under Perl 5.003.
+
+Changed Net::DNS::Resolver->nameservers to accept unqualified hostnames.
+
+
 *** 0.06  2 Apr 1997
 
 Fixed Net::DNS::Resolver->nameservers to accept CNAME RRs if the
@@ -67,4 +77,4 @@ memory management.
 
 ---
 Michael Fuhr <mfuhr@dimensional.com>
-$Id: Changes,v 1.5 1997/04/03 06:28:15 mfuhr Exp $
+$Id: Changes,v 1.6 1997/04/19 17:51:33 mfuhr Exp $

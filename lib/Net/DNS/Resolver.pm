@@ -66,7 +66,7 @@ use IO::Socket;
 use Net::DNS;
 use Net::DNS::Packet;
 
-# $Id: Resolver.pm,v 1.7 1997/04/03 06:31:35 mfuhr Exp $
+# $Id: Resolver.pm,v 1.8 1997/04/19 17:48:49 mfuhr Exp $
 $VERSION = $Net::DNS::VERSION;
 
 #------------------------------------------------------------------------------
@@ -119,6 +119,12 @@ sub new {
 	my $self = { %default };
 	return bless $self, $class;
 }
+
+#
+# Some people have reported that Net::DNS dies because AUTOLOAD picks up
+# calls to DESTROY.
+#
+sub DESTROY {}
 
 sub res_init {
 	read_config($resolv_conf) if (-f $resolv_conf) and (-r $resolv_conf);
@@ -264,10 +270,25 @@ sub nameservers {
 				push(@a, $ns);
 			}
 			else {
-				my $packet = $defres->query($ns);
+				my @names;
+
+				if ($ns !~ /\./) {
+					if (defined $defres->searchlist) {
+						@names = map { $ns . "." . $_ }
+							    $defres->searchlist;
+					}
+					elsif (defined $defres->domain) {
+						@names = ($ns . "." . $defres->domain);
+					}
+				}
+				else {
+					@names = ($ns);
+				}
+
+				my $packet = $defres->search($ns);
 				$self->errorstring($defres->errorstring);
 				if (defined($packet)) {
-					push @a, cname_addr($ns, $packet);
+					push @a, cname_addr([@names], $packet);
 				}
 			}
 		}
@@ -278,15 +299,16 @@ sub nameservers {
 }
 
 sub cname_addr {
-	my $name = shift;
+	my $names = shift;
 	my $packet = shift;
 	my $rr;
 	my @addr;
+	my @names = @{$names};
 
 	foreach $rr ($packet->answer) {
-		next unless $rr->name eq $name;
+		next unless grep {$rr->name} @names;
 		if ($rr->type eq "CNAME") {
-			$name = $rr->cname;
+			@names = ($rr->cname);
 		}
 		elsif ($rr->type eq "A") {
 			push @addr, $rr->address;

@@ -5,7 +5,7 @@ use vars qw($VERSION $AUTOLOAD);
 
 use Net::DNS;
 
-# $Id: RR.pm,v 1.4 1997/04/03 06:32:02 mfuhr Exp $
+# $Id: RR.pm,v 1.5 1997/04/19 17:48:07 mfuhr Exp $
 $VERSION = $Net::DNS::VERSION;
 
 =head1 NAME
@@ -65,6 +65,12 @@ sub new {
 
 	return $retval;
 }
+
+#
+# Some people have reported that Net::DNS dies because AUTOLOAD picks up
+# calls to DESTROY.
+#
+sub DESTROY {}
 
 =head2 print
 

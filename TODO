@@ -1,6 +1,8 @@
 To Do list for Net::DNS
 =======================
 
+Get rid of "eval" in RR.pm.
+
 Handle "host is down" error in Resolver.pm.
 
 Net::DNS::Packet->data currently returns only header and question section
@@ -28,4 +30,4 @@ Consider providing an .xs file for those who wish to link against
 libresolv instead of using the entirely-Perl resolver.
 
 ---
-$Id: TODO,v 1.6 1997/03/28 02:32:58 mfuhr Exp $
+$Id: TODO,v 1.7 1997/04/19 17:50:51 mfuhr Exp $
