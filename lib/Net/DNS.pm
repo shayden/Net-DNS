@@ -195,8 +195,8 @@ use Net::DNS::Header;
 use Net::DNS::Question;
 use Net::DNS::RR;
 
-# $Id: DNS.pm,v 1.9 1997/04/19 17:51:57 mfuhr Exp $
-$VERSION = "0.07";
+# $Id: DNS.pm,v 1.10 1997/05/13 15:02:47 mfuhr Exp $
+$VERSION = "0.08";
 
 %typesbyname= (
 	"A"		=> 1,		# RFC 1035, Section 3.4.1

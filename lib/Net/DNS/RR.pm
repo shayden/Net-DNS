@@ -5,7 +5,7 @@ use vars qw($VERSION $AUTOLOAD);
 
 use Net::DNS;
 
-# $Id: RR.pm,v 1.5 1997/04/19 17:48:07 mfuhr Exp $
+# $Id: RR.pm,v 1.6 1997/05/13 15:03:29 mfuhr Exp $
 $VERSION = $Net::DNS::VERSION;
 
 =head1 NAME
@@ -31,6 +31,7 @@ use Net::DNS::RR::AFSDB;
 use Net::DNS::RR::CNAME;
 use Net::DNS::RR::HINFO;
 use Net::DNS::RR::ISDN;
+use Net::DNS::RR::LOC;
 use Net::DNS::RR::MG;
 use Net::DNS::RR::MINFO;
 use Net::DNS::RR::MR;

@@ -1,6 +1,8 @@
 To Do list for Net::DNS
 =======================
 
+Check query IDs.
+
 Get rid of "eval" in RR.pm.
 
 Handle "host is down" error in Resolver.pm.
@@ -12,7 +14,7 @@ Improve the error handling and reporting.
 
 Implement TCP queries.
 
-Add DNS Dynamic Updates.
+Add DNS Dynamic Updates (RFC 2136).
 
 Add more RR types.
 
@@ -30,4 +32,4 @@ Consider providing an .xs file for those who wish to link against
 libresolv instead of using the entirely-Perl resolver.
 
 ---
-$Id: TODO,v 1.7 1997/04/19 17:50:51 mfuhr Exp $
+$Id: TODO,v 1.8 1997/05/13 15:05:29 mfuhr Exp $

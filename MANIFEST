@@ -18,6 +18,7 @@ lib/Net/DNS/RR/AFSDB.pm
 lib/Net/DNS/RR/CNAME.pm
 lib/Net/DNS/RR/HINFO.pm
 lib/Net/DNS/RR/ISDN.pm
+lib/Net/DNS/RR/LOC.pm
 lib/Net/DNS/RR/MG.pm
 lib/Net/DNS/RR/MINFO.pm
 lib/Net/DNS/RR/MR.pm
