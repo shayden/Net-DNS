@@ -5,7 +5,7 @@ use vars qw($VERSION $AUTOLOAD);
 
 use Net::DNS;
 
-# $Id: RR.pm,v 1.3 1997/02/02 08:32:59 mfuhr Exp $
+# $Id: RR.pm,v 1.4 1997/04/03 06:32:02 mfuhr Exp $
 $VERSION = $Net::DNS::VERSION;
 
 =head1 NAME
@@ -71,18 +71,32 @@ sub new {
     $rrobj->print;
 
 Prints the record to the standard output.  Calls the
-B<rdatastr> method to get the RR-specific data.
+B<string> method to get the RR's string representation.
 
 =cut
 
 sub print {
 	my $self = shift;
-	print $self->{"name"}, ".\t",
-	      $self->{"ttl"}, "\t",
-	      $self->{"class"}, "\t",
-	      $self->{"type"}, "\t",
-	      $self->rdatastr,
-	      "\n";
+	print $self->string, "\n";
+}
+
+=head2 string
+
+    print $rrobj->string, "\n";
+
+Returns a string representation of the RR.  Calls the
+B<rdatastr> method to get the RR-specific data.
+
+=cut
+
+sub string {
+	my $self = shift;
+
+	return $self->{"name"}  . ".\t" .
+	       $self->{"ttl"}   . "\t"  .
+	       $self->{"class"} . "\t"  .
+	       $self->{"type"}  . "\t"  .
+	       $self->rdatastr;
 }
 
 =head2 rdatastr
@@ -129,7 +143,14 @@ sub AUTOLOAD {
 	my $self = shift;
 	my $name = $AUTOLOAD;
 	$name =~ s/.*://;
-	Carp::confess "$name: no such method" unless exists $self->{$name};
+
+	unless (exists $self->{$name}) {
+		Carp::confess "ERROR: no such method \"$name\" for the " .
+			      "following RR.\nPlease check your RR types " .
+			      "and call appropriate methods.\n\n" .
+			      $self->string . "\n\nDied";
+	}
+
 	return $self->{$name};
 }
 

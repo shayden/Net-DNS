@@ -66,7 +66,7 @@ use IO::Socket;
 use Net::DNS;
 use Net::DNS::Packet;
 
-# $Id: Resolver.pm,v 1.6 1997/03/28 02:22:23 mfuhr Exp $
+# $Id: Resolver.pm,v 1.7 1997/04/03 06:31:35 mfuhr Exp $
 $VERSION = $Net::DNS::VERSION;
 
 #------------------------------------------------------------------------------
@@ -267,7 +267,7 @@ sub nameservers {
 				my $packet = $defres->query($ns);
 				$self->errorstring($defres->errorstring);
 				if (defined($packet)) {
-					push(@a, ($packet->answer)[0]->address);
+					push @a, cname_addr($ns, $packet);
 				}
 			}
 		}
@@ -275,6 +275,24 @@ sub nameservers {
 	}
 
 	return @{$self->{"nameservers"}};
+}
+
+sub cname_addr {
+	my $name = shift;
+	my $packet = shift;
+	my $rr;
+	my @addr;
+
+	foreach $rr ($packet->answer) {
+		next unless $rr->name eq $name;
+		if ($rr->type eq "CNAME") {
+			$name = $rr->cname;
+		}
+		elsif ($rr->type eq "A") {
+			push @addr, $rr->address;
+		}
+	}
+	return @addr;
 }
 
 =head2 search

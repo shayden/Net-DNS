@@ -1,4 +1,4 @@
-# $Id: Makefile.PL,v 1.2 1997/02/03 05:14:51 mfuhr Exp $
+# $Id: Makefile.PL,v 1.3 1997/04/03 06:28:30 mfuhr Exp $
 
 # Check for required modules.  This stolen from libwww.
 $| = 1;
@@ -8,7 +8,7 @@ my $missing_modules = 0;
 print "Checking for IO::Socket.";
 eval {
     require IO::Socket;
-    IO::Socket->require_version('1.13');
+    IO::Socket->require_version('1.15');
 };
 if ($@) {
     print " failed\n";

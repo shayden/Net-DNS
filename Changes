@@ -1,6 +1,20 @@
 Revision history for Net::DNS
 =============================
 
+*** 0.06  2 Apr 1997
+
+Fixed Net::DNS::Resolver->nameservers to accept CNAME RRs if the
+corresponding A RR is found in the answer section.  This should
+eliminate some of the "address: no such method" errors that have
+been reported.
+
+Added the "string" method to Net::DNS::RR.
+
+Added a more descriptive error to Net::DNS::RR::AUTOLOAD.  This
+error is printed if you call a method that doesn't exist for
+a particular RR type.
+
+
 *** 0.05  27 Mar 1997
 
 Fixed Net::DNS::Resolver->nameservers to accept IP addresses.  Was
@@ -53,4 +67,4 @@ memory management.
 
 ---
 Michael Fuhr <mfuhr@dimensional.com>
-$Id: Changes,v 1.4 1997/03/28 02:33:57 mfuhr Exp $
+$Id: Changes,v 1.5 1997/04/03 06:28:15 mfuhr Exp $
