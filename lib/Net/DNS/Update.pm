@@ -6,7 +6,7 @@ use vars qw($VERSION);
 use Net::DNS;
 # use Net::DNS::Packet;
 
-# $Id: Update.pm,v 1.2 1997/07/06 16:35:47 mfuhr Exp $
+# $Id: Update.pm,v 1.3 1997/10/02 05:28:05 mfuhr Exp $
 $VERSION = $Net::DNS::VERSION;
 
 =head1 NAME
@@ -30,6 +30,7 @@ used to maintain a production nameserver.
 
 =head2 new
 
+    $packet = new Net::DNS::Update;
     $packet = new Net::DNS::Update("foo.com");
     $packet = new Net::DNS::Update("foo.com", "HS");
 
@@ -41,8 +42,9 @@ Section 2.3).
 Programs must use the C<push> method to add RRs to the prerequisite,
 update, and additional sections before performing the update.
 
-Arguments are the zone name and the class.  If omitted, the class
-defaults to IN.
+Arguments are the zone name and the class.  If the zone is omitted,
+the default domain will be taken from the resolver configuration.
+If the class is omitted, it defaults to IN.
 
 Future versions of C<Net::DNS> may provide a simpler interface
 for making dynamic updates.
@@ -53,6 +55,12 @@ sub new {
 	shift;
 	my ($zone, $class) = @_;
 	my ($type, $packet);
+
+	unless ($zone) {
+		my $res = new Net::DNS::Resolver;
+		$zone = ($res->searchlist)[0];
+		return unless $zone;
+	}
 
 	$type  = "SOA";
 	$class = "IN" unless defined $class;

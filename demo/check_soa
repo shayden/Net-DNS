@@ -1,5 +1,5 @@
 #!/usr/local/bin/perl -w
-# $Id: check_soa,v 1.4 1997/06/29 04:44:26 mfuhr Exp $
+# $Id: check_soa,v 1.5 1997/10/02 05:00:51 mfuhr Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ This Perl version was written by Michael Fuhr.
 
 =head1 SEE ALSO
 
-L<perl(1)>, L<axfr>, L<check_zone>, L<mx>, L<perldig>, L<Net::DNS>
+L<perl(1)>, L<axfr>, L<check_zone>, L<mresolv>, L<mx>, L<perldig>, L<Net::DNS>
 
 =cut
 

@@ -51,6 +51,13 @@ Perl Archive Network (CPAN) or from the author's homepage:
     http://www.perl.org/CPAN/modules/by-module/Net/
     http://www.dimensional.com/~mfuhr/perldns/
 
+The following links will redirect your browser to the current
+released version and the current working (i.e., not released)
+version, respectively:
+
+    http://www.dimensional.com/~mfuhr/perldns/Net-DNS-release.tar.gz
+    http://www.dimensional.com/~mfuhr/perldns/Net-DNS-current.tar.gz
+
 
 3. PREREQUISITES
 ----------------
@@ -207,4 +214,4 @@ mfuhr@dimensional.com
 http://www.dimensional.com/~mfuhr/
 
 ----
-$Id: README,v 1.8 1997/07/06 16:42:47 mfuhr Exp $
+$Id: README,v 1.9 1997/10/02 05:35:28 mfuhr Exp $

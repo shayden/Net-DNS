@@ -1,5 +1,5 @@
 package Net::DNS;
-# $Id: DNS.pm,v 1.13 1997/07/06 16:40:25 mfuhr Exp $
+# $Id: DNS.pm,v 1.14 1997/10/02 05:32:53 mfuhr Exp $
 
 use strict;
 use vars qw(
@@ -16,7 +16,7 @@ use vars qw(
 	%rcodesbyval
 );
 
-$VERSION = "0.11";
+$VERSION = "0.12";
 
 use Net::DNS::Resolver;
 use Net::DNS::Packet;
@@ -64,7 +64,7 @@ require Exporter;
 	"NIMLOC"	=> 32,		# draft-ietf-nimrod-dns-xx.txt
 	"SRV"		=> 33,		# RFC 2052
 	"ATMA"		=> 34,		# ???
-	"NAPTR"		=> 35,		# draft-ietf-urn-naptr-xx.txt
+	"NAPTR"		=> 35,		# RFC 2168
 	"TSIG"		=> 36,		# draft-ietf-dnsind-tsig-xx.txt
 	"UINFO"		=> 100,		# non-standard
 	"UID"		=> 101,		# non-standard
@@ -467,22 +467,27 @@ for the answer.
 has arrived.
 
   use Net::DNS;
-  $res = new Net::DNS::Resolver;
-  $socket = $res->bgsend("foo.bar.com");
-  $rin = "";
-  vec($rin, $socket->fileno, 1) = 1;
-  # Add more descriptors to $rin if desired.
+  use IO::Select;
   $timeout = 5;
-  $nfound = select($rout=$rin, undef, undef, $timeout);
-  if ($nfound < 1) {
-      print "timed out after $timeout seconds\n";
-  }
-  elsif (vec($rout, $socket->fileno, 1) == 1) {
-      $packet = $res->bgread($socket);
-      $packet->print;
+  $res = new Net::DNS::Resolver;
+  $bgsock = $res->bgsend("foo.bar.com");
+  $sel = new IO::Select($bgsock);
+  # Add more sockets to $sel if desired.
+  @ready = $sel->can_read($timeout);
+  if (@ready) {
+      foreach $sock (@ready) {
+          if ($sock == $bgsock) {
+              $packet = $res->bgread($bgsock);
+              $packet->print;
+              $bgsock = undef;
+          }
+	  # Check for the other sockets.
+	  $sel->remove($sock);
+	  $sock = undef;
+      }
   }
   else {
-      # Check for the other descriptors.
+      print "timed out after $timeout seconds\n";
   }
 
 =head1 BUGS

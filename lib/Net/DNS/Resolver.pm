@@ -63,10 +63,11 @@ use vars qw(
 use Carp;
 use Socket;
 use IO::Socket;
+use IO::Select;
 use Net::DNS;
 use Net::DNS::Packet;
 
-# $Id: Resolver.pm,v 1.11 1997/07/06 16:36:08 mfuhr Exp $
+# $Id: Resolver.pm,v 1.12 1997/10/02 05:29:08 mfuhr Exp $
 $VERSION = $Net::DNS::VERSION;
 
 #------------------------------------------------------------------------------
@@ -81,7 +82,7 @@ push(@confpath, ".");
 
 %default = (
 	"nameservers"	=> ["127.0.0.1"],
-	"port"		=> "domain(53)",
+	"port"		=> "53",
 	"domain"	=> "",
 	"searchlist"	=> [],
 	"retrans"	=> 5,
@@ -96,15 +97,12 @@ push(@confpath, ".");
 	"errorstring"	=> "unknown error or no error",
 	"answerfrom"    => "",
 	"answersize"    => 0,
+	"tcp_timeout"   => 120,
 );
 
 %global = (
 	"id"		=> int(rand(65535)),
 );
-
-BEGIN {
-	srand(time ^ ($$ + ($$ << 15)));
-}
 
 =head2 new
 
@@ -168,7 +166,11 @@ sub read_config {
 			};
 
 			/^\s*nameserver\s+(.*)/ && do {
-				push(@ns, split(" ", $1));
+				my $ns;
+				foreach $ns (split(" ", $1)) {
+					$ns = "0.0.0.0" if $ns eq "0";
+					push @ns, $ns;
+				}
 				last SWITCH;
 			};
 		}
@@ -224,10 +226,12 @@ sub string {
 	my $self = shift;
 
 	return	";; RESOLVER state:\n"				.
-		";;  domain      = $self->{domain}\n"		.
-		";;  searchlist  = @{$self->{searchlist}}\n"	.
-		";;  nameservers = @{$self->{nameservers}}\n"	.
-		";;  port        = $self->{port}\n"		.
+		";;  domain       = $self->{domain}\n"		.
+		";;  searchlist   = @{$self->{searchlist}}\n"	.
+		";;  nameservers  = @{$self->{nameservers}}\n"	.
+		";;  port         = $self->{port}\n"		.
+		";;  tcp_timeout  = " .
+		(defined $self->{"tcp_timeout"} ? $self->{"tcp_timeout"} : "indefinite") . "\n" .
 		";;  retrans  = $self->{retrans}  "		.
 		"retry    = $self->{retry}\n"			.
 		";;  usevc    = $self->{usevc}  "		.
@@ -284,8 +288,9 @@ sub nameservers {
 		my @a;
 		my $ns;
 		foreach $ns (@_) {
-			if ($ns =~ /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/) {
-				push(@a, $ns);
+			#if ($ns =~ /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/) {
+			if ($ns =~ /^\d+(\.\d+){0,3}$/) {
+				push @a, ($ns eq "0") ? "0.0.0.0" : $ns;
 			}
 			else {
 				my @names;
@@ -489,6 +494,132 @@ was an error.
 
 sub send {
 	my $self = shift;
+	my $packet = $self->make_query_packet(@_);
+	my $packet_data = $packet->data;
+
+	my $ans;
+
+	if ($self->{"usevc"} || length $packet_data > &Net::DNS::PACKETSZ) {
+		$ans = $self->send_tcp($packet, $packet_data);
+	}
+	else {
+		$ans = $self->send_udp($packet, $packet_data);
+
+		if ($ans && $ans->header->tc && !$self->{"igntc"}) {
+			print ";;\n;; packet truncated: retrying using TCP\n"
+				if $self->{"debug"};
+			$ans = $self->send_tcp($packet, $packet_data);
+		}
+	}
+
+	return $ans;
+}
+
+sub send_tcp {
+	my ($self, $packet, $packet_data) = @_;
+
+	unless (@{$self->{"nameservers"}}) {
+		$self->{"errorstring"} = "no nameservers";
+		print ";; ERROR: no nameservers\n" if $self->{"debug"};
+		return;
+	}
+
+	$self->errorstring($default{"errorstring"});
+	my $timeout = $self->{"tcp_timeout"};
+
+	my $ns;
+	foreach $ns (@{$self->{"nameservers"}}) {
+		# IO::Socket carps on errors if Perl's -w flag is turned on.
+		# Uncomment the next two lines and the line following the "new"
+		# call to turn off these messages.
+
+		my $old_wflag = $^W;
+		$^W = 0;
+
+		print ";; send_tcp($ns:", $self->{"port"}, ")\n"
+			if $self->{"debug"};
+
+		my $sock = IO::Socket::INET->new(PeerAddr => $ns,
+				                 PeerPort => $self->{"port"},
+				                 Proto    => "tcp",
+						 Timeout  => $timeout);
+		$^W = $old_wflag;
+
+		unless ($sock) {
+			$self->errorstring("connection failed");
+			print ";; ERROR: connection failed\n"
+				if $self->{"debug"};
+			next;
+		}
+
+		my $lenmsg = pack("n", length($packet_data));
+		print ";; sending ", length($packet_data), " bytes\n"
+			if $self->{"debug"};
+
+		unless ($sock->send($lenmsg)) {
+			$self->errorstring($!);
+			print ";; ERROR: length send failed: $!\n"
+				if $self->{"debug"};
+			next;
+		}
+
+		unless ($sock->send($packet_data)) {
+			$self->errorstring($!);
+			print ";; ERROR: data send failed: $!\n"
+				if $self->{"debug"};
+			next;
+		}
+
+		my $sel = new IO::Select($sock);
+		if ($sel->can_read($timeout)) {
+			my $buf = read_tcp($sock, &Net::DNS::INT16SZ);
+			next unless length($buf);
+			my ($len) = unpack("n", $buf);
+			next unless $len;
+
+			unless ($sel->can_read($timeout)) {
+				$self->errorstring("timeout");
+				print ";; TIMEOUT\n" if $self->{"debug"};
+				next;
+			}
+
+			$buf = read_tcp($sock, $len);
+
+			$self->answerfrom($sock->peerhost);
+			$self->answersize(length $buf);
+
+			print ";; received ", length($buf), " bytes\n"
+				if $self->{"debug"};
+
+			unless (length($buf) == $len) {
+				$self->errorstring("expected $len bytes, " .
+						   "received " . length($buf));
+				next;
+			}
+
+			my ($ans, $err) = new Net::DNS::Packet(\$buf, $self->{"debug"});
+			if (defined $ans) {
+				$self->errorstring($ans->header->rcode);
+				$ans->answerfrom($self->answerfrom);
+				$ans->answersize($self->answersize);
+			}
+			elsif (defined $err) {
+				$self->errorstring($err);
+			}
+
+			return $ans;
+		}
+		else {
+			$self->errorstring("timeout");
+			next;
+		}
+	}
+
+	return;
+}
+
+sub send_udp {
+	my ($self, $packet, $packet_data) = @_;
 	my $retrans = $self->{"retrans"};
 	my $timeout = $retrans;
 	my ($ns, @ns);
@@ -496,24 +627,27 @@ sub send {
 
 	$self->errorstring($default{"errorstring"});
 
-	my $packet = $self->make_query_packet(@_);
-	my $packet_data = $packet->data;
+	# IO::Socket carps on errors if Perl's -w flag is turned on.
+	# Uncomment the next two lines and the line following the "new"
+	# call to turn off these messages.
 
-	if (length $packet_data > &Net::DNS::PACKETSZ) {
-		$self->errorstring("request packet too large");
-		return undef;
-	}
+	my $old_wflag = $^W;
+	$^W = 0;
 
-	@ns = map {
+	@ns = grep { $_ } map {
 		IO::Socket::INET->new(PeerAddr => $_,
 				      PeerPort => $self->{"port"},
 				      Proto    => "udp");
 	} @{$self->{"nameservers"}};
 
-	unless (defined(@ns) && @ns) {
+	$^W = $old_wflag;
+
+	unless (@ns) {
 		$self->errorstring("no nameservers");
-		return undef;
+		return;
 	}
+
+	my $sel = new IO::Select(@ns);
 
 	# Perform each round of retries.
 	for ($i = 0;
@@ -523,66 +657,59 @@ sub send {
 		$timeout = 1 if ($timeout < 1);
 
 		# Try each nameserver.
-		foreach $ns (@ns) {
-			print ";; send(", $ns->peerhost, ":", $ns->peerport, ")\n"
+		foreach $ns ($sel->handles) {
+			print ";; send_udp(", $ns->peerhost, ":", $ns->peerport, ")\n"
 				if $self->{"debug"};
 
-			# Failure here needs to be more graceful.
-			my $rin = $self->select_vec(@ns);
-			$ns->send($packet_data) or Carp::confess "send: $!";
-
-			my $rout;
-			select($rout=$rin, undef, undef, $timeout);
-
-			# If one of the nameservers answered, which was it?
-			my $ns2;
-			my $j = 0;
-			foreach $ns2 (@ns) {
-				if (vec($rout, $ns2->fileno, 1) == 1) {
-					my $buf = "";
-					if ($ns2->recv($buf, &Net::DNS::PACKETSZ)) {
-						$self->answerfrom($ns2->peerhost);
-						$self->answersize(length $buf);
-						print ";; answer from ",
-						      $ns2->peerhost, ":",
-						      $ns2->peerport, " : ",
-						      length($buf), " bytes\n"
-							if $self->{"debug"};
-						my ($ans, $err) = new Net::DNS::Packet(\$buf, $self->{"debug"});
-						if (defined $ans) {
-							next unless $ans->header->qr == 1;
-							next unless $ans->header->id == $packet->header->id;
-							$self->errorstring($ans->header->rcode);
-							$ans->answerfrom($self->answerfrom);
-							$ans->answersize($self->answersize);
-						}
-						elsif (defined $err) {
-							$self->errorstring($err);
-						}
-						return $ans;
-					}
-					else {
-						$self->errorstring($!);
-						print ";; ERROR(",
-						      $ns[$j]->peerhost, ":",
-						      $ns[$j]->peerport, "): ",
-						      $self->errorstring, "\n"
-							if $self->{"debug"};
-
-						# Delete this nameserver.
-						splice(@ns, $j, 1);
-						return undef unless @ns;
-					}
-				}
+			unless ($ns->send($packet_data)) {
+				print ";; send error: $!\n" if $self->{"debug"};
+				$sel->remove($ns);
+				next;
 			}
-			continue {
-				++$j;
+
+			my @ready = $sel->can_read($timeout);
+
+			my $ready;
+			foreach $ready (@ready) {
+				my $buf = "";
+				if ($ready->recv($buf, &Net::DNS::PACKETSZ)) {
+					$self->answerfrom($ready->peerhost);
+					$self->answersize(length $buf);
+					print ";; answer from ",
+					      $ready->peerhost, ":",
+					      $ready->peerport, " : ",
+					      length($buf), " bytes\n"
+						if $self->{"debug"};
+					my ($ans, $err) = new Net::DNS::Packet(\$buf, $self->{"debug"});
+					if (defined $ans) {
+						next unless $ans->header->qr;
+						next unless $ans->header->id == $packet->header->id;
+						$self->errorstring($ans->header->rcode);
+						$ans->answerfrom($self->answerfrom);
+						$ans->answersize($self->answersize);
+					}
+					elsif (defined $err) {
+						$self->errorstring($err);
+					}
+					return $ans;
+				}
+				else {
+					$self->errorstring($!);
+					print ";; recv ERROR(",
+					      $ready->peerhost, ":",
+					      $ready->peerport, "): ",
+					      $self->errorstring, "\n"
+						if $self->{"debug"};
+
+					$sel->remove($ready);
+					return unless $sel->handles;
+				}
 			}
 		}
 	}
 
 	$self->errorstring("query timed out");
-	return undef;
+	return;
 }
 
 =head2 bgsend
@@ -605,14 +732,18 @@ then an appropriate PTR query will be performed.
 
 Returns an C<IO::Socket> object.  The program must determine when
 the socket is ready for reading and call C<$res>->C<bgread> to get
-the response packet.  You can use C<$res>->C<bgisready> to find out
-if the socket is ready, or you can use C<vec> and the socket's C<fileno>
-method to add the socket's file descriptor to a bitmask for C<select>.
+the response packet.  You can use C<$res>->C<bgisready> or C<IO::Select>
+to find out if the socket is ready before reading it.
 
 =cut
 
 sub bgsend {
 	my $self = shift;
+
+	unless (@{$self->{"nameservers"}}) {
+		$self->errorstring("no nameservers");
+		return;
+	}
 
 	$self->errorstring($default{"errorstring"});
 	my $packet = $self->make_query_packet(@_);
@@ -622,22 +753,35 @@ sub bgsend {
 					 PeerPort => $self->{"port"},
 					 Proto    => "udp");
 
+	unless ($sock) {
+		$self->errorstring("couldn't get socket");
+		return;
+	}
+
 	print ";; bgsend(", $ns->peerhost, ":", $ns->peerport, ")\n"
 		if $self->{"debug"};
 
-	# Failure here needs to be more graceful.
-	$sock->send($packet->data) or Carp::confess "send: $!";
+	unless ($sock->send($packet->data)) {
+		my $err = $!;
+		print ";; send ERROR($ns): $err\n";
+		$self->errorstring($err);
+		return;
+	}
+
 	return $sock;
 }
 
 =head2 bgread
 
     $packet = $res->bgread($socket);
+    undef $socket;
 
 Reads the answer from a background query (see L</bgsend>).  The argument
 is an C<IO::Socket> object returned by C<bgsend>.
 
 Returns a C<Net::DNS::Packet> object or C<undef> on error.
+
+The programmer should close or destroy the socket object after reading it.
 
 =cut
 
@@ -651,6 +795,7 @@ sub bgread {
 		print ";; answer from ", $sock->peerhost, ":",
 		      $sock->peerport, " : ", length($buf), " bytes\n"
 			if $self->{"debug"};
+
 		my ($ans, $err) = new Net::DNS::Packet(\$buf, $self->{"debug"});
 		if (defined $ans) {
 			$self->errorstring($ans->header->rcode);
@@ -662,7 +807,7 @@ sub bgread {
 	}
 	else {
 		$self->errorstring($!);
-		return undef;
+		return;
 	}
 }
 
@@ -673,6 +818,7 @@ sub bgread {
 	# do some other processing
     }
     $packet = $res->bgread($socket);
+    $socket = undef;
 
 Determines whether a socket is ready for reading.  The argument is
 an C<IO::Socket> object returned by C<$res>->C<bgsend>.
@@ -683,10 +829,9 @@ Returns true if the socket is ready, false if not.
 
 sub bgisready {
 	my $self = shift;
-	my $rin = $self->select_vec(@_);
-	my $rout;
-	my $nfound = select($rout=$rin, undef, undef, 0.0);
-	return $nfound > 0;
+	my $sel = new IO::Select(@_);
+	my @ready = $sel->can_read(0.0);
+	return @ready > 0;
 }
 
 sub make_query_packet {
@@ -717,23 +862,15 @@ sub make_query_packet {
 	return $packet;
 }
 
-sub select_vec {
-	my $self = shift;
-
-	my $retval = "";
-	foreach (@_) {
-		vec($retval, $_->fileno, 1) = 1;
-	}
-	return $retval;
-}
-
 =head2 axfr
 
+    @zone = $res->axfr;
     @zone = $res->axfr("foo.com");
     @zone = $res->axfr("passwd.foo.com", "HS");
 
 Performs a zone transfer from the first nameserver listed in C<nameservers>.
-The record class can be omitted; it defaults to IN.
+If the zone is omitted, it defaults to the first zone listed in the resolver's
+search list.  If the class is omitted, it defaults to IN.
 
 Returns a list of C<Net::DNS::RR> objects, or C<undef> if the zone
 transfer failed.
@@ -741,19 +878,39 @@ transfer failed.
 The redundant SOA record that terminates the zone transfer is not
 returned to the caller.
 
+Here's an example that uses a timeout:
+
+    $res->tcp_timeout(10);
+    @zone = $res->axfr("foo.com");
+    if (@zone) {
+        foreach $rr (@zone) {
+            $rr->print;
+        }
+    }
+    else {
+        print "Zone transfer failed: ", $res->errorstring, "\n";
+    }
+
 =cut
 
 sub axfr {
 	my $self = shift;
 	my ($dname, $class) = @_;
+	$dname ||= $self->{"searchlist"}->[0];
 	$class ||= "IN";
+
+	unless ($dname) {
+		print ";; ERROR: axfr: no zone specified\n" if $self->{"debug"};
+		$self->{"errorstring"} = "no zone";
+		return;
+	}
 
 	print ";; axfr($dname, $class)\n" if $self->{"debug"};
 
 	unless (@{$self->{"nameservers"}}) {
 		$self->{"errorstring"} = "no nameservers";
 		print ";; ERROR: no nameservers\n" if $self->{"debug"};
-		return ();
+		return;
 	}
 
 	my $packet = new Net::DNS::Packet($dname, "AXFR", $class);
@@ -766,39 +923,68 @@ sub axfr {
 	# Uncomment the next two lines and the line following the "new"
 	# call to turn off these messages.
 
-	# my $old_wflag = $^W;
-	# $^W = 0;
+	my $old_wflag = $^W;
+	$^W = 0;
 
 	my $sock = new IO::Socket::INET(PeerAddr => $ns,
 					PeerPort => $self->{"port"},
-					Proto    => "tcp");
+					Proto    => "tcp",
+					Timeout  => $self->{"tcp_timeout"});
 
-	# $^W = $old_wflag;
+	$^W = $old_wflag;
 
-	unless (defined($sock)) {
+	unless ($sock) {
 		$self->errorstring("couldn't connect");
-		return ();
+		return;
 	}
 
 	my $lenmsg = pack("n", length($data));
-	$sock->send($lenmsg) or Carp::confess "send: $!";
-	$sock->send($data)   or Carp::confess "send: $!";
+
+	unless ($sock->send($lenmsg)) {
+		$self->errorstring($!);
+		return;
+	}
+
+	unless ($sock->send($data)) {
+		$self->errorstring($!);
+		return;
+	}
+
+	my $sel = new IO::Select;
+	$sel->add($sock);
 
 	my @zone;
 	my $soa_count = 0;
+	my $timeout = $self->{"tcp_timeout"};
+
 	while (1) {
+		my @ready = $sel->can_read($timeout);
+		unless (@ready) {
+			$self->errorstring("timeout");
+			return;
+		}
+
 		my $buf = read_tcp($sock, &Net::DNS::INT16SZ);
 		last unless length($buf);
 		my ($len) = unpack("n", $buf);
 		last unless $len;
+
+		@ready = $sel->can_read($timeout);
+		unless (@ready) {
+			$self->errorstring("timeout");
+			return;
+		}
 
 		$buf = read_tcp($sock, $len);
 
 		print ";; received ", length($buf), " bytes\n"
 			if $self->{"debug"};
 
-		Carp::confess "expected $len bytes, received " . length($buf)
-			if length($buf) != $len;
+		unless (length($buf) == $len) {
+			$self->errorstring("expected $len bytes, " .
+					   "received " . length($buf));
+			return;
+		}
 
 		my ($ans, $err) = new Net::DNS::Packet(\$buf, $self->{"debug"});
 
@@ -846,9 +1032,17 @@ sub read_tcp {
 	return $buf;
 }
 
+=head2 tcp_timeout
+
+    print "TCP timeout: ", $res->tcp_timeout, "\n";
+    $res->tcp_timeout(10);
+
+Get or set the TCP timeout in seconds.  A timeout of C<undef> means
+indefinite.  The default is 120 seconds (2 minutes).
+
 =head2 retrans
 
-    print "retrans interval", $res->retrans, "\n";
+    print "retrans interval: ", $res->retrans, "\n";
     $res->retrans(3);
 
 Get or set the retransmission interval.  The default is 5.
@@ -894,7 +1088,7 @@ Get or set the debug flag.  If set, calls to B<search>, B<query>,
 and B<send> will print debugging information on the standard output.
 The default is false.
 
-=head2 usevc (not yet implemented)
+=head2 usevc
 
     print "usevc flag: ", $res->usevc, "\n";
     $res->usevc(1);
@@ -903,7 +1097,7 @@ Get or set the usevc flag.  If true, then queries will be performed
 using virtual circuits (TCP) instead of datagrams (UDP).  The default
 is false.
 
-=head2 igntc (not yet implemented)
+=head2 igntc
 
     print "igntc flag: ", $res->igntc, "\n";
     $res->igntc(1);
@@ -996,9 +1190,7 @@ take values are specified as I<option>:I<value>.
 
 =head1 BUGS
 
-TCP queries are not yet implemented.
-
-Error reporting needs to be improved.
+Error reporting and handling needs to be improved.
 
 =head1 COPYRIGHT
 

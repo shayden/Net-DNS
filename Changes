@@ -1,6 +1,76 @@
 Revision history for Net::DNS
 =============================
 
+*** 0.12  1 Oct 1997
+
+Implemented TCP queries.  UDP is still the default, but you can
+make TCP the default by setting $res->usevc(1).  If the response
+to a UDP query has the truncated flag set ($query->header->tc),
+the query will be retried using TCP; you can turn off this behavior
+by setting $res->igntc(1).  This has been on my TODO list for a
+long time -- thanks to T.P. Brisco for inspiring me to finally add
+it.
+
+Added $res->tcp_timeout to set the timeout for TCP queries, including
+zone transfers.  Suggested by Stan Barber and finally added after
+a question about timeouts from Jerzy Kedra.
+
+Changed Net::DNS::Resolver->send to be a front-end to either send_udp
+or send_tcp, as appropriate.
+
+Added a check to Net::DNS::Resolver->send_udp to make sure the
+socket objects really were created.  Failure to make this check
+was causing Net::DNS to die with errors like "Can't call method
+'peerhost' without a package or object reference" or "Can't call
+method 'fileno' without a package or object reference" if the socket
+creation had failed.  Problem noted by John Line, David Topper,
+and Timothy Zakamaldin.
+
+Changed some of the code in Resolver.pm to use IO::Select instead
+of select().  Also changed one of the examples in DNS.pm to use
+IO::Select.
+
+Added "sub class" to RR.pm instead of using AUTOLOAD for it.
+Apparently some versions of Perl, specifically the 5.003_07 release
+included with some Linux distributions, would return the class an
+object was blessed into instead of the RR's class.  This fix should
+work around the problem.  Problem noted by John Line.
+
+Added a check for a nameserver of "0" and convert it to "0.0.0.0".
+Inspired in part by a report from David Mazieres.
+
+Changed Net::DNS::Update->new to use the default domain if none
+is specified.  Inspired by a question from KrisJon Hanson.
+
+Changed Net::DNS::Resolver->axfr to use the default domain if none
+is specified.
+
+In the documentation for Net::DNS::Resolver->bgread, mentioned that
+the programmer should close or destroy the socket object after reading
+from it.  Suggested by Kouichirou Eto.
+
+Removed an "srand" command from the Net::DNS::Resolver initialization
+code.  Decided it wasn't appropriate for the module to do.
+
+Added the "-q" option to demo/axfr to make zone transfers quiet
+(don't print the zone's resource records).
+
+Wrote demo/mresolv as a demonstration of performing multiple
+background queries simultaneously.
+
+Replaced contrib/loc2earth.cgi with loc2earth.fcgi.  Contributed by
+Christopher Davis.
+
+Added contrib/check_zone, a hacked version of demo/check_zone.
+Contributed by Dennis Glatting.
+
+Added contrib/DNSHash.pm, a module to implement DNS lookups as a
+tied hash.  Contributed by Dave Hayes.
+
+Added contrib/dnswalk.README to mention Dave Barr's dnswalk, which
+now uses Net::DNS.
+
+
 *** 0.11  6 Jul 1997
 
 Net::DNS::RR->new now allows the programmer to create RR objects
@@ -225,4 +295,4 @@ memory management.
 
 ---
 Michael Fuhr <mfuhr@dimensional.com>
-$Id: Changes,v 1.10 1997/07/06 16:43:21 mfuhr Exp $
+$Id: Changes,v 1.11 1997/10/02 05:34:51 mfuhr Exp $

@@ -1,7 +1,53 @@
 To Do list for Net::DNS
 =======================
 
+* Work on Resolver.pm:
+
+  - Add a method to set the query source port.
+
+  - Add an optional argument to Net::DNS::Resolver->new to read a
+    specific configuration file instead of using the default files.
+
+  - Accept options in resolver config files.
+
+  - Show more info about the query when $res->debug(1).
+
+  - Work on a way to use the same socket for background queries.
+
+  - Write $res->axfr_start, $res->axfr_next.
+
+  - Document $res->errorstring messages.
+
+  - Work on efficiency of IO::Socket handling.
+
+  - Implement AAONLY queries.  Here's a code fragment to set the
+    nameserver list to the hosts returned in the authority section:
+
+	  $res->nameservers(map  { $_->nsdname }
+	                    grep { $_->type eq "NS" }
+		            $ans->authority);
+
+* Work on the manual pages:
+
+  - Review the examples in the Net::DNS manual page.
+
+  - Make "->" non-breaking.
+
+  - Reorganize to put the most frequently-used methods first.  Suggested
+    by John Line.
+
+  - Add manual pages for individual RR types to the homepage.
+
+* Consider using function prototypes.
+
+* Get rid of .* in AAAA.pm; write more tests for AAAA.pm.
+
+* Allow Net::DNS::RR::LOC->latlon to set the lat/lon.
+
 * Work on the dynamic update code.  Some things remaining to do:
+
+  - Append the default zone in update packets if the name doesn't
+    contain a dot.
 
   - Add the "new_from_string" method to the following RR types:
 
@@ -24,16 +70,11 @@ To Do list for Net::DNS
   - Do case-insensitive comparisons in Net::DNS::Packet->dn_comp.
 
 * Consider getting rid of the "; no data" string from $rr->rdatastr.  Add
-  it possibly in $rr->string;
-
-* Implement AAONLY queries.  Here's a code fragment to set the
-  nameserver list to the hosts returned in the authority section:
-
-	$res->nameservers(map { $_->nsdname }
-	                  grep { $_->type eq "NS" }
-		          $ans->authority);
+  it possibly in $rr->string.
 
 * Improve the error handling and reporting.  Some things to do:
+
+  - Get rid of Carp::confess as many places as possible.
 
   - Make sure empty RDATA sections don't cause the program to print
     the obnoxious "no such method" warning.
@@ -56,14 +97,6 @@ To Do list for Net::DNS
   - Net::DNS::Packet->dn_expand (get rid of the recursive call).
 
   - Passing of references between Net::DNS::Packet and Net::DNS::RR.
-
-* Implement TCP queries.  Things to change once this is ready:
-
-  - Change the code checking for packet size in Net::DNS::Resolver->send.
-
-  - Use TCP by default if $res->usevc is true.
-
-  - Retry truncated UDP responses using TCP if $res->igntc is false.
 
 * Add more RR types.  Currently unimplemented are:
 
@@ -88,30 +121,48 @@ To Do list for Net::DNS
   BIND 8.1-REL doesn't appear to implement EID or NIMLOC (perhaps
   via dynamic update?).
 
-* Accept options in resolver config files.
-
 * Write some front-end methods to do CNAME translations automagically.
 
-* Write more demo scripts.
+* Work on demo scripts:
+
+  - Add a copyright notice to the demo scripts.
+
+  - Work on demo/axfr:
+
+    * Add a print statement to tell whether the zone info comes from
+      a file or a zone transfer.
+
+  - Work on demo/srv (not included with the distribution).  Remaining
+    to do:
+
+    * Documentation.  Don't forget to add a reference to it in the other
+      demo scripts.
+
+    * Consider adding "sub srv" to DNS.pm.
+
+    * Add to the Changes file.
 
   - Work on nsupdate.pl (not included with the distribution) and add it
     to the demo directory.  Remaining to do:
 
-    o Write documentation.
+    * Write documentation.
 
-    o Make it more robust.
+    * Make it more robust.
 
   - Work on dns.cgi (not included with the distribution) and add it to
     the demo directory.  Some things remaining to do:
 
-    o Check for HTTP_USER_AGENT in zone transfers.
+    * Check for HTTP_USER_AGENT in zone transfers.
 
-    o Add a way to change resolver settings.  Edit do_axfr and remove
+    * Add a way to change resolver settings.  Edit do_axfr and remove
       the query for the zone's nameservers when this is finished.
 
-    o Add support for dynamic updates.
+    * Add support for dynamic updates.
 
   - Consider writing a simple nameserver with Net::DNS.
+
+* Do more study of resolver behavior as recommended in RFCs 1035, 1123,
+  and 2136.
 
 * Add some text- and html-specific sections to the manual pages.
 
@@ -126,4 +177,4 @@ To Do list for Net::DNS
   or possibly going back to using Dave Shield's resparse library.
 
 ---
-$Id: TODO,v 1.11 1997/07/06 16:42:23 mfuhr Exp $
+$Id: TODO,v 1.12 1997/10/02 05:35:14 mfuhr Exp $

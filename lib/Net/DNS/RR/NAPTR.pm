@@ -1,6 +1,6 @@
 package Net::DNS::RR::NAPTR;
 
-# $Id: NAPTR.pm,v 1.4 1997/07/06 16:31:54 mfuhr Exp $
+# $Id: NAPTR.pm,v 1.5 1997/09/20 21:16:14 mfuhr Exp $
 
 use strict;
 use vars qw(@ISA);
@@ -173,6 +173,6 @@ B<Net::DNS::RR::NAPTR> is based on code contributed by Ryan Moats.
 
 L<perl(1)>, L<Net::DNS>, L<Net::DNS::Resolver>, L<Net::DNS::Packet>,
 L<Net::DNS::Header>, L<Net::DNS::Question>, L<Net::DNS::RR>,
-draft-ietf-urn-naptr-I<xx>.txt
+RFC 2168
 
 =cut

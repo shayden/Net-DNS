@@ -1,4 +1,4 @@
-# $Id: Makefile.PL,v 1.4 1997/07/06 16:43:35 mfuhr Exp $
+# $Id: Makefile.PL,v 1.5 1997/09/19 04:11:28 mfuhr Exp $
 
 # Check for required modules (borrowed from libwww).
 $| = 1;
@@ -16,7 +16,7 @@ if ($@) {
 
 ERROR: $@
 IO::Socket is required but wasn't found.  You must install the IO-1.15
-module to use Net::DNS.
+module (or a newer version) to use Net::DNS.
 
 AMEN
 }

@@ -6,7 +6,7 @@ use vars qw($VERSION $AUTOLOAD);
 use Carp;
 use Net::DNS;
 
-# $Id: RR.pm,v 1.10 1997/07/06 16:37:56 mfuhr Exp $
+# $Id: RR.pm,v 1.11 1997/10/02 05:27:29 mfuhr Exp $
 $VERSION = $Net::DNS::VERSION;
 
 =head1 NAME
@@ -362,6 +362,25 @@ Returns the record's type.
     $class = $rr->class;
 
 Returns the record's class.
+
+=cut
+
+# Used to AUTOLOAD this, but apparently some versions of Perl (specifically
+# 5.003_07, included with some Linux distributions) would return the
+# class the object was blessed into, instead of the RR's class.
+
+sub class {
+	my $self = shift;
+
+	if (@_) {
+		$self->{"class"} = shift;
+	} elsif (!exists $self->{"class"}) {
+		Carp::carp("class: no such method");
+		return undef;
+	}
+	return $self->{"class"};
+}
+	
 
 =head2 ttl
 

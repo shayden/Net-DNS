@@ -12,7 +12,7 @@ use Net::DNS;
 use Net::DNS::Question;
 use Net::DNS::RR;
 
-# $Id: Packet.pm,v 1.6 1997/07/06 16:35:18 mfuhr Exp $
+# $Id: Packet.pm,v 1.7 1997/10/02 05:26:57 mfuhr Exp $
 $VERSION = $Net::DNS::VERSION;
 
 =head1 NAME
@@ -567,9 +567,11 @@ sub dn_expand {
 	my ($packet, $offset) = @_;
 	my $name = "";
 	my $len;
+	my $packetlen = length $$packet;
+	my $int16sz = &Net::DNS::INT16SZ;
 
 	while (1) {
-		return (undef, undef) if length($$packet) < ($offset + 1);
+		return (undef, undef) if $packetlen < ($offset + 1);
 
 		$len = unpack("\@$offset C", $$packet);
 
@@ -579,7 +581,7 @@ sub dn_expand {
 		}
 		elsif (($len & 0xc0) == 0xc0) {
 			return (undef, undef)
-				if length($$packet) < ($offset + &Net::DNS::INT16SZ);
+				if $packetlen < ($offset + $int16sz);
 
 			my $ptr = unpack("\@$offset n", $$packet);
 			$ptr &= 0x3fff;
@@ -588,14 +590,14 @@ sub dn_expand {
 			return (undef, undef) unless defined $name2;
 
 			$name .= $name2;
-			$offset += &Net::DNS::INT16SZ;
+			$offset += $int16sz;
 			last;
 		}
 		else {
 			$offset++;
 
 			return (undef, undef)
-				if length($$packet) < ($offset + $len);
+				if $packetlen < ($offset + $len);
 
 			my $elem = substr($$packet, $offset, $len);
 			$name .= "$elem.";
