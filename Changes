@@ -2,7 +2,12 @@ Revision history for Net::DNS
 =============================
 
 
-*** 0.48_03
+*** 0.49 March 29, 2005
+
+No changes wrt 0.49_03.
+
+
+*** 0.48_03 March 22, 2005 (Version 0.49 release candidate 3)
 
 Fix: Only remove leading zeros in the regular expressions for typesbyval
      and classbyval methods. (patch by Ronald v.d. Pol)
@@ -512,4 +517,4 @@ Olaf Kolkman <olaf@net-dns.org>
 Chris Reinhardt 
 Michael Fuhr 
 
-$Id: Changes 247 2005-03-21 13:35:32Z olaf $
+$Id: Changes 251 2005-03-29 13:02:13Z olaf $
