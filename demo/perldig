@@ -1,5 +1,5 @@
 #!/usr/local/bin/perl -w
-# $Id: perldig,v 1.1 1997/02/03 05:18:31 mfuhr Exp $
+# $Id: perldig,v 1.2 1997/02/08 21:05:15 mfuhr Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ Michael Fuhr <mfuhr@dimensional.com>
 
 =head1 SEE ALSO
 
-L<perl(1)>, L<check_soa>, L<mx>, L<Net::DNS>
+L<perl(1)>, L<check_soa>, L<check_zone>, L<mx>, L<Net::DNS>
 
 =cut
 

@@ -60,12 +60,22 @@ C<Net::DNS::Question> objects represent the query section of a DNS packet.
 C<Net::DNS::RR> is the base class for DNS resource record (RR) objects in
 the answer, authority, and additional sections of a DNS packet.
 
+=head1 METHODS
+
+=head2 version
+
+    print Net::DNS->version;
+
+Returns the version of Net::DNS.
+
+See the manual pages listed above for class-specific methods.
+
 =head1 EXAMPLES
 
 These examples show how to use the DNS modules:
 
   # Look up a host's addresses.
-  use Net::DNS::Resolver;
+  use Net::DNS;
   $res = new Net::DNS::Resolver;
   $query = $res->search("foo.bar.com");
   foreach $record ($query->answer) {
@@ -73,7 +83,7 @@ These examples show how to use the DNS modules:
   }
 
   # Find the nameservers for a domain.
-  use Net::DNS::Resolver;
+  use Net::DNS;
   $res = new Net::DNS::Resolver;
   $query = $res->query("foo.com", "NS");
   foreach $nameserver ($query->answer) {
@@ -81,7 +91,7 @@ These examples show how to use the DNS modules:
   }
 
   # Find the MX records for a domain.
-  use Net::DNS::Resolver;
+  use Net::DNS;
   $res = new Net::DNS::Resolver;
   $query = $res->query("foo.com", "MX");
   foreach $mxhost ($query->answer) {
@@ -89,7 +99,7 @@ These examples show how to use the DNS modules:
   }
 
   # Print a domain's SOA record in zone file format.
-  use Net::DNS::Resolver;
+  use Net::DNS;
   $res = new Net::DNS::Resolver;
   $query = $res->query("foo.com", "SOA");
   ($query->answer)[0]->print;
@@ -131,8 +141,8 @@ use Net::DNS::Header;
 use Net::DNS::Question;
 use Net::DNS::RR;
 
-# $Id: DNS.pm,v 1.4 1997/02/03 05:58:37 mfuhr Exp $
-$VERSION = "0.02";
+# $Id: DNS.pm,v 1.5 1997/02/08 21:18:52 mfuhr Exp $
+$VERSION = "0.03";
 
 %typesbyname= (
 	"A"		=> 1,		# RFC 1035, Section 3.4.1
@@ -208,6 +218,7 @@ $VERSION = "0.02";
 );
 %rcodesbyval = map { ($rcodesbyname{$_} => $_) } keys %rcodesbyname;
 
+sub version   { $VERSION; }
 sub PACKETSZ  { 512; }
 sub HFIXEDSZ  {  12; }
 sub QFIXEDSZ  {   4; }

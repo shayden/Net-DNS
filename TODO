@@ -4,19 +4,25 @@ To do list for Net::DNS
 Net::DNS::Packet->data currently returns only header and question section
 data.  Need to return data for the entire packet.
 
-Work on more test cases.
-
-Write more demo scripts, including a CGI interface to the resolver.
-
 Improve the error handling and reporting.
 
 Implement TCP queries.
-
-Implement zone transfers.
 
 Implement background queries.
 
 Accept options in resolver config files.
 
+Work on more test cases.
+
+Write more demo scripts, including a CGI interface to the resolver.
+
+Contact maintainers of DNS Tools pages.  A couple of places to start are:
+
+    http://www.dns.net/dnsrd/tools.html
+    http://www.isc.org/bind/index.html
+
+Check code for conformance to the guidelines listed in The Perl 5 Module
+List.  Check style & efficiency according to the Camel.
+
 ---
-$Id: TODO,v 1.3 1997/02/03 05:24:21 mfuhr Exp $
+$Id: TODO,v 1.4 1997/02/08 21:23:34 mfuhr Exp $

@@ -17,10 +17,12 @@ Net::DNS is a Perl interface to the DNS resolver.  It allows the
 programmer to perform any type of DNS query.  For details, see the
 Net::DNS manual page.
 
-This version (0.02) is written entirely in Perl; version 0.01 was
-written mostly in C.  The Perl version runs quite a bit slower, but
-considering that the network can be a serious bottleneck when making
-DNS queries, the speed difference may not really matter in most cases.
+As of version 0.02, Net::DNS is written entirely in Perl.  Version 0.01
+was written mostly in C and used the system's resolver.  The Perl version
+runs quite a bit slower, but considering that the network can be a serious
+bottleneck when making DNS queries, the speed difference may not really
+matter in most cases.  However, future versions may contain some C for those
+who wish to link against libresolv.
 
 The author invites feedback on the module, particularly at this early
 stage of its development.
@@ -30,7 +32,8 @@ INSTALLATION
 ============
 
 This version of Net::DNS uses IO::Socket, which is part of the
-IO module available on CPAN archives.
+IO module available on CPAN.  You'll need to have IO installed
+before using Net::DNS.
 
 To build this module, run the following commands:
 
@@ -64,8 +67,8 @@ mentioned somewhere.
 BUGS
 ====
 
-The module isn't complete yet and contains a few bugs.  See the TODO
-file for more info.
+The module isn't complete yet and is sure to contain a few bugs.  See
+the TODO and Changes files for more info.
 
 
 AUTHOR
@@ -75,4 +78,4 @@ Michael Fuhr
 mfuhr@dimensional.com
 http://www.dimensional.com/~mfuhr/
 
-$Id: README,v 1.2 1997/02/03 05:15:07 mfuhr Exp $
+$Id: README,v 1.3 1997/02/08 21:21:30 mfuhr Exp $

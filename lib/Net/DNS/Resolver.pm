@@ -66,7 +66,7 @@ use IO::Socket;
 use Net::DNS;
 use Net::DNS::Packet;
 
-# $Id: Resolver.pm,v 1.3 1997/02/03 05:20:22 mfuhr Exp $
+# $Id: Resolver.pm,v 1.4 1997/02/08 21:20:03 mfuhr Exp $
 $VERSION = $Net::DNS::VERSION;
 
 #------------------------------------------------------------------------------
@@ -147,6 +147,7 @@ sub res_init {
 
 sub read_config {
 	my $file = shift;
+	local *FILE;
 	open(FILE, $file) or Carp::confess "can't open $file: $!";
 	while (<FILE>) {
 		next if /^\s*[;#]/;
@@ -183,7 +184,7 @@ sub read_env {
 	if (exists $ENV{"RES_OPTIONS"}) {
 		my @env = split(" ", $ENV{"RES_OPTIONS"});
 		foreach (@env) {
-			my($name, $val) = split(/:/);
+			my ($name, $val) = split(/:/);
 			$val = 1 unless defined $val;
 			$default{$name} = $val if exists $default{$name};
 		}
@@ -402,7 +403,7 @@ sub query {
 
 =head2 send
 
-    $packet = $res->send($query_packet);
+    $packet = $res->send($packet_object);
     $packet = $res->send("mailhost.foo.com");
     $packet = $res->send("foo.com", "MX");
     $packet = $res->send("user.passwd.foo.com", "TXT", "HS");
@@ -410,14 +411,15 @@ sub query {
 Performs a DNS query for the given name.  Neither the searchlist
 nor the default domain will be appended.  
 
-The record type and class can be omitted; they default to A and
-IN.  If the name looks like an IP address (4 dot-separated numbers),
+The argument list can be either a C<Net::DNS::Packet> object or a list
+of strings.  The record type and class can be omitted; they default to
+A and IN.  If the name looks like an IP address (4 dot-separated numbers),
 then an appropriate PTR query will be performed.
 
-Returns a C<Net::DNS::Packet> object whether there were any
-answers or not.  Use $packet->ancount or $packet->answer
-to find out if there were any records in the answer section.
-Returns undef if there was an error.
+Returns a C<Net::DNS::Packet> object whether there were any answers or not.
+Use C<$packet>->C<header>->C<ancount> or C<$packet>->C<answer> to find out
+if there were any records in the answer section.  Returns C<undef> if there
+was an error.
 
 =cut
 
@@ -531,6 +533,100 @@ sub select_list {
 		vec($retval, $_->fileno, 1) = 1;
 	}
 	return $retval;
+}
+
+=head2 axfr
+
+    @zone = $res->axfr("foo.com");
+    @zone = $res->axfr("passwd.foo.com", "HS");
+
+Performs a zone transfer from the first nameserver listed in C<nameservers>.
+The record class can be omitted; it defaults to IN.
+
+Returns a list of C<Net::DNS::RR> objects, or C<undef> if the zone
+transfer failed.
+
+=cut
+
+sub axfr {
+	my $self = shift;
+	my ($dname, $class) = @_;
+	$class ||= "IN";
+
+	print ";; axfr($dname, $class)\n" if $self->{"debug"};
+
+	unless (@{$self->{"nameservers"}}) {
+		$self->{"errorstring"} = "no nameservers";
+		print ";; ERROR: no nameservers\n" if $self->{"debug"};
+		return ();
+	}
+
+	my $packet = new Net::DNS::Packet($dname, "AXFR", $class);
+	my $data   = $packet->data;
+	my $ns     = $self->{"nameservers"}->[0];
+
+	print ";; axfr nameserver = $ns\n" if $self->{"debug"};
+
+	# IO::Socket carps on errors if Perl's -w flag is turned on.
+	# Uncomment the next two lines and the line following the "new"
+	# call to # turn off these messages.
+
+	# my $old_wflag = $^W;
+	# $^W = 0;
+
+	my $sock = new IO::Socket::INET(PeerAddr => $ns,
+					PeerPort => $self->{"port"},
+					Proto    => "tcp");
+
+	# $^W = $old_wflag;
+
+	unless (defined($sock)) {
+		$self->errorstring("couldn't connect");
+		return ();
+	}
+
+	my $lenmsg = pack("n", length($data));
+	$sock->send($lenmsg) or Carp::confess "send: $!";
+	$sock->send($data)   or Carp::confess "send: $!";
+
+	my @zone;
+	while (1) {
+		my $buf = read_tcp($sock, &Net::DNS::INT16SZ);
+		last unless length($buf);
+		my ($len) = unpack("n", $buf);
+		last unless $len;
+
+		$buf = read_tcp($sock, $len);
+		# need to error here if length($buf) != $len
+		my $ans = new Net::DNS::Packet(\$buf);
+
+		if ($ans->header->ancount < 1) {
+			$self->errorstring($ans->header->rcode);
+			last;
+		}
+
+		foreach ($ans->answer) {
+			push @zone, $_;
+		}
+	}
+
+	return @zone;
+}
+
+#
+# Usage:  $data = read_tcp($socket, $nbytes);
+#
+sub read_tcp {
+	my ($sock, $nbytes) = @_;
+	my $buf = "";
+	my $buf2;
+
+	while (length($buf) < $nbytes) {
+		$sock->recv($buf2, $nbytes - length($buf));
+		last unless length($buf2);
+		$buf .= $buf2;
+	}
+	return $buf;
 }
 
 =head2 retrans
@@ -669,8 +765,7 @@ take values are specified as I<option>:I<value>.
 
 =head1 BUGS
 
-Only UDP queries are supported in this version.  Zone transfers
-can't be done until TCP queries are implemented.
+TCP queries are not yet implemented.
 
 Error reporting needs to be improved.
 

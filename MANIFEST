@@ -5,6 +5,7 @@ README
 TODO
 demo/README
 demo/check_soa
+demo/check_zone
 demo/mx
 demo/perldig
 lib/Net/DNS.pm

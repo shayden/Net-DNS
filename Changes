@@ -1,4 +1,10 @@
-Revision history Net::DNS
+Revision history for Net::DNS
+=============================
+
+*** 0.03  8 Feb 1996
+
+Added zone transfers.  Wrote demo/check_zone.  Minor corrections and
+additions to the documentation.
 
 *** 0.02  2 Feb 1996
 
@@ -13,4 +19,4 @@ memory management.
 
 ---
 Michael Fuhr <mfuhr@dimensional.com>
-$Id: Changes,v 1.1 1997/02/02 07:49:29 mfuhr Exp $
+$Id: Changes,v 1.2 1997/02/08 21:24:14 mfuhr Exp $
