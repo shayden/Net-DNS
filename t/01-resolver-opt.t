@@ -1,4 +1,4 @@
-# $Id: 01-resolver-opt.t 215 2005-03-02 15:48:44Z olaf $
+# $Id: 01-resolver-opt.t 265 2005-04-11 14:10:18Z olaf $
 
 
 use Test::More tests => 60;
@@ -83,6 +83,9 @@ foreach my $test (qw(nameservers searchlist)) {
 	}
 }
 
+
+
+
 undef $res;
 
 my %bad_input = (
@@ -103,4 +106,8 @@ $res = Net::DNS::Resolver->new(%bad_input);
 foreach my $key (keys %bad_input) {
 	isnt($res->{$key}, 'set', "$key is not set");
 }
+
+
+
+
 

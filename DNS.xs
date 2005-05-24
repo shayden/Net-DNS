@@ -1,8 +1,8 @@
 /*
- * $Id: DNS.xs 232 2005-03-07 13:52:01Z olaf $
+ * $Id: DNS.xs 289 2005-05-20 09:06:47Z olaf $
  *
  *
- * 
+ * Copyright (c) 2005 Olaf Kolkman
  * Copyright (c) 2002-2003 Chris Reinhardt.
  * 
  * All rights reserved.  This program is free software; you may redistribute
@@ -19,21 +19,22 @@
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
-#include <sys/types.h>
-#include <netinet/in.h>
-#include <arpa/nameser.h>
-#include <resolv.h> 
+
+#include "./netdnslib/netdns.h"
+
 
 
 /*
- * int dn_expand(const uchar_t *msg,  const	 uchar_t  *eomorig,
- *	 uchar_t *comp_dn, char exp_dn, int length); 
+ * int dn_expand( char *msg,  char *eomorig,
+ *	       char *comp_dn,  char *exp_dn,
+ *	      int length);
  *
  *	   
  * dn_expand
  *	 dn_expand() expands the compressed domain name	 given by the
- *	 pointer comp _dn into a full domain name. Expanded names are
- *	 converted to upper case. The compressed name is contained in
+ *	 pointer comp _dn into a full domain name.
+ * 
+ *       The compressed name is contained in
  *	 a	query or reply message; msg is a pointer to the beginning
  *	 of that message. Expanded names are  stored  in  the  buffer
  *	 referenced by the exp_dn buffer of size length , which should
@@ -50,22 +51,21 @@ PROTOTYPES: DISABLE
 void
 dn_expand_XS(sv_buf, offset) 
 	SV * sv_buf
-	int offset
+	unsigned int offset
 
   PPCODE:
 	STRLEN len;
-	char * buf;
-	char name[MAXDNAME];
-	int pos;
+	u_char * buf;
+	u_char name[MAXDNAME];
+	unsigned int pos;
 	
 	if (SvROK(sv_buf)) 
 		sv_buf = SvRV(sv_buf);
 	
-	
-	buf = SvPV(sv_buf, len);
+	buf = (u_char *) SvPV(sv_buf, len);
 	
 	/* This is where we do the actual uncompressing magic. */
-	pos = dn_expand(buf, buf+len, buf+offset, &name[0], MAXDNAME);
+	pos = dn_expand(buf, buf+len , buf+offset, &name[0], MAXDNAME);
 	
 	EXTEND(SP, 2);
 	
@@ -73,9 +73,11 @@ dn_expand_XS(sv_buf, offset)
 		PUSHs(sv_2mortal(newSVsv(&PL_sv_undef)));
 		PUSHs(sv_2mortal(newSVsv(&PL_sv_undef)));
 	} else {
-		PUSHs(sv_2mortal(newSVpv(name, 0)));
+		PUSHs(sv_2mortal(newSVpv((const char *)name, 0)));
 		PUSHs(sv_2mortal(newSViv(pos + offset)));
 	}
 	
 	XSRETURN(2);
  
+
+

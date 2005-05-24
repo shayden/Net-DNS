@@ -1,6 +1,6 @@
 package Net::DNS::RR::SSHFP;
 #
-# $Id: SSHFP.pm 219 2005-03-03 14:18:10Z olaf $
+# $Id: SSHFP.pm 264 2005-04-06 09:16:15Z olaf $
 #
 use strict;
 use vars qw(@ISA $VERSION $HasBabble);
@@ -15,7 +15,7 @@ BEGIN {
 	
 }
 
-$VERSION = (qw$LastChangedRevision: 219 $)[1];
+$VERSION = (qw$LastChangedRevision: 264 $)[1];
 
 @ISA = qw(Net::DNS::RR);
 

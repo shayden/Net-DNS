@@ -1,6 +1,6 @@
 package Net::DNS::RR::TXT;
 #
-# $Id: TXT.pm 219 2005-03-03 14:18:10Z olaf $
+# $Id: TXT.pm 264 2005-04-06 09:16:15Z olaf $
 #
 use strict;
 use vars qw(@ISA $VERSION);
@@ -8,7 +8,7 @@ use vars qw(@ISA $VERSION);
 use Text::ParseWords;
 
 @ISA     = qw(Net::DNS::RR);
-$VERSION = (qw$LastChangedRevision: 219 $)[1];
+$VERSION = (qw$LastChangedRevision: 264 $)[1];
 
 sub new {
 	my ($class, $self, $data, $offset) = @_;

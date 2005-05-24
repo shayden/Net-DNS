@@ -1,4 +1,4 @@
-# $Id: 05-rr.t 215 2005-03-02 15:48:44Z olaf $
+# $Id: 05-rr.t 264 2005-04-06 09:16:15Z olaf $
 
 use Test::More tests => 219;
 use strict;

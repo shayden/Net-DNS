@@ -44,7 +44,7 @@ To Do list for Net::DNS
   - Proper identification of the set of nameservers to query in Cygwin.pm
     and Win32.pm. Using the registy is highly unreliable. Also see
     rt.cpan.org ticket 11931.
-  
+
 * Get rid of .* in AAAA.pm; write more tests for AAAA.pm.
 
 * Allow Net::DNS::RR::LOC->latlon to set the lat/lon.
@@ -110,4 +110,4 @@ To Do list for Net::DNS
   or possibly going back to using Dave Shield's resparse library.
 
 ---
-$Id: TODO 248 2005-03-22 15:41:50Z olaf $
+$Id: TODO 264 2005-04-06 09:16:15Z olaf $

@@ -1,7 +1,7 @@
-# $Id: 01-resolver-env.t 215 2005-03-02 15:48:44Z olaf $
+# $Id: 01-resolver-env.t 265 2005-04-11 14:10:18Z olaf $
 
 
-use Test::More tests => 11;
+use Test::More tests => 13;
 use strict;
 
 BEGIN { 
@@ -34,3 +34,20 @@ is($res->domain,  't.net-dns.org', 'Local domain works'  );
 is($res->retrans, 3,               'Retransmit works'    );
 is($res->retry,   2,               'Retry works'         );
 ok($res->debug,                    'Debug works'         );
+
+
+
+
+
+eval {
+	$Net::DNS::DNSSEC=0;
+	local $SIG{__WARN__}=sub { ok ($_[0]=~/You called the Net::DNS::Resolver::dnssec\(\)/, "Correct warning in absense of Net::DNS::SEC") };	
+	$res->dnssec(1);
+};
+
+{ 
+	$Net::DNS::DNSSEC=1;			
+	local $SIG{__WARN__}=sub { diag "We are ignoring that Net::DNS::SEC not installed."	 };
+	$res->dnssec(1);	
+	is ($res->udppacketsize(),2048,"dnssec() sets udppacketsize to 2048");
+};

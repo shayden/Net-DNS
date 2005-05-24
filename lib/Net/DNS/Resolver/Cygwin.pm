@@ -1,6 +1,6 @@
 package Net::DNS::Resolver::Cygwin;
 #
-# $Id: Cygwin.pm 208 2005-03-02 14:59:43Z olaf $
+# $Id: Cygwin.pm 291 2005-05-21 07:40:58Z olaf $
 #
 
 use strict;
@@ -9,7 +9,7 @@ use vars qw(@ISA $VERSION);
 use Net::DNS::Resolver::Base ();
 
 @ISA	 = qw(Net::DNS::Resolver::Base);
-$VERSION = (qw$LastChangedRevision: 246 $)[1];
+$VERSION = (qw$LastChangedRevision: 291 $)[1];
 
 sub getregkey {
 	my $key	  = $_[0] . $_[1];
@@ -85,14 +85,18 @@ sub init {
 			my $regiface = $interfaces . $iface . '/';
 			if (opendir(LM, $regiface)) {
 				closedir(LM);
-				my $ns;
-				$ns = getregkey($regiface, "NameServer") ||
-					getregkey($regiface, "DhcpNameServer") || '';
-				$nameservers .= " $ns" if $ns;
-			}
-		}
-	}
 
+				my $ns;
+				my $ip;
+				$ip = getregkey($regiface, "IPAddress");
+				$ns = getregkey($regiface, "NameServer") ||
+				    getregkey($regiface, "DhcpNameServer") || ''				    unless !$ip || ($ip =~ /0\.0\.0\.0/);
+				
+				$nameservers .= " $ns" if $ns;
+			    }
+		    }
+	    }
+	
 	if (!$nameservers) {
 		$nameservers = $nt4nameservers;
 	}

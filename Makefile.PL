@@ -1,4 +1,4 @@
-# $Id: Makefile.PL 219 2005-03-03 14:18:10Z olaf $
+# $Id: Makefile.PL 290 2005-05-20 11:42:59Z olaf $ -*-perl-*-
 
 use strict;
 $^W = 1;
@@ -23,6 +23,22 @@ properly with older perls such as yours, but bugs may lurk.
 
 
 AMEN
+
+#
+# Test to see if V6 is available.
+#    
+unless(    eval {require Socket6;} &&
+	   # INET6 prior to 2.01 will not work; sorry.
+	   eval {require IO::Socket::INET6; IO::Socket::INET6->VERSION("2.00");}	   ){
+print <<V6WARNING;
+
+
+The libraries needed to support IPv6 transport have not been found. 
+You will need recent versions of the IO::Socket::INET6 and Socket6 
+libraries (from CPAN). 
+
+V6WARNING
+}
 
 
 #
@@ -53,18 +69,27 @@ my %Makefile = (
 		'MIME::Base64'     => 2.11,
 		'Digest::MD5'      => 2.12,
 		'Digest::HMAC_MD5' => 1.00,
+		"Net::IP"          => 1.20,
+
 	},
 	XS            => {},
 	C             => [],
 	clean         => { FILES => 't/online.enabled compile.* DNS.o DNS.c DNS.bs' },
+
+
 );
+
+
 
 if ($^O eq 'MSWin32') {
 	$Makefile{'PREREQ_PM'}->{'Win32::Registry'} = 0;
 }
-if ($^O eq 'darwin' and $Config{'osvers'} =~ m/^7\./) {
-	$Makefile{'DEFINE'} = '-DBIND_8_COMPAT';
-}
+
+
+# Not relevant with netdnslib.
+#if ($^O eq 'darwin' and $Config{'osvers'} =~ m/^[78]\./) {
+#	$Makefile{'DEFINE'} = '-DBIND_8_COMPAT';
+#}
 
 if ($] >= 5.005) {
 	$Makefile{'AUTHOR'}   = 'Olaf Kolkman <olaf@net-dns.org>';
@@ -78,6 +103,9 @@ unless (defined $use_xs) {
 	if (test_cc()) {
 		print "You have a working compiler.\n";
 		$use_xs = 1;
+	        $Makefile{'MYEXTLIB'}    = 'netdnslib/netdns$(LIB_EXT)',
+
+
 	} else {
 		$use_xs = 0;
 		print <<END;
@@ -89,15 +117,23 @@ You can force installation of the XS version with:
 
 	perl Makefile.PL --xs
 END
+	$Makefile{'MYEXTLIB'}    = '',		
+
 	}
 }
+
+
+
+
+
+
+
 
 if ($use_xs) {
 	# turn the XS bits on.
 	print "Activating XS Magic...\n" if DEBUG; 
 	delete $Makefile{'XS'};
 	delete $Makefile{'C'};
-	$Makefile{'LIBS'} = ['-lresolv'];
 }
 
 #
@@ -149,11 +185,7 @@ sub test_cc {
 	}
 
 	print F <<'EOF';
-#include <sys/types.h>
-#include <netinet/in.h>
-#include <arpa/nameser.h>
-#include <resolv.h> 
-
+#include "netdnslib/netdns.h"
 int main() { return 0; }
 EOF
 	
@@ -174,17 +206,24 @@ sub metafile {
 	my $self    = shift;
 	my $meta    = $self->SUPER::metafile_target(@_); 
 	my ($extra) = $self->echo('license: perl', 'META.yml', 1);
-	
 	return "$meta\t$extra\n";
 }
 
 sub postamble {
-	return <<'END_O_MAKE';
+    my $content;
+    $content='$(MYEXTLIB): netdnslib/Makefile
+	cd netdnslib && $(MAKE) $(PASSTHRU)
+' if $use_xs;
+
+    $content.='
 test_cover : pure_all
 	cover -delete
 	HARNESS_PERL_SWITCHES=-MDevel::Cover $(MAKE) test
 	cover
-END_O_MAKE
+';
+    print "$content";
+    return $content;
+
 }
 
 

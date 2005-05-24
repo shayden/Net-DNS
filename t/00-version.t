@@ -1,4 +1,4 @@
-# $Id: 00-version.t 215 2005-03-02 15:48:44Z olaf $
+# $Id: 00-version.t 264 2005-04-06 09:16:15Z olaf $ -*-perl-*-
 
 use Test::More;
 use File::Spec;

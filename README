@@ -34,12 +34,14 @@ out about known bugs and to see what's planned for future versions,
 see the TODO file.
 
 Net::DNS does not depend on any C libraries.  However, if possible
-Net::DNS tries to link to the libresolv library.  This provides a 
-notable speed increase.
+Net::DNS tries to link against a C-library that is supplied with the
+code.  This provides a notable speed increase.
 
 The author invites feedback on Net::DNS.  If there's something you'd
 like to have added, please let me know.  If you find a bug, please
 send me the information described in the BUGS section below.
+
+See http://www.net-dns.org/blog/ for announcments about Net::DNS
 
 
 2. AVAILABILITY
@@ -48,8 +50,8 @@ send me the information described in the BUGS section below.
 You can get the latest version of Net::DNS from the Comprehensive
 Perl Archive Network (CPAN) or from the module's homepage:
 
-    http://www.perl.org/CPAN/modules/by-module/Net/
-
+    http://search.cpan.org/dist/Net-DNS/
+or through
     http://www.net-dns.org/
 
 The following link will always be the current released version:
@@ -57,9 +59,35 @@ The following link will always be the current released version:
     http://www.net-dns.org/download/Net-DNS-release.tar.gz
     
 
+Additionally a subversion repository is made available through
+	http://www.net-dns.org/svn/net-dns/
+
+
+The version on the "trunk" (http://www.net-dns.org/svn/net-dns/trunk) is
+the version that is targeted for next release.
+
+Please note that the SVN version at any given moment may be broken.
+
 
 3. PREREQUISITES
 ----------------
+
+
+The availability of prerequisites for Net::DNS is tested at
+installation time. These are the core packages that need to be
+available.
+
+     Test::More       
+     IO::Socket      
+     MIME::Base64     
+     Digest::MD5  
+     Digest::HMAC_MD5
+     Net::IP
+
+
+For IPv6 support you will need Socket6 and IO::Socket::INET6. The availability
+of these is tested at runtime.
+
 
 Net::DNS has been tested with the following:
 
@@ -76,6 +104,7 @@ Net::DNS has been tested with the following:
     Version of IO::Socket distributed with Perl 5.6.1
     Version of IO::Select distributed with Perl 5.6.1
     Version of FileHandle distributed with Perl 5.6.1
+
 
 You can obtain the latest version of Perl from:
 
@@ -206,7 +235,7 @@ welcome.
 The extensions to make Net::DNS DNSSEC aware are distributed seperatly
 as Net::DNS::SEC. The package is available from CPAN.  Because of its
 dependency on Crypt::OpenSSL and other not so standard libraries, it
-is distributed as a seperate package.
+is distributed as a seperate package. 
 
 
 10. BUGS
@@ -262,7 +291,7 @@ it and/or modify it under the same terms as Perl itself.
 
 Net::DNS is currently maintained by:
         Olaf Kolkman
-	olaf@net-dns.org
+	olaf at net-dns.org
 
 Between 2002 and 2004 Net::DNS was maintained by:
        Chris Reinhardt
@@ -270,7 +299,7 @@ Between 2002 and 2004 Net::DNS was maintained by:
 
 Net::DNS was created by:
 	Michael Fuhr
-	mike@fuhr.org 
+	mike at fuhr.org 
 
 
 13. STAYING TUNED
@@ -280,7 +309,6 @@ http://www.net-dns.org is a web site dedicated to the development of
 Net::DNS. Announcements about Net::DNS and Net::DNS::SEC will be done
 through the Net::DNS weblog at http://www.net-dns.org/blog/. An RSS
 feed for the weblog is available.
-
 
 If you want to have access to the latest and greatest code a
 subversion repository is made available through
@@ -296,6 +324,7 @@ branches may be broken at any time.
 
 13. ACKNOWLEDGMENTS
 -------------------
+
 
 Thanks to Mike for letting me take care of his baby.
 
@@ -328,7 +357,7 @@ difficult.
 
 Thanks to the thousands who participate in the open-source community.
 I've always developed Net::DNS using open-source systems and I'm
-proud to make Net::DNS freely available to the world.
+proud to make Net::DNS freely available to the world 
 
 ----
-$Id: README 232 2005-03-07 13:52:01Z olaf $
+$Id: README 293 2005-05-24 07:34:28Z olaf $

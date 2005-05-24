@@ -1,12 +1,12 @@
 package Net::DNS::Resolver;
 #
-# $Id: Resolver.pm 208 2005-03-02 14:59:43Z olaf $
+# $Id: Resolver.pm 290 2005-05-20 11:42:59Z olaf $
 #
 
 use strict;
 use vars qw($VERSION @ISA);
 
-$VERSION = (qw$LastChangedRevision: 215 $)[1];
+$VERSION = (qw$LastChangedRevision: 290 $)[1];
 
 BEGIN {
 	if ($^O eq 'MSWin32') {
@@ -322,6 +322,8 @@ See also L</axfr>.
 
 Gets or sets the nameservers to be queried.
 
+Also see the IPv6 transport notes below    
+
 =head2 print
 
     $res->print;
@@ -369,10 +371,13 @@ The default is 0.0.0.0, meaning any local address.
 
 =head2 bgsend
 
-    $socket = $res->bgsend($packet_object);
+    $socket = $res->bgsend($packet_object) || die " $res->errorstring";
+
     $socket = $res->bgsend('mailhost.example.com');
     $socket = $res->bgsend('example.com', 'MX');
     $socket = $res->bgsend('user.passwd.example.com', 'TXT', 'HS');
+
+
 
 Performs a background DNS query for the given name, i.e., sends a
 query packet to the first nameserver listed in C<< $res->nameservers >>
@@ -385,10 +390,14 @@ of strings.  The record type and class can be omitted; they default to
 A and IN.  If the name looks like an IP address (4 dot-separated numbers),
 then an appropriate PTR query will be performed.
 
-Returns an C<IO::Socket::INET> object.  The program must determine when
-the socket is ready for reading and call C<< $res->bgread >> to get
-the response packet.  You can use C<< $res->bgisready >> or C<IO::Select>
-to find out if the socket is ready before reading it.
+Returns an C<IO::Socket::INET> object or C<undef> on error in which
+case the reason for failure can be found through a call to the
+errorstring method.
+
+The program must determine when the socket is ready for reading and
+call C<< $res->bgread >> to get the response packet.  You can use C<<
+$res->bgisready >> or C<IO::Select> to find out if the socket is ready
+before reading it.
 
 =head2 bgread
 
@@ -579,7 +588,21 @@ Enabled DNSSEC this will set the checking disabled flag in the query header
 and add EDNS0 data as in RFC2671 and RFC3225
 
 When set to true the answer and additional section of queries from
-secured zones will contain KEY, NXT and SIG records.
+secured zones will contain DNSKEY, NSEC and RRSIG records.
+
+Setting calling the dnssec method with a non-zero value will set the
+UDP packet size to the default value of 2048. If that is to small or
+to big for your environement you should call the udppacketsize()
+method immeditatly after.
+
+   $res->dnssec(1);    # turns on DNSSEC and sets udp packetsize to 2048
+   $res->udppacketsize(1028);   # lowers the UDP pakcet size
+
+The method will Croak::croak with the message "You called the
+Net::DNS::Resolver::dnssec() method but do not have Net::DNS::SEC
+installed at ..." if you call it without Net::DNS::SEC being in your
+@INC path.
+
 
 
 =head2 cdflag
@@ -621,6 +644,32 @@ For example, if we wanted to cache lookups:
 	
 	return $cache{@args} ||= $self->SUPER::search(@args);
  } 
+
+
+=head1 IPv6 transport
+
+The Net::DNS::Resolver library will use IPv6 transport if the
+appropriate libraries (Socket6 and IO::Socket::INET6) are available
+and the address the server tries to connect to is an IPv6 address.
+
+The print() will method will report if IPv6 transport is available.
+
+You can use the force_v4() method with a non-zero argument
+to force IPv4 transport.
+
+The nameserver() method has IPv6 dependend behavior. If IPv6 is not
+available or IPv4 transport has been forced the nameserver() method
+will only return IPv4 addresses.
+
+For example
+
+    $res->nameservers('192.168.1.1', '192.168.2.2', '2001:610:240:0:53:0:0:3');
+    $res->force_v4(1);
+    print join (" ",$res->nameserver());	    
+
+Will print: 192.168.1.1 192.168.2.2
+
+
 
 
 =head1 ENVIRONMENT
@@ -685,6 +734,7 @@ No validation of server replies is performed.
 Copyright (c) 1997-2002 Michael Fuhr. 
 
 Portions Copyright (c) 2002-2004 Chris Reinhardt.
+Portions Copyright (c) 2005 Olaf M. Kolkman
 
 All rights reserved.  This program is free software; you may redistribute
 it and/or modify it under the same terms as Perl itself.
