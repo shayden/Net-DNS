@@ -1,5 +1,5 @@
 /*
- * $Id: DNS.xs 289 2005-05-20 09:06:47Z olaf $
+ * $Id: DNS.xs 300 2005-05-27 21:54:01Z olaf $
  *
  *
  * Copyright (c) 2005 Olaf Kolkman
@@ -20,7 +20,7 @@
 #include "perl.h"
 #include "XSUB.h"
 
-#include "./netdnslib/netdns.h"
+#include "netdns.h"
 
 
 

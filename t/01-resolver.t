@@ -1,4 +1,4 @@
-# $Id: 01-resolver.t 291 2005-05-21 07:40:58Z olaf $
+# $Id: 01-resolver.t 302 2005-05-28 05:39:23Z olaf $  -*-perl-*-
 
 use Test::More tests => 44;
 use strict;
@@ -38,14 +38,23 @@ my %good_input = (
 	force_v4       => 1,
 );
 
-diag "\n\nIf you do not have Net::DNS::SEC installed you will see a warning.\n";
-diag "It is safe to ignore this\n";
+#diag "\n\nIf you do not have Net::DNS::SEC installed you will see a warning.\n";
+#diag "It is safe to ignore this\n";
+
 
 while (my ($param, $value) = each %good_input) {
-	is_deeply($res->$param($value), $value, "setting $param returns correctly");
-	is_deeply($res->$param(), $value,       "setting $param sticks");
+    open (TMPFH,">/dev/null") or die "can't open /dev/null";
+    local *STDERR=*TMPFH;
+    
+    
+    is_deeply($res->$param($value), $value, "setting $param returns correctly");
+    is_deeply($res->$param(), $value,       "setting $param sticks");
+    
+    close (TMPFH);	
+
 }
-	
+
+
 	
 
 my %bad_input = (

@@ -1,6 +1,6 @@
 package Net::DNS::Resolver::Base;
 #
-# $Id: Base.pm 290 2005-05-20 11:42:59Z olaf $
+# $Id: Base.pm 299 2005-05-27 21:43:34Z olaf $
 #
 
 use strict;
@@ -21,7 +21,7 @@ use Net::IP qw(ip_is_ipv4 ip_is_ipv6 ip_normalize);
 use Net::DNS;
 use Net::DNS::Packet;
 
-$VERSION = (qw$LastChangedRevision: 290 $)[1];
+$VERSION = (qw$LastChangedRevision: 299 $)[1];
 
 
 #
@@ -827,7 +827,10 @@ sub send_udp {
 	    return;
 	}
 
- 	my $sel = IO::Select->new($sock[AF_INET]) ;
+ 	my $sel = IO::Select->new() ;
+	# We allready tested that one of the two socket exists
+
+ 	$sel->add($sock[AF_INET]) if defined ($sock[AF_INET]);
  	$sel->add($sock[AF_INET6]) if $has_inet6 &&  defined ($sock[AF_INET6]) && ! $self->force_v4();
 	
 
@@ -877,62 +880,65 @@ sub send_udp {
 				next;
 			}
 
-			my @ready = $sel->can_read($timeout);
-
-			SELECTOR: foreach my $ready (@ready) {
-				my $buf = '';
-
-				if ($ready->recv($buf, $self->_packetsz)) {
-				
-					$self->answerfrom($ready->peerhost);
-					$self->answersize(length $buf);
-				
-					print ';; answer from ',
-					      $ready->peerhost, ':',
-					      $ready->peerport, ' : ',
-					      length($buf), " bytes\n"
-						if $self->{'debug'};
-				
-					my ($ans, $err) = Net::DNS::Packet->new(\$buf, $self->{'debug'});
-				
-					if (defined $ans) {
-						next SELECTOR unless $ans->header->qr;
-						next SELECTOR unless $ans->header->id == $packet->header->id;
-						$self->errorstring($ans->header->rcode);
-						$ans->answerfrom($self->answerfrom);
-						$ans->answersize($self->answersize);
-						if ($ans->header->rcode ne "NOERROR" &&
-						    $ans->header->rcode ne "NXDOMAIN"){
-							# Remove this one from the stack
-							@ns = grep { $_->[0] ne $ready->peerhost } @ns;
-							print "RCODE: ".$ans->header->rcode ."; tying next nameserver\n" if $self->{'debug'};
-							$lastanswer=$ans;
-							next NAMESERVER ;
-							
-						    }
-					} elsif (defined $err) {
-						$self->errorstring($err);
-					}
-					
-					return $ans;
-				} else {
-					$self->errorstring($!);
-					
-					print ';; recv ERROR(',
-					      $ready->peerhost, ':',
-					      $ready->peerport, '): ',
-					      $self->errorstring, "\n"
-						if $self->{'debug'};
-
-					@ns = grep { $_->[0] ne $ready->peerhost } @ns;
-					
-					return unless @ns;
-				}
-			}
-		    }
-
+			# See ticket 11931 but this works not quite yet
+			my $oldpacket_timeout=time+$timeout;
+			until ( $oldpacket_timeout && ($oldpacket_timeout < time())) {
+			    my @ready = $sel->can_read($timeout);
+			  SELECTOR: foreach my $ready (@ready) {
+			      my $buf = '';
+			      
+			      if ($ready->recv($buf, $self->_packetsz)) {
+				  
+				  $self->answerfrom($ready->peerhost);
+				  $self->answersize(length $buf);
+				  
+				  print ';; answer from ',
+				  $ready->peerhost, ':',
+				  $ready->peerport, ' : ',
+				  length($buf), " bytes\n"
+				      if $self->{'debug'};
+				  
+				  my ($ans, $err) = Net::DNS::Packet->new(\$buf, $self->{'debug'});
+				  
+				  if (defined $ans) {
+				      next SELECTOR unless $ans->header->qr;
+				      next SELECTOR unless $ans->header->id == $packet->header->id;
+				      $self->errorstring($ans->header->rcode);
+				      $ans->answerfrom($self->answerfrom);
+				      $ans->answersize($self->answersize);
+				      if ($ans->header->rcode ne "NOERROR" &&
+					  $ans->header->rcode ne "NXDOMAIN"){
+					  # Remove this one from the stack
+					  @ns = grep { $_->[0] ne $ready->peerhost } @ns;
+					  print "RCODE: ".$ans->header->rcode ."; tying next nameserver\n" if $self->{'debug'};
+					  $lastanswer=$ans;
+					  next NAMESERVER ;
+					  
+				      }
+				  } elsif (defined $err) {
+				      $self->errorstring($err);
+				  }
+				  
+				  return $ans;
+			      } else {
+				  $self->errorstring($!);
+				  
+				  print ';; recv ERROR(',
+				  $ready->peerhost, ':',
+				  $ready->peerport, '): ',
+				  $self->errorstring, "\n"
+				      if $self->{'debug'};
+				  
+				  @ns = grep { $_->[0] ne $ready->peerhost } @ns;
+				  
+				  return unless @ns;
+			      }
+			  } #SELECTOR LOOP
+			} # until stop_time loop
+		    } #NAMESERVER LOOP
+		
 	}
-
+	
 	if ($lastanswer){
 		$self->errorstring('RCODE: '.$lastanswer->header->rcode );
 		return $lastanswer;

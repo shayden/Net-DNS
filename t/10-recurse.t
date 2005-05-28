@@ -1,4 +1,4 @@
-# $Id: 10-recurse.t 290 2005-05-20 11:42:59Z olaf $ -*-perl-*-
+# $Id: 10-recurse.t 299 2005-05-27 21:43:34Z olaf $ -*-perl-*-
 
 use Test::More;
 use strict;
@@ -48,11 +48,11 @@ BEGIN { use_ok('Net::DNS::Resolver::Recurse'); }
 
 	isa_ok($res, 'Net::DNS::Resolver::Recurse');
 
-	#$res->debug(1);	
-	$res->udp_timeout(60);
+	$res->debug(1);	
+	$res->udp_timeout(20);
 	
 	# Hard code A and K.ROOT-SERVERS.NET hint 
-	ok($res->hints("198.0.14.129", "198.41.0.4" ), "hints() set");
+	ok($res->hints("193.0.14.129", "198.41.0.4" ), "hints() set");
 	
 	ok(%{ $res->{'hints'} }, 'sanity check worked');
 	

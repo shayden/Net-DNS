@@ -1,4 +1,4 @@
-# $Id: Makefile.PL 290 2005-05-20 11:42:59Z olaf $ -*-perl-*-
+# $Id: Makefile.PL 313 2005-05-28 06:57:49Z olaf $ -*-perl-*-
 
 use strict;
 $^W = 1;
@@ -103,7 +103,7 @@ unless (defined $use_xs) {
 	if (test_cc()) {
 		print "You have a working compiler.\n";
 		$use_xs = 1;
-	        $Makefile{'MYEXTLIB'}    = 'netdnslib/netdns$(LIB_EXT)',
+	        $Makefile{'MYEXTLIB'}    = 'netdns$(LIB_EXT)',
 
 
 	} else {
@@ -185,7 +185,7 @@ sub test_cc {
 	}
 
 	print F <<'EOF';
-#include "netdnslib/netdns.h"
+#include "netdns.h"
 int main() { return 0; }
 EOF
 	
@@ -209,19 +209,26 @@ sub metafile {
 	return "$meta\t$extra\n";
 }
 
+
+
 sub postamble {
     my $content;
-    $content='$(MYEXTLIB): netdnslib/Makefile
-	cd netdnslib && $(MAKE) $(PASSTHRU)
-' if $use_xs;
 
     $content.='
 test_cover : pure_all
 	cover -delete
 	HARNESS_PERL_SWITCHES=-MDevel::Cover $(MAKE) test
 	cover
+
+
+
+netdns$(LIB_EXT): netdns.o
+	$(AR) cr netdns$(LIB_EXT) netdns.o
+	$(RANLIB) netdns$(LIB_EXT)
+
+
 ';
-    print "$content";
+#    print "$content";
     return $content;
 
 }
