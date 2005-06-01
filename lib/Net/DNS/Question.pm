@@ -1,14 +1,15 @@
 package Net::DNS::Question;
 #
-# $Id: Question.pm 264 2005-04-06 09:16:15Z olaf $
+# $Id: Question.pm 319 2005-05-30 17:12:09Z olaf $
 #
 use strict;
+use bytes;
 use vars qw($VERSION $AUTOLOAD);
 
 use Carp;
 use Net::DNS;
 
-$VERSION = (qw$LastChangedRevision: 264 $)[1];
+$VERSION = (qw$LastChangedRevision: 319 $)[1];
 
 =head1 NAME
 

@@ -1,15 +1,16 @@
 package Net::DNS::RR::TKEY;
 #
-# $Id: TKEY.pm 264 2005-04-06 09:16:15Z olaf $
+# $Id: TKEY.pm 319 2005-05-30 17:12:09Z olaf $
 #
 use strict;
+use bytes;
 use vars qw(@ISA $VERSION);
 
 use Digest::HMAC_MD5;
 use MIME::Base64;
 
 @ISA     = qw(Net::DNS::RR);
-$VERSION = (qw$LastChangedRevision: 264 $)[1];
+$VERSION = (qw$LastChangedRevision: 319 $)[1];
 
 sub new {
 	my ($class, $self, $data, $offset) = @_;

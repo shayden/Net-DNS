@@ -1,16 +1,17 @@
 package Net::DNS::RR;
 #
-# $Id: RR.pm 264 2005-04-06 09:16:15Z olaf $
+# $Id: RR.pm 319 2005-05-30 17:12:09Z olaf $
 #
 use strict;
+use bytes;
 use vars qw($VERSION $AUTOLOAD);
-
 use Carp;
 use Net::DNS;
 use Net::DNS::RR::Unknown;
 
 
-$VERSION = (qw$LastChangedRevision: 264 $)[1];
+
+$VERSION = (qw$LastChangedRevision: 319 $)[1];
 
 =head1 NAME
 
@@ -608,6 +609,7 @@ sub data {
 		$data  = $packet->dn_comp($self->{'name'}, $offset);
 	}
 
+
 	my $qtype     = uc($self->{'type'});
 	my $qtype_val = ($qtype =~ m/^\d+$/) ? $qtype : Net::DNS::typesbyname($qtype);
 	$qtype_val    = 0 if !defined($qtype_val);
@@ -631,8 +633,9 @@ sub data {
 
 	my $rdata = $self->rdata($packet, $offset);
 
+
 	$data .= pack('n', length $rdata);
-	$data .= $rdata;
+	$data.=$rdata;
 
 	return $data;
 }

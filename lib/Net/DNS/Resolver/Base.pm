@@ -1,9 +1,10 @@
 package Net::DNS::Resolver::Base;
 #
-# $Id: Base.pm 299 2005-05-27 21:43:34Z olaf $
+# $Id: Base.pm 329 2005-05-31 18:14:44Z olaf $
 #
 
 use strict;
+use bytes;
 
 use vars qw(
 	    $VERSION
@@ -21,7 +22,7 @@ use Net::IP qw(ip_is_ipv4 ip_is_ipv6 ip_normalize);
 use Net::DNS;
 use Net::DNS::Packet;
 
-$VERSION = (qw$LastChangedRevision: 299 $)[1];
+$VERSION = (qw$LastChangedRevision: 329 $)[1];
 
 
 #
@@ -108,6 +109,13 @@ BEGIN {
 		cdflag         => 1,  # this is only used when {dnssec} == 1
 		force_v4       => 0,  # force_v4 is only relevant when we have
                                       # v6 support available
+		ignqrid        => 0,  # normally packets with non-matching ID 
+                                      # or with the qr bit of are thrown away
+			              # in 'ignqrid' these packets are 
+			              # are accepted.
+			              # USE WITH CARE, YOU ARE VULNARABLE TO
+			              # SPOOFING IF SET.
+			              # This is may be a temporary feature
 	);
 	
 	# If we're running under a SOCKSified Perl, use TCP instead of UDP
@@ -143,6 +151,7 @@ my %public_attr = map { $_ => 1 } qw(
 	persistent_tcp
 	persistent_udp
 	dnssec
+	ignqrid
 );
 
 
@@ -277,6 +286,7 @@ sub string {
 
 	my $timeout = defined $self->{'tcp_timeout'} ? $self->{'tcp_timeout'} : 'indefinite';
 	my $hasINET6line= $has_inet6 ?" (IPv6 Transport is available)":" (IPv6 Transport is not available)";
+	my $ignqrid=$self->{'ignqrid'} ? "\n;; ACCEPTING ALL PACKETS (IGNQRID)":"";
 	return <<END;
 ;; RESOLVER state:
 ;;  domain       = $self->{domain}
@@ -290,7 +300,7 @@ sub string {
 ;;  usevc    = $self->{usevc}  stayopen = $self->{stayopen}    igntc = $self->{igntc}
 ;;  defnames = $self->{defnames}  dnsrch   = $self->{dnsrch}
 ;;  recurse  = $self->{recurse}  debug    = $self->{debug}
-;;  force_v4 = $self->{force_v4} $hasINET6line
+;;  force_v4 = $self->{force_v4} $hasINET6line $ignqrid
 END
 
 }
@@ -901,8 +911,8 @@ sub send_udp {
 				  my ($ans, $err) = Net::DNS::Packet->new(\$buf, $self->{'debug'});
 				  
 				  if (defined $ans) {
-				      next SELECTOR unless $ans->header->qr;
-				      next SELECTOR unless $ans->header->id == $packet->header->id;
+				      next SELECTOR unless ( $ans->header->qr || $self->{'ignqrid'});
+				      next SELECTOR unless  ( ($ans->header->id == $packet->header->id) || $self->{'ignqrid'} );
 				      $self->errorstring($ans->header->rcode);
 				      $ans->answerfrom($self->answerfrom);
 				      $ans->answersize($self->answersize);

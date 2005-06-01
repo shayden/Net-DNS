@@ -1,12 +1,13 @@
 package Net::DNS::RR::Unknown;
 #
-# $Id: Unknown.pm 264 2005-04-06 09:16:15Z olaf $
+# $Id: Unknown.pm 319 2005-05-30 17:12:09Z olaf $
 #
 use strict;
+use bytes;
 use vars qw(@ISA $VERSION);
 
 @ISA     = qw(Net::DNS::RR);
-$VERSION = (qw$LastChangedRevision: 264 $)[1];
+$VERSION = (qw$LastChangedRevision: 319 $)[1];
 
 sub new {
 	my ($class, $self, $data, $offset) = @_;
