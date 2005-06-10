@@ -1,6 +1,6 @@
 package Net::DNS::Resolver::Base;
 #
-# $Id: Base.pm 329 2005-05-31 18:14:44Z olaf $
+# $Id: Base.pm 374 2005-06-10 10:39:36Z olaf $
 #
 
 use strict;
@@ -22,7 +22,7 @@ use Net::IP qw(ip_is_ipv4 ip_is_ipv6 ip_normalize);
 use Net::DNS;
 use Net::DNS::Packet;
 
-$VERSION = (qw$LastChangedRevision: 329 $)[1];
+$VERSION = (qw$LastChangedRevision: 374 $)[1];
 
 
 #
@@ -1058,8 +1058,8 @@ sub bgsend {
 
 
 
-	print ";; bgsend($ns_address : $dstport)\n" if $self->{'debug'};
-	print ";; remote addr struc: ".unpack("H*", $dst_sockaddr)."\n";
+	print ";; bgsend($ns_address : $dstport)\n" if $self->{'debug'}	;
+
 
 	foreach my $socket (@socket){
 	    next if !defined $socket;

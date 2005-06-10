@@ -1,4 +1,4 @@
-# $Id: 10-recurse.t 299 2005-05-27 21:43:34Z olaf $ -*-perl-*-
+# $Id: 10-recurse.t 372 2005-06-10 06:01:34Z olaf $ -*-perl-*-
 
 use Test::More;
 use strict;
@@ -48,7 +48,7 @@ BEGIN { use_ok('Net::DNS::Resolver::Recurse'); }
 
 	isa_ok($res, 'Net::DNS::Resolver::Recurse');
 
-	$res->debug(1);	
+	$res->debug(0);	
 	$res->udp_timeout(20);
 	
 	# Hard code A and K.ROOT-SERVERS.NET hint 
