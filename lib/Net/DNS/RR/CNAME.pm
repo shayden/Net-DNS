@@ -1,12 +1,16 @@
 package Net::DNS::RR::CNAME;
 #
-# $Id: CNAME.pm 264 2005-04-06 09:16:15Z olaf $
+# $Id: CNAME.pm 388 2005-06-22 10:06:05Z olaf $
 #
 use strict;
+BEGIN { 
+    eval { require bytes; }
+} 
+
 use vars qw(@ISA $VERSION);
 
 @ISA     = qw(Net::DNS::RR);
-$VERSION = (qw$LastChangedRevision: 264 $)[1];
+$VERSION = (qw$LastChangedRevision: 388 $)[1];
 
 sub new {
 	my ($class, $self, $data, $offset) = @_;

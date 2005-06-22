@@ -1,17 +1,19 @@
 package Net::DNS::RR::CERT;
 #
-# $Id: CERT.pm 319 2005-05-30 17:12:09Z olaf $
+# $Id: CERT.pm 388 2005-06-22 10:06:05Z olaf $
 #
 # Written by Mike Schiraldi <raldi@research.netsol.com> for VeriSign
 
 use strict;
-use bytes;
+BEGIN { 
+    eval { require bytes; }
+} 
 use vars qw(@ISA $VERSION);
 
 use MIME::Base64;
 
 @ISA     = qw(Net::DNS::RR);
-$VERSION = (qw$LastChangedRevision: 319 $)[1];
+$VERSION = (qw$LastChangedRevision: 388 $)[1];
 
 my %formats = (
 	PKIX => 1,

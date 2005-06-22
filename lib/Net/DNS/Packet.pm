@@ -1,9 +1,13 @@
 package Net::DNS::Packet;
 #
-# $Id: Packet.pm 319 2005-05-30 17:12:09Z olaf $
+# $Id: Packet.pm 388 2005-06-22 10:06:05Z olaf $
 #
 use strict;
-use bytes; # Make sure characters are treated as bytes See perldoc perlunicode
+
+BEGIN { 
+    eval { require bytes; }
+}
+
 use vars qw(@ISA @EXPORT_OK $VERSION $AUTOLOAD);
 
 use Carp;
@@ -18,7 +22,7 @@ require Exporter;
 @EXPORT_OK = qw(dn_expand);
 
 
-$VERSION = (qw$LastChangedRevision: 319 $)[1];
+$VERSION = (qw$LastChangedRevision: 388 $)[1];
 
 
 

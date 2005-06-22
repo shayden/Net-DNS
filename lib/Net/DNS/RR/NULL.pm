@@ -1,15 +1,17 @@
 package Net::DNS::RR::NULL;
 #
-# $Id: NULL.pm 319 2005-05-30 17:12:09Z olaf $
+# $Id: NULL.pm 388 2005-06-22 10:06:05Z olaf $
 #
 use strict;
-use bytes; # not really needed for NULL 
+BEGIN { 
+    eval { require bytes; }
+} 
 use vars qw(@ISA $VERSION);
 
 use Net::DNS::Packet;
 
 @ISA     = qw(Net::DNS::RR);
-$VERSION = (qw$LastChangedRevision: 319 $)[1];
+$VERSION = (qw$LastChangedRevision: 388 $)[1];
 
 sub new {
 	my ($class, $self, $data, $offset) = @_;

@@ -1,7 +1,13 @@
 package Net::DNS::Nameserver;
 #
-# $Id: Nameserver.pm 264 2005-04-06 09:16:15Z olaf $
+# $Id: Nameserver.pm 388 2005-06-22 10:06:05Z olaf $
 #
+
+
+BEGIN { 
+    eval { require bytes; }
+} 
+
 
 use Net::DNS;
 use IO::Socket;
@@ -16,7 +22,7 @@ use vars qw($VERSION
  	    $DEFAULT_PORT
  	    );
 
-$VERSION = (qw$LastChangedRevision: 264 $)[1];
+$VERSION = (qw$LastChangedRevision: 388 $)[1];
 
 #@DEFAULT_ADDR is set in the BEGIN block 
 $DEFAULT_PORT=53;

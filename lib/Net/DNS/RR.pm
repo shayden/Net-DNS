@@ -1,9 +1,13 @@
 package Net::DNS::RR;
 #
-# $Id: RR.pm 319 2005-05-30 17:12:09Z olaf $
+# $Id: RR.pm 388 2005-06-22 10:06:05Z olaf $
 #
 use strict;
-use bytes;
+
+BEGIN { 
+    eval { require bytes; }
+} 
+
 use vars qw($VERSION $AUTOLOAD);
 use Carp;
 use Net::DNS;
@@ -11,7 +15,7 @@ use Net::DNS::RR::Unknown;
 
 
 
-$VERSION = (qw$LastChangedRevision: 319 $)[1];
+$VERSION = (qw$LastChangedRevision: 388 $)[1];
 
 =head1 NAME
 

@@ -1,14 +1,17 @@
 package Net::DNS::Update;
 #
-# $Id: Update.pm 264 2005-04-06 09:16:15Z olaf $
+# $Id: Update.pm 388 2005-06-22 10:06:05Z olaf $
 #
 use strict;
+BEGIN { 
+    eval { require bytes; }
+} 
 use vars qw($VERSION @ISA);
 
 use Net::DNS;
 
 @ISA     = qw(Net::DNS::Packet);
-$VERSION = (qw$LastChangedRevision: 264 $)[1];
+$VERSION = (qw$LastChangedRevision: 388 $)[1];
 
 =head1 NAME
 
