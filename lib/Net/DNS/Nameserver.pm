@@ -1,6 +1,6 @@
 package Net::DNS::Nameserver;
 #
-# $Id: Nameserver.pm 388 2005-06-22 10:06:05Z olaf $
+# $Id: Nameserver.pm 460 2005-07-15 19:18:22Z olaf $
 #
 
 
@@ -22,7 +22,7 @@ use vars qw($VERSION
  	    $DEFAULT_PORT
  	    );
 
-$VERSION = (qw$LastChangedRevision: 388 $)[1];
+$VERSION = (qw$LastChangedRevision: 460 $)[1];
 
 #@DEFAULT_ADDR is set in the BEGIN block 
 $DEFAULT_PORT=53;
@@ -517,6 +517,12 @@ additional filtering on its basis may be applied.
 =head1 BUGS
 
 Net::DNS::Nameserver objects can handle only one query at a time.
+
+Limitations in perl 5.8.6 makes it impossible to guarantee that
+replies to UDP queries from Net::DNS::Nameserver are sent from the
+IP-address they were received on. This is a problem for machines with
+multiple IP-addresses and causes violation of RFC2181 section 4.
+
 
 =head1 COPYRIGHT
 

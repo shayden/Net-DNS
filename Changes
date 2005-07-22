@@ -1,6 +1,36 @@
 Revision history for Net::DNS                                     -*-text-*-
 =============================
 
+*** 0.53 July 22, 2005
+
+Fix rt.cpan.org 13669
+
+    Danny Thomas provided a somewhat more elegant line of code for the 
+    typesbyval regexp.
+
+Fix rt.cpan.org 13534 
+
+    Net::DNS::Resolver::Recurse would bail out when it happened to run
+    into lame servers.
+
+Doc rt.cpan.org 13387
+
+    Documented the BUG caught by Robert Martin-Legène;
+    Net::DNS::Nameserver running with multiple IP interfaces might
+    violate section 4 of RFC2181.
+
+
+Fix IPv6 on AIX
+
+    Binding to the local interface did not work when local address was
+    specified as "0" instead of "::". The problem was identified,
+    reported and fixed by Achim Adam.
+
+
+
+Fix rt.cpan.org 13232
+    One uncought AF_INET6.
+
 *** 0.52 July 1, 2005
 
 Feature
@@ -806,4 +836,4 @@ Olaf Kolkman <olaf@net-dns.org>
 Chris Reinhardt 
 Michael Fuhr 
 
-$Id: Changes 393 2005-07-01 19:21:52Z olaf $
+$Id: Changes 468 2005-07-22 12:12:55Z olaf $

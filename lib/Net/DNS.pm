@@ -1,6 +1,6 @@
 package Net::DNS;
 #
-# $Id: DNS.pm 393 2005-07-01 19:21:52Z olaf $
+# $Id: DNS.pm 468 2005-07-22 12:12:55Z olaf $
 #
 use strict;
 
@@ -41,7 +41,7 @@ BEGIN {
     @ISA     = qw(Exporter DynaLoader);
 
     
-    $VERSION = '0.52';
+    $VERSION = '0.53';
     $HAVE_XS = eval { 
 	local $SIG{'__DIE__'} = 'DEFAULT';
 	__PACKAGE__->bootstrap(); 1 
@@ -181,10 +181,9 @@ sub typesbyval {
     my $val = shift;
     
     die "Net::DNS::typesbyval() argument ($val) is not numeric" unless 
-        $val =~ m/^\s*\d+\s*$/;  
+	$val =~ m/^\s*0*(\d+)\s*$/;
+    $val = $1;
     
-    $val =~ s/\s*//g; 
-    $val =~ s/^0*([0-9]+)/$1/;    #remove leading zeros 
     
     return $typesbyval{$val} if $typesbyval{$val};
     
