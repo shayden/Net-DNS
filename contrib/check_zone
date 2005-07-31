@@ -1,5 +1,5 @@
 #!/usr/local/bin/perl -w
-# $Id: check_zone 264 2005-04-06 09:16:15Z olaf $
+# $Id: check_zone 479 2005-07-31 14:19:41Z olaf $
 
 =head1 NAME
 
@@ -166,12 +166,12 @@ sub check_domain {
         $res->nameservers( $ns );
         
         my @local_zone = $res->axfr( $domain, $class );
-        unless( defined( @local_zone ) && @local_zone ) {
+        unless( @local_zone ) {
     
             warn "Zone transfer from '", $ns, "' failed: ", 
                     $res->errorstring, "\n";
         }
-        @zone = @local_zone if( ! defined( @zone ) && ! @zone );
+        @zone = @local_zone if( ! @zone );
     }
 
     # Query each name server for the zone
@@ -691,7 +691,7 @@ sub types4name {
     # return the RR types of ???
     #
     
-    push @rr_types, ( '???' ) if( ! defined( @rr_types ) || ! @rr_types );
+    push @rr_types, ( '???' ) if( ! @rr_types );
 
     return @rr_types;
 }

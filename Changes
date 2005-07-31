@@ -1,6 +1,31 @@
 Revision history for Net::DNS                                     -*-text-*-
 =============================
 
+
+*** 0.53_01 July 31, 2005
+
+Fix rt.cpan.org 13809
+
+     "Phar" noted that the peerhost is never passed to the make_reply function
+     in nameserver.pm and provided the trivial patch. 
+
+Fix rt.cpan.org 13922
+
+    Fixed a problem with persistent TCP sockets which was introdcuced
+    because of using the address family as an index to the array of
+    persistent sockets. 
+
+    Used AF_UNSPEC for the array index for the TCP socket; just to choose
+    a number. The key to the persistent sockets is the remote nameserver:port 
+    combination.
+
+    Acknowledgements to Mike Mitchell for reporting the bug and testing
+    the solution.
+
+Feat t/01-resolve will not try to do tests from private IP space; hopefully
+    that cuts down on the number of false positives.
+
+
 *** 0.53 July 22, 2005
 
 Fix rt.cpan.org 13669
@@ -836,4 +861,4 @@ Olaf Kolkman <olaf@net-dns.org>
 Chris Reinhardt 
 Michael Fuhr 
 
-$Id: Changes 468 2005-07-22 12:12:55Z olaf $
+$Id: Changes 480 2005-07-31 14:23:50Z olaf $

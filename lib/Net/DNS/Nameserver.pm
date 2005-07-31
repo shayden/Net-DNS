@@ -1,6 +1,6 @@
 package Net::DNS::Nameserver;
 #
-# $Id: Nameserver.pm 460 2005-07-15 19:18:22Z olaf $
+# $Id: Nameserver.pm 477 2005-07-29 12:01:18Z olaf $
 #
 
 
@@ -22,7 +22,7 @@ use vars qw($VERSION
  	    $DEFAULT_PORT
  	    );
 
-$VERSION = (qw$LastChangedRevision: 460 $)[1];
+$VERSION = (qw$LastChangedRevision: 477 $)[1];
 
 #@DEFAULT_ADDR is set in the BEGIN block 
 $DEFAULT_PORT=53;
@@ -330,7 +330,7 @@ sub udp_connection {
 
 	my $buf = "";
 
- 	my ($peerhost,$peerport);
+ 	my ($peerhost,$peerport)=($sock->peerhost,$sock->peerport);
  
  	$sock->recv($buf, &Net::DNS::PACKETSZ);
  

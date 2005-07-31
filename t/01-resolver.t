@@ -1,4 +1,4 @@
-# $Id: 01-resolver.t 302 2005-05-28 05:39:23Z olaf $  -*-perl-*-
+# $Id: 01-resolver.t 479 2005-07-31 14:19:41Z olaf $  -*-perl-*-
 
 use Test::More tests => 44;
 use strict;
@@ -70,9 +70,25 @@ my %bad_input = (
 	cdflag         => 'set',
 );	
 
+# Some people try to run these on private address space."
+
+use Net::IP;
+
+use IO::Socket::INET;
+my $sock = IO::Socket::INET->new(PeerAddr => '193.0.14.129', # k.root-servers.net.
+				 PeerPort => '25',
+				 Proto    => 'udp');
+
+
+my $ip=Net::IP->new(inet_ntoa($sock->sockaddr));
+	    
+
 SKIP: {
 	skip 'Online tests disabled.', 2
 		unless -e 't/online.enabled';
+
+	skip 'Tests may not run succesful from private IP('.$ip->ip() .')', 2
+	    if ($ip->iptype() ne "PUBLIC");
 
 	my $res = Net::DNS::Resolver->new;
 	

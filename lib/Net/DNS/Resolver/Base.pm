@@ -1,6 +1,6 @@
 package Net::DNS::Resolver::Base;
 #
-# $Id: Base.pm 459 2005-07-15 18:56:02Z olaf $
+# $Id: Base.pm 479 2005-07-31 14:19:41Z olaf $
 #
 
 use strict;
@@ -25,7 +25,7 @@ use Net::IP qw(ip_is_ipv4 ip_is_ipv6 ip_normalize);
 use Net::DNS;
 use Net::DNS::Packet;
 
-$VERSION = (qw$LastChangedRevision: 459 $)[1];
+$VERSION = (qw$LastChangedRevision: 479 $)[1];
 
 
 #
@@ -574,8 +574,8 @@ sub send_tcp {
 		my $sock;
 		my $sock_key = "$ns:$dstport";
 		my ($host,$port);
-		if ($self->persistent_tcp && $self->{'sockets'}{$sock_key}) {
-			$sock = $self->{'sockets'}{$sock_key};
+		if ($self->persistent_tcp && $self->{'sockets'}[AF_UNSPEC]{$sock_key}) {
+			$sock = $self->{'sockets'}[AF_UNSPEC]{$sock_key};
 			print ";; using persistent socket\n"
 				if $self->{'debug'};
 		} else {
@@ -623,7 +623,7 @@ sub send_tcp {
 			next;
 		    }
 
-			$self->{'sockets'}{$sock_key} = $sock;
+			$self->{'sockets'}[AF_UNSPEC]{$sock_key} = $sock;
 		}
 
 		my $lenmsg = pack('n', length($packet_data));
@@ -1261,8 +1261,8 @@ sub axfr_start {
 	my $sock;
 	my $sock_key = "$ns:$self->{'port'}";
 
-	if ($self->{'persistent_tcp'} && $self->{'sockets'}->{$sock_key}) {
-	    $sock = $self->{'sockets'}->{$sock_key};
+	if ($self->{'persistent_tcp'} && $self->{'sockets'}[AF_UNSPEC]{$sock_key}) {
+	    $sock = $self->{'sockets'}[AF_UNSPEC]{$sock_key};
 	    print ";; using persistent socket\n" if $self->{'debug'};
 	    
 	} else {
@@ -1294,10 +1294,10 @@ sub axfr_start {
 		$self->errorstring('connection failed');
 		print ';; ERROR: send_tcp: connection ',
 		"failed: $!\n" if $self->{'debug'};
-		next;
+		return;
 	    }
 	    
-	    $self->{'sockets'}{$sock_key} = $sock;
+	    $self->{'sockets'}[AF_UNSPEC]{$sock_key} = $sock;
 	}
 
 
