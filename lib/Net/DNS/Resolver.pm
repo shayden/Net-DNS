@@ -1,12 +1,12 @@
 package Net::DNS::Resolver;
 #
-# $Id: Resolver.pm 290 2005-05-20 11:42:59Z olaf $
+# $Id: Resolver.pm 492 2005-10-06 12:01:24Z olaf $
 #
 
 use strict;
 use vars qw($VERSION @ISA);
 
-$VERSION = (qw$LastChangedRevision: 290 $)[1];
+$VERSION = (qw$LastChangedRevision: 492 $)[1];
 
 BEGIN {
 	if ($^O eq 'MSWin32') {
@@ -153,7 +153,7 @@ An array reference of domains.
 
 =item retry
 
-=item usecv
+=item usevc
 
 =item stayopen
 

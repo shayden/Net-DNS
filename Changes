@@ -1,13 +1,84 @@
 Revision history for Net::DNS                                     -*-text-*-
 =============================
 
+*** 0.53_02 Oct 18, 2005
+
+
+
+Fix rt.cpan.org 14046
+
+  RRSIGs verify and create failed fror a number of RR types. The 
+  error message showed something like:
+      Can't call method "dn_comp" on an undefined value 
+  This was caused by an ommission in the _canonicalRdata() method
+  in Net::DNS::RR that was inherited by all failing RR types.
+
+  Code was added to t/05-rr.t that will test signature creation
+  if Net::DNS::SEC is available and can be loaded.
+
+
+Feature async nameserver behaviour.
+  
+   In rt.cpan.org 14622 Robert Stone suggested:
+
+      The fact that it needs to take over the main runnning thread
+      limits its audience.  Since many daemon programs are already
+      driven by a top level select loop, it seems useful to provide an
+      API for the user to integrate Net::DNS::Nameserver processing to
+      their own select loop.
+
+   He also supplied example code for which he is hereby acknowledged.
+   The patch was not used because simultaneously Robert Martin-Legene
+   supplied a patch to Nameservers.pm that allowed the same async
+   functionality through the use of loop_once method. Robert M-L's 
+   code also carefully manages the TCP sockets, so that they can 
+   deal with AXFRs.
+
+   Robert S. has been so kind to review Robert M-L's code and is hereby
+   kindly acknowledged.
+
+   NB. Since the code may be subject to change the documentation of the
+   loop_once method has been commented out.
+
+
+Fix bgsend srcaddr for IPv6 Achim Adam previously noticed that the
+  source address wildard "::" works provides better portability than
+  "0". We forgot to fix the bgsend() part earlier.
+
+
+
+Fix rt.cpan.org 14624 
+
+  Fixed documentation of Nameserver.pm Replyhandler and fixed a bug
+  that prevented the peerhost to be set.
+
+Fix rt.cpan.org 14700
+
+  mistyped _name2wire helper function name. Noticed and patched by Simon 
+  Josefsson.
+
+Fix rt.cpan.org 13944
+
+  Terminating dot not printed when printing SRV record. The SRV dname should
+  be printed as FQDN, that is, including the dot at the end.
+  Acknowledgements Jakob Schlyter. 
+
+  While adding the "dot" I noticed that in the fileformat parsing code
+  there might be theoretical corner cases where rdata elements are not
+  properly read. The code needs an audit for this.
+
+Fix srcport for socket creation in bgsend method
+
+   Lionel Cons noted and patched a small bug in bgsocket creation code for
+   lib/Net/DNS/Resolver/Base.pm
+
 
 *** 0.53_01 July 31, 2005
 
 Fix rt.cpan.org 13809
 
-     "Phar" noted that the peerhost is never passed to the make_reply function
-     in nameserver.pm and provided the trivial patch. 
+   "Phar" noted that the peerhost is never passed to the make_reply function
+   in nameserver.pm and provided the trivial patch. 
 
 Fix rt.cpan.org 13922
 
@@ -40,7 +111,7 @@ Fix rt.cpan.org 13534
 
 Doc rt.cpan.org 13387
 
-    Documented the BUG caught by Robert Martin-LegÃ¨ne;
+    Documented the BUG caught by Robert Martin-Legène
     Net::DNS::Nameserver running with multiple IP interfaces might
     violate section 4 of RFC2181.
 
@@ -861,4 +932,4 @@ Olaf Kolkman <olaf@net-dns.org>
 Chris Reinhardt 
 Michael Fuhr 
 
-$Id: Changes 480 2005-07-31 14:23:50Z olaf $
+$Id: Changes 502 2005-10-18 13:59:03Z olaf $

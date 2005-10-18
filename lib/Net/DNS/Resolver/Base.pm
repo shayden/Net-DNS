@@ -1,6 +1,6 @@
 package Net::DNS::Resolver::Base;
 #
-# $Id: Base.pm 479 2005-07-31 14:19:41Z olaf $
+# $Id: Base.pm 492 2005-10-06 12:01:24Z olaf $
 #
 
 use strict;
@@ -25,7 +25,7 @@ use Net::IP qw(ip_is_ipv4 ip_is_ipv6 ip_normalize);
 use Net::DNS;
 use Net::DNS::Packet;
 
-$VERSION = (qw$LastChangedRevision: 479 $)[1];
+$VERSION = (qw$LastChangedRevision: 492 $)[1];
 
 
 #
@@ -586,7 +586,7 @@ sub send_tcp {
 		    
 		    #my $old_wflag = $^W;
 		    #$^W = 0;
-		    if ($has_inet6 && ! $self->force_v4()){
+		    if ($has_inet6 && ! $self->force_v4() && ip_is_ipv6($ns) ){
                         # XXX IO::Socket::INET6 fails in a cryptic way upon send()
                         # on AIX5L if "0" is passed in as LocalAddr
 			# $srcaddr="0" if $srcaddr eq "0.0.0.0";  # Otherwise the INET6 socket will just fail
@@ -595,7 +595,7 @@ sub send_tcp {
 
 			$sock = 
 			    IO::Socket::INET6->new(
-						   PeerPort =>    53,
+						   PeerPort =>    $dstport,
 						   PeerAddr =>    $ns,
 						   LocalAddr => $srcaddr6,
 						   LocalPort => ($srcport || undef),
@@ -817,7 +817,7 @@ sub send_udp {
 	  # If getaddrinfo is available that is used for both INET4 and INET6
 	  # If getaddrinfo is not avialable (Socket6 failed to load) we revert
 	  # to the 'classic mechanism
-	  if ($has_inet6  && ! $self->force_v4()){ 
+	  if ($has_inet6  && ! $self->force_v4() ){ 
 	      # we can use getaddrinfo
 	      no strict 'subs';   # Because of the eval statement in the BEGIN
 	      # AI_NUMERICHOST is not available at compile time.
@@ -1072,15 +1072,16 @@ sub bgsend {
 							 Proto => 'udp',
 							 Type => SOCK_DGRAM,
 							 LocalAddr => $srcaddr,
-							 LocalPort => $srcport,
+							 LocalPort => ($srcport || undef),
 					    );
 	} elsif ($has_inet6 && $sockfamily == AF_INET6() ) {
-	    $srcaddr="0" if $srcaddr eq "0.0.0.0";  # Otherwise the INET6 socket will just fail
+	    # Otherwise the INET6 socket will just fail
+	    my $srcaddr6 = $srcaddr eq "0.0.0.0" ? '::' : $srcaddr;
 	    $socket[$sockfamily] = IO::Socket::INET6->new(
 							  Proto => 'udp',
 							  Type => SOCK_DGRAM,
-							  LocalAddr => $srcaddr,
-							  LocalPort => $srcport,
+							  LocalAddr => $srcaddr6,
+							  LocalPort => ($srcport || undef),
 					     );
 	} else {
 	    die ref($self)." bgsend:Unsoported Socket Family: $sockfamily";
@@ -1252,11 +1253,14 @@ sub axfr_start {
 
 	my $ns = ($self->nameservers())[0];
 
-	print ";; axfr_start nameserver = $ns\n" if $self->{'debug'};
 
 	my $srcport = $self->{'srcport'};
 	my $srcaddr = $self->{'srcaddr'};
 	my $dstport = $self->{'port'};
+
+	print ";; axfr_start nameserver = $ns\n" if $self->{'debug'};
+	print ";; axfr_start srcport: $srcport, srcaddr: $srcaddr, dstport: $dstport\n" if $self->{'debug'};
+
 
 	my $sock;
 	my $sock_key = "$ns:$self->{'port'}";
@@ -1266,14 +1270,13 @@ sub axfr_start {
 	    print ";; using persistent socket\n" if $self->{'debug'};
 	    
 	} else {
-	    if ($has_inet6  && ! $self->force_v4()){
-		$srcaddr="0" if $srcaddr eq "0.0.0.0";  # Otherwise the INET6 socket will just fail
-		
-		$sock = 
-		    IO::Socket::INET6->new(
-					   PeerPort =>    53,
+	    if ($has_inet6  && ! $self->force_v4() && ip_is_ipv6($ns)){
+		# Otherwise the INET6 socket will just fail
+		my $srcaddr6 = $srcaddr eq "0.0.0.0" ? '::' : $srcaddr;
+		$sock = IO::Socket::INET6->new(
+					   PeerPort =>    $dstport,
 					   PeerAddr =>    $ns,
-					   LocalAddr => 0,
+					   LocalAddr => $srcaddr6,
 					   LocalPort => ($srcport || undef),
 					   Proto     => 'tcp',
 					   );

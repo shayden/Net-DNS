@@ -1,6 +1,6 @@
 package Net::DNS::RR;
 #
-# $Id: RR.pm 388 2005-06-22 10:06:05Z olaf $
+# $Id: RR.pm 501 2005-10-18 13:50:11Z olaf $
 #
 use strict;
 
@@ -15,7 +15,7 @@ use Net::DNS::RR::Unknown;
 
 
 
-$VERSION = (qw$LastChangedRevision: 388 $)[1];
+$VERSION = (qw$LastChangedRevision: 501 $)[1];
 
 =head1 NAME
 
@@ -688,9 +688,11 @@ sub _canonicaldata {
 # have domain names in the RDATA and _name2wire is used to convert a
 # domain name to "wire format"
 
+
 sub _canonicalRdata {
-    my $self = shift;
-    my $rdata = $self->rr_rdata;
+    my $self=shift;
+    my $packet=Net::DNS::Packet->new();
+    my $rdata = $self->rr_rdata($packet,0);
     return $rdata;
 }
 

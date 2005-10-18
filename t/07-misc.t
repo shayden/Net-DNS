@@ -1,4 +1,4 @@
-# $Id: 07-misc.t 264 2005-04-06 09:16:15Z olaf $ -*-perl-*-
+# $Id: 07-misc.t 488 2005-09-26 08:15:21Z olaf $ -*-perl-*-
 
 use Test::More tests => 22;
 use strict;
@@ -62,8 +62,8 @@ is($warning, 0, 'No evil warning');
 {
 	my $srv = Net::DNS::RR->new('srv.t.net-dns.org 60 IN SRV 0 2 3 target.net-dns.org');
 	
-	like($srv->string, '/0 2 3 target.net-dns.org/');
-	is($srv->rdatastr, '0 2 3 target.net-dns.org');
+	like($srv->string, '/0 2 3 target.net-dns.org\./');
+	is($srv->rdatastr, '0 2 3 target.net-dns.org.');
 }
 
 

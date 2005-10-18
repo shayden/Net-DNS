@@ -1,6 +1,6 @@
 package Net::DNS::RR::SRV;
 #
-# $Id: SRV.pm 388 2005-06-22 10:06:05Z olaf $
+# $Id: SRV.pm 484 2005-09-22 19:05:12Z olaf $
 #
 use strict;
 BEGIN { 
@@ -9,7 +9,7 @@ BEGIN {
 use vars qw(@ISA $VERSION);
 
 @ISA     = qw(Net::DNS::RR);
-$VERSION = (qw$LastChangedRevision: 388 $)[1];
+$VERSION = (qw$LastChangedRevision: 484 $)[1];
 
 sub new {
 	my ($class, $self, $data, $offset) = @_;
@@ -42,6 +42,7 @@ sub rdatastr {
 
 	if (exists $self->{'priority'}) {
 		$rdatastr = join(' ', @{$self}{qw(priority weight port target)});
+		$rdatastr =~ s/(.*[^\.])$/$1./;
 	} else {
 		$rdatastr = '';
 	}
@@ -68,7 +69,7 @@ sub _canonicalRdata {
 	
 	if (exists $self->{'priority'}) {
 		$rdata .= pack('n3', @{$self}{qw(priority weight port)});
-		$rdata .= $self->name_2wire($self->{'target'});
+		$rdata .= $self->_name2wire($self->{'target'});
 	}
 
 	return $rdata;
