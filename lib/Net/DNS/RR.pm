@@ -1,6 +1,6 @@
 package Net::DNS::RR;
 #
-# $Id: RR.pm 501 2005-10-18 13:50:11Z olaf $
+# $Id: RR.pm 517 2005-11-21 08:38:47Z olaf $
 #
 use strict;
 
@@ -15,7 +15,7 @@ use Net::DNS::RR::Unknown;
 
 
 
-$VERSION = (qw$LastChangedRevision: 501 $)[1];
+$VERSION = (qw$LastChangedRevision: 517 $)[1];
 
 =head1 NAME
 
@@ -186,7 +186,7 @@ sub build_regex {
  $a     = Net::DNS::RR->new("foo.example.com. 86400 A 10.1.2.3");
  $mx    = Net::DNS::RR->new("example.com. 7200 MX 10 mailhost.example.com.");
  $cname = Net::DNS::RR->new("www.example.com 300 IN CNAME www1.example.com");
- $txt   = Net::DNS::RR->new("baz.example.com 3600 HS TXT 'text record'");
+ $txt   = Net::DNS::RR->new('baz.example.com 3600 HS TXT "text record"');
 
 Returns a C<Net::DNS::RR> object of the appropriate type and
 initialized from the string passed by the user.  The format of the
@@ -663,7 +663,7 @@ sub _canonicaldata {
 	    my @dname=Net::DNS::name2labels($name);
 	    for (my $i=0;$i<@dname;$i++){
 		$data .= pack ('C',length $dname[$i] );
-		$data .= $dname[$i] ;
+		$data .= lc($dname[$i] );
 	    }
 	    $data .= pack ('C','0');
 	}

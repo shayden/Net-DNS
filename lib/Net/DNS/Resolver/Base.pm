@@ -1,6 +1,6 @@
 package Net::DNS::Resolver::Base;
 #
-# $Id: Base.pm 492 2005-10-06 12:01:24Z olaf $
+# $Id: Base.pm 519 2005-12-07 12:30:16Z olaf $
 #
 
 use strict;
@@ -25,7 +25,7 @@ use Net::IP qw(ip_is_ipv4 ip_is_ipv6 ip_normalize);
 use Net::DNS;
 use Net::DNS::Packet;
 
-$VERSION = (qw$LastChangedRevision: 492 $)[1];
+$VERSION = (qw$LastChangedRevision: 519 $)[1];
 
 
 #
@@ -1451,7 +1451,6 @@ sub dnssec {
     }
     
     Carp::carp ("You called the Net::DNS::Resolver::dnssec() method but do not have Net::DNS::SEC installed") if $self->{"dnssec"} && ! $Net::DNS::DNSSEC;
-    
     return $self->{"dnssec"};
 };
 

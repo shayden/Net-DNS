@@ -1,6 +1,34 @@
 Revision history for Net::DNS                                     -*-text-*-
 =============================
 
+
+*** 0.54 December 7, 2005
+
+
+Fix rt.cpan.org 15947
+
+  Failure to bind a nameserver when specifying an IPv6 address.
+
+Fix rt.cpan.org 11931
+
+  Using Net-DNS 0.53 on Win XP, it is unable to retrieve the
+  nameservers when the IP address of the interface is assigned by
+  DHCP.  This is due to the DHCP assigned IP address being stored in
+  DhcpIPAddress rather than IPAddress (which is then 0.0.0.0).  Adding
+  a check of DhcpIPAddress existance and not being 0.0.0.0 fixes the
+  problem.  Applied the patch submitted by "orjan". 
+
+Fix rt.cpan.org 15119
+
+  main_loop() consumed 100% of memory, because of a bug that
+  couced loop_once() to loop ad infinitum.
+
+Fix rt.cpan.org 15299
+
+  Defining multiple constants with 'use constant { BLA => 1, FOO =>2 };
+  is a backwards incompatible feature. Thanks to Ian White for spotting and
+  fixing this.
+
 *** 0.53_02 Oct 18, 2005
 
 
@@ -932,4 +960,4 @@ Olaf Kolkman <olaf@net-dns.org>
 Chris Reinhardt 
 Michael Fuhr 
 
-$Id: Changes 502 2005-10-18 13:59:03Z olaf $
+$Id: Changes 519 2005-12-07 12:30:16Z olaf $

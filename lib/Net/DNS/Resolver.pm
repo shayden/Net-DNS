@@ -1,12 +1,12 @@
 package Net::DNS::Resolver;
 #
-# $Id: Resolver.pm 492 2005-10-06 12:01:24Z olaf $
+# $Id: Resolver.pm 513 2005-11-09 23:49:38Z olaf $
 #
 
 use strict;
 use vars qw($VERSION @ISA);
 
-$VERSION = (qw$LastChangedRevision: 492 $)[1];
+$VERSION = (qw$LastChangedRevision: 513 $)[1];
 
 BEGIN {
 	if ($^O eq 'MSWin32') {
@@ -729,12 +729,14 @@ Error reporting and handling needs to be improved.
 The current implementation supports TSIG only on outgoing packets.
 No validation of server replies is performed.
 
+bgsend does not honor the usevc flag and only uses UDP for transport.
+
 =head1 COPYRIGHT
 
 Copyright (c) 1997-2002 Michael Fuhr. 
 
 Portions Copyright (c) 2002-2004 Chris Reinhardt.
-Portions Copyright (c) 2005 Olaf M. Kolkman
+Portions Copyright (c) 2005 Olaf M. Kolkman, NLnet Labs.
 
 All rights reserved.  This program is free software; you may redistribute
 it and/or modify it under the same terms as Perl itself.

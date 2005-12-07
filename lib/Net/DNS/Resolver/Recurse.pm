@@ -1,13 +1,13 @@
 package Net::DNS::Resolver::Recurse;
 #
-# $Id: Recurse.pm 462 2005-07-15 20:55:32Z olaf $
+# $Id: Recurse.pm 515 2005-11-16 15:28:39Z olaf $
 #
 use strict;
 use Net::DNS::Resolver;
 
 use vars qw($VERSION @ISA);
 
-$VERSION = (qw$LastChangedRevision: 462 $)[1];
+$VERSION = (qw$LastChangedRevision: 515 $)[1];
 @ISA = qw(Net::DNS::Resolver);
 
 sub hints {
@@ -133,9 +133,13 @@ sub _dorecursion {
   my $depth = shift;
   my $cache = $self->{'authority_cache'};
 
-  print ";; _dorecursion() depth=[$depth] known_zone=[$known_zone]\n" if $self->{'debug'};
-  die "Recursion too deep, aborting..." if $depth > 255;
-
+  # die "Recursion too deep, aborting..." if $depth > 255;
+  if ( $depth > 255 ) {
+      print ";; _dorecursion() Recursion too deep, aborting...\n" if
+	  $self->{'debug'};
+      $self->errorstring="Recursion to deep, abborted";
+      return undef;
+  }
   
   $known_zone =~ s/\.*$/./;
 
@@ -397,7 +401,7 @@ Portions Copyright (c) 2005, Olaf M Kolkman.
 This module is free software; you can redistribute
 it and/or modify it under the same terms as Perl itself.
 
-$Id: Recurse.pm 462 2005-07-15 20:55:32Z olaf $
+$Id: Recurse.pm 515 2005-11-16 15:28:39Z olaf $
 
 =cut
 
