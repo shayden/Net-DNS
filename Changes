@@ -2,6 +2,33 @@ Revision history for Net::DNS                                     -*-text-*-
 =============================
 
 
+**** 0.55 December 14, 2005
+
+Fix Inconsistency in test
+
+   There was an inconsistency in the t/05-rr.t that got triggered by
+   the release of Net::DNS::SEC version 0.13 (when installed). That
+   has been fixed.
+
+Feature Net::DNS::Nameserver loop_once()
+
+   Uncommented the documentation of the loop_once() function and introduced
+   get_open_tcp() that reports if there are any open TCP sockets (useful
+   when using loop_once().
+
+   loop_once() itself was introduced in version 0.53_02
+
+
+Fix rt.cpan.org 16392
+
+   TCP Sockets stayed open even if not requested. This may cause the kernel
+   to run out of TCP slots. 
+
+   This bug is the reason for releasing version 0.55 shortly after 0.54.
+
+   Spotted and patched by Robert Felber.
+
+
 *** 0.54 December 7, 2005
 
 
@@ -960,4 +987,4 @@ Olaf Kolkman <olaf@net-dns.org>
 Chris Reinhardt 
 Michael Fuhr 
 
-$Id: Changes 519 2005-12-07 12:30:16Z olaf $
+$Id: Changes 536 2005-12-14 10:06:12Z olaf $

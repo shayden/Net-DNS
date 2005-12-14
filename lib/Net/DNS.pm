@@ -1,6 +1,6 @@
 package Net::DNS;
 #
-# $Id: DNS.pm 519 2005-12-07 12:30:16Z olaf $
+# $Id: DNS.pm 539 2005-12-14 10:16:14Z olaf $
 #
 use strict;
 
@@ -41,7 +41,7 @@ BEGIN {
     @ISA     = qw(Exporter DynaLoader);
 
     
-    $VERSION = '0.54';
+    $VERSION = '0.55';
     $HAVE_XS = eval { 
 	local $SIG{'__DIE__'} = 'DEFAULT';
 	__PACKAGE__->bootstrap(); 1 

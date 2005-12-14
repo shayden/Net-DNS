@@ -1,6 +1,6 @@
 package Net::DNS::Resolver::Base;
 #
-# $Id: Base.pm 519 2005-12-07 12:30:16Z olaf $
+# $Id: Base.pm 534 2005-12-09 18:03:45Z olaf $
 #
 
 use strict;
@@ -25,7 +25,7 @@ use Net::IP qw(ip_is_ipv4 ip_is_ipv6 ip_normalize);
 use Net::DNS;
 use Net::DNS::Packet;
 
-$VERSION = (qw$LastChangedRevision: 519 $)[1];
+$VERSION = (qw$LastChangedRevision: 534 $)[1];
 
 
 #
@@ -622,8 +622,9 @@ sub send_tcp {
 			"failed: $!\n" if $self->{'debug'};
 			next;
 		    }
-
-			$self->{'sockets'}[AF_UNSPEC]{$sock_key} = $sock;
+		    
+		    $self->{'sockets'}[AF_UNSPEC]{$sock_key} = $sock if 
+			$self->persistent_tcp;
 		}
 
 		my $lenmsg = pack('n', length($packet_data));
@@ -1300,7 +1301,8 @@ sub axfr_start {
 		return;
 	    }
 	    
-	    $self->{'sockets'}[AF_UNSPEC]{$sock_key} = $sock;
+	    $self->{'sockets'}[AF_UNSPEC]{$sock_key} = $sock 
+		if $self->persistent_tcp;
 	}
 
 
