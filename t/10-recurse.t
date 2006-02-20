@@ -1,4 +1,4 @@
-# $Id: 10-recurse.t 372 2005-06-10 06:01:34Z olaf $ -*-perl-*-
+# $Id: 10-recurse.t 566 2006-02-20 12:00:50Z olaf $ -*-perl-*-
 
 use Test::More;
 use strict;
@@ -77,6 +77,7 @@ BEGIN { use_ok('Net::DNS::Resolver::Recurse'); }
 {
 	my $res = Net::DNS::Resolver::Recurse->new ;
 	my $count;
+
 
 	$res->recursion_callback(sub {
 		my $packet = shift;

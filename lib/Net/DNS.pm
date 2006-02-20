@@ -1,6 +1,6 @@
 package Net::DNS;
 #
-# $Id: DNS.pm 539 2005-12-14 10:16:14Z olaf $
+# $Id: DNS.pm 564 2006-02-20 09:34:26Z olaf $
 #
 use strict;
 
@@ -41,7 +41,7 @@ BEGIN {
     @ISA     = qw(Exporter DynaLoader);
 
     
-    $VERSION = '0.55';
+    $VERSION = '0.56';
     $HAVE_XS = eval { 
 	local $SIG{'__DIE__'} = 'DEFAULT';
 	__PACKAGE__->bootstrap(); 1 
@@ -69,10 +69,11 @@ use Net::DNS::Update;
 use Net::DNS::Header;
 use Net::DNS::Question;
 use Net::DNS::RR;   # use only after $Net::DNS::DNSSEC has been evaluated
-
+use Carp;
 
 @EXPORT = qw(mx yxrrset nxrrset yxdomain nxdomain rr_add rr_del);
-@EXPORT_OK= qw(name2labels wire2presentation );
+@EXPORT_OK= qw(name2labels wire2presentation rrsort);
+
 
 #
 # If you implement an RR record make sure you also add it to 
@@ -131,6 +132,7 @@ use Net::DNS::RR;   # use only after $Net::DNS::DNSSEC has been evaluated
     'RRSIG'     => 46,      # RFC 4034
     'NSEC'      => 47,      # RFC 4034
     'DNSKEY'    => 48,      # RFC 4034
+    'SPF'       => 99,      # rfc-schlitt-spf-classic-o2 (No RFC # yet at time of coding)
     'UINFO'     => 100,     # non-standard
     'UID'       => 101,     # non-standard
     'GID'       => 102,     # non-standard
@@ -165,12 +167,12 @@ sub typesbyname {
 
     return $typesbyname{$name} if $typesbyname{$name};
 
-    die "Net::DNS::typesbyname() argument ($name) is not TYPE###" unless 
-        $name =~ m/^\s*TYPE(\d+)\s*$/;  
+    confess "Net::DNS::typesbyname() argument ($name) is not TYPE###" unless 
+        $name =~ m/^\s*TYPE(\d+)\s*$/o;  
     
     my $val = $1;
     
-    die 'Net::DNS::typesbyname() argument larger than ' . 0xffff if $val > 0xffff;
+    confess 'Net::DNS::typesbyname() argument larger than ' . 0xffff if $val > 0xffff;
     
     return $val;
 }
@@ -179,15 +181,15 @@ sub typesbyname {
 
 sub typesbyval {
     my $val = shift;
-    
-    die "Net::DNS::typesbyval() argument ($val) is not numeric" unless 
-	$val =~ m/^\s*0*(\d+)\s*$/;
-    $val = $1;
+    confess "Net::DNS::typesbyval() argument is not defined" unless defined $val;
+    confess "Net::DNS::typesbyval() argument ($val) is not numeric" unless 
+	$val =~ s/^\s*0*(\d+)\s*$/$1/o;
+
     
     
     return $typesbyval{$val} if $typesbyval{$val};
     
-    die 'Net::DNS::typesbyval() argument larger than '. 0xffff if 
+    confess 'Net::DNS::typesbyval() argument larger than '. 0xffff if 
         $val > 0xffff;
     
     return "TYPE$val";
@@ -220,12 +222,12 @@ sub classesbyname {
     my $name = uc shift;
     return $classesbyname{$name} if $classesbyname{$name};
     
-    die "Net::DNS::classesbyval() argument is not CLASS### ($name)" unless 
-        $name =~ m/^\s*CLASS(\d+)\s*$/;
+    confess "Net::DNS::classesbyval() argument is not CLASS### ($name)" unless 
+        $name =~ m/^\s*CLASS(\d+)\s*$/o;
     
     my $val = $1;
     
-    die 'Net::DNS::classesbyval() argument larger than '. 0xffff if $val > 0xffff;
+    confess 'Net::DNS::classesbyval() argument larger than '. 0xffff if $val > 0xffff;
     
     return $val;
 }
@@ -235,15 +237,12 @@ sub classesbyname {
 sub classesbyval {
     my $val = shift;
     
-    die "Net::DNS::classesbyname() argument is not numeric ($val)" unless 
-        $val=~/^\s*\d+\s*$/;
-    
-    $val =~ s/\s*//g;
-    $val =~ s/^0*([0-9]+)/$1/;    #remove leading zeros 
+    confess "Net::DNS::classesbyname() argument is not numeric ($val)" unless 
+	$val =~ s/^\s*0*([0-9]+)\s*$/$1/o;
     
     return $classesbyval{$val} if $classesbyval{$val};
     
-    die 'Net::DNS::classesbyname() argument larger than ' . 0xffff if $val > 0xffff;
+    confess 'Net::DNS::classesbyname() argument larger than ' . 0xffff if $val > 0xffff;
     
     return "CLASS$val";
 }
@@ -485,6 +484,47 @@ sub presentation2wire {
 
 
 
+
+
+sub rrsort {
+    my ($rrtype,$attribute,@rr_array)=@_;
+    unless (exists($Net::DNS::typesbyname{uc($rrtype)})){
+	# unvalid error type
+	return();
+    }
+    unless (defined($attribute)){
+	# no second argument... hence no array.
+	return();
+    }
+
+    # attribute is empty or not specified.
+    
+    if( ref($attribute)=~/^Net::DNS::RR::.*/){
+	# push the attribute back on the array.
+	push @rr_array,$attribute;
+	undef($attribute);
+
+    }
+
+    my @extracted_rr;
+    foreach my $rr (@rr_array){
+	push( @extracted_rr, $rr )if (uc($rr->type) eq uc($rrtype));
+    }
+    return () unless  @extracted_rr;
+    my $func=("Net::DNS::RR::".$rrtype)->get_rrsort_func($attribute);
+    my @sorted=sort $func  @extracted_rr;
+    return @sorted; 
+    
+}
+
+
+
+
+
+
+
+
+
 1;
 __END__
 
@@ -698,6 +738,54 @@ section of a dynamic update packet.
 
 Returns a C<Net::DNS::RR> object or C<undef> if the object couldn't
 be created.
+
+
+=head2 Sorting of RR arrays
+
+As of version 0.55 there is functionality to help you sort RR
+arrays. 'rrsort()' is the function that is available to do the
+sorting. In most cases rrsort will give you the answer that you
+want but you can specify your own sorting method by using the 
+Net::DNS::RR::FOO->set_rrsort_func() class method. See L<Net::DNS::RR>
+for details.
+
+=head3 rrsort()
+
+   use Net::DNS qw(rrsort);
+
+   my @prioritysorted=rrsort("SRV","priority",@rr_array);
+
+
+rrsort() selects all RRs from the input array that are of the type
+that are defined in the first argument. Those RRs are sorted based on
+the attribute that is specified as second argument.
+
+There are a number of RRs for which the sorting function is
+specifically defined for certain attributes.  If such sorting function
+is defined in the code (it can be set or overwritten using the
+set_rrsort_func() class method) that function is used. 
+
+For instance:
+   my @prioritysorted=rrsort("SRV","priority",@rr_array);
+returns the SRV records sorted from lowest to heighest priority and
+for equal priorities from heighes to lowes weight.
+
+If the function does not exist then a numerical sort on the attribute
+value is performed. 
+   my @portsorted=rrsort("SRV","port",@rr_array);
+
+If the attribute does not exist for a certain RR than the RRs are
+sorted on string comparrisson of the rdata.
+
+If the attribute is not defined than either the default_sort function
+will be defined or "Canonical sorting" (as defined by DNSSEC) will be
+used.
+
+rrsort() returns a sorted array with only elements of the specified
+RR type or undef.
+
+rrsort() returns undef when arguments are incorrect.
+
 
 
 =head1 EXAMPLES

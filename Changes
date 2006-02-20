@@ -1,6 +1,93 @@
 Revision history for Net::DNS                                     -*-text-*-
 =============================
 
+*** 0.56 February 20, 2006
+
+Fix rt.cpan.org 17694
+ 
+   Net::DNS::typesbyval() now confesses on undefined
+   args. Acknowledgements to Dean Serenevy.
+
+Feature Implemented SPF (typecode 99).
+
+   The class completely inherits from Net::DNS::RR::TXT (the easiest 
+   RR to implement ever).
+
+Feature added rrsort() function.
+   Feature was requested by Eric Hall in rt.cpan.org 13392
+
+   This was a little tricky as I think that the sort functions are in
+   fact RR specific class attributes that should be accessed through
+   class methods. This is difficult to implement. I do think I found a
+   fairly clean manner. It does require a global variable in Net::DNS
+   to store the functions and some trickery when the sorting functions
+   are defined.
+
+   See Net::DNS and Net::DNS::RR documentation for details.
+
+   Defaults sorting functions are currently implemented in 
+      SRV: default sort: low prioirity to high priority and for
+           same preference highest weight first.
+	   weight: sort all RRs based on weight, highest first
+	   priority: see default sort
+
+      MX:  default sort: lowest preference first.
+           preference: see default sort    
+           
+    NAPTR: default sort: lowest to highest order, for same order lowest
+           preference first
+	   order: see default sort
+	   preference: order on preference, lowest first
+
+      PX:  See MX
+      RT:  See MX
+
+
+Fix rt.cpan.org 14653 and 14049 
+   TCP fallback after V6 socket failure 
+
+   Reworked Net::DNS::Base::Nameserver::send_tcp() to fallback to IPv4 when 
+   possible. (change applied to SVN Revision 538).
+
+
+Feature Cleanup duplicated code
+
+   axfr_send() and send_tcp() contained some duplicated code. I merged
+   this in one "helper" method _create_tcp_socket()
+
+
+
+Fix AXFR persistent sockets coliding with query sockets.
+
+   I think that using the same persistent sockets for AXFR and
+   'ordinary' queries could lead to race conditions. Better safe than
+   sorry. For axfrs we create a different set of persitent sockets.
+
+   Note that this prevents performing a SOA query first and then using
+   the same socket for the zone transfer itself(in Net::DNS these are
+   different code paths). This behavior 00 SOA and transfer on the
+   same socket-- seems to be suggested by 1035 section 4.2.2:
+
+     "In particular, the server should allow the SOA and AXFR request
+     sequence (which begins a refresh operation) to be made on a
+     single connection."
+
+   Obviously, on the client side this behavior is not mandatory.
+
+
+Fix rt.cpan.org 17596
+    
+    The fixes and features above also fixed the timeout problem reported by
+    Paul Hofman
+   
+
+ Profiling
+
+    It turned out that each time we were calling
+    Net::DNS::Resolver::Base::nameserver(); We were creating a
+    resolver object. Now a resolver object is only called when a
+    domain name is given as argument.
+
 
 **** 0.55 December 14, 2005
 
@@ -987,4 +1074,4 @@ Olaf Kolkman <olaf@net-dns.org>
 Chris Reinhardt 
 Michael Fuhr 
 
-$Id: Changes 536 2005-12-14 10:06:12Z olaf $
+$Id: Changes 565 2006-02-20 12:00:15Z olaf $

@@ -1,4 +1,4 @@
-# $Id: 05-rr.t 536 2005-12-14 10:06:12Z olaf $   -*-perl-*-
+# $Id: 05-rr.t 549 2005-12-20 20:45:03Z olaf $   -*-perl-*-
 
 use Test::More;
 use strict;
@@ -13,11 +13,11 @@ BEGIN {
 	eval {require Net::DNS::SEC;}
 	){
 	$HAS_DNSSEC=1;
-	plan tests => 245;
+	plan tests => 253;
 
     }else{
 	$HAS_DNSSEC=0;
-	plan tests => 219;
+	plan tests => 226;
     }
 };
 
@@ -209,6 +209,11 @@ my @rrs = (
 		tag			 => 1,
 		algorithm    => 1,
 		certificate  => '123456789abcdefghijklmnopqrstuvwxyz',
+	},
+
+	{	#[25]
+		type         => 'SPF',
+		txtdata      => 'txt-txtdata',
 	},
 	
 );

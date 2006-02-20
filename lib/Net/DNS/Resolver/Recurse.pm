@@ -1,13 +1,13 @@
 package Net::DNS::Resolver::Recurse;
 #
-# $Id: Recurse.pm 515 2005-11-16 15:28:39Z olaf $
+# $Id: Recurse.pm 552 2005-12-23 09:29:12Z olaf $
 #
 use strict;
 use Net::DNS::Resolver;
 
 use vars qw($VERSION @ISA);
 
-$VERSION = (qw$LastChangedRevision: 515 $)[1];
+$VERSION = (qw$LastChangedRevision: 552 $)[1];
 @ISA = qw(Net::DNS::Resolver);
 
 sub hints {
@@ -165,15 +165,20 @@ sub _dorecursion {
     foreach my $ns (keys %{ $known_authorities }) {
       if (!@{ $known_authorities->{$ns} }) {
         print ";; _dorecursion() Manual lookup for authority [$ns]\n" if $self->{'debug'};
-        my $auth_packet =
-	    $self->_dorecursion
-	    ($self->make_query_packet($ns,"AAAA"),  # packet
-	     ".",               # known_zone
-	     $self->{'hints'},  # known_authorities
-	     $depth+1);         # depth
+
+        my $auth_packet;
 	my @ans;
-	@ans = $auth_packet->answer if $auth_packet;
-	
+
+	# Don't query for V6 if its not there.
+	if ($Net::DNS::Resolver::Base::has_inet6 && ! $self->{force_v4}){
+	    $auth_packet =
+		$self->_dorecursion
+		($self->make_query_packet($ns,"AAAA"),  # packet
+		 ".",               # known_zone
+		 $self->{'hints'},  # known_authorities
+		 $depth+1);         # depth
+	    @ans = $auth_packet->answer if $auth_packet;
+	}
 	
 	$auth_packet =
 	    $self->_dorecursion
@@ -401,7 +406,7 @@ Portions Copyright (c) 2005, Olaf M Kolkman.
 This module is free software; you can redistribute
 it and/or modify it under the same terms as Perl itself.
 
-$Id: Recurse.pm 515 2005-11-16 15:28:39Z olaf $
+$Id: Recurse.pm 552 2005-12-23 09:29:12Z olaf $
 
 =cut
 

@@ -1,7 +1,7 @@
-# $Id: 00-load.t 264 2005-04-06 09:16:15Z olaf $
+# $Id: 00-load.t 549 2005-12-20 20:45:03Z olaf $ -*-perl-*-
 
 
-use Test::More tests => 75;
+use Test::More tests => 77;
 use strict;
 
 BEGIN { 
