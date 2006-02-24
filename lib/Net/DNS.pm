@@ -1,6 +1,6 @@
 package Net::DNS;
 #
-# $Id: DNS.pm 564 2006-02-20 09:34:26Z olaf $
+# $Id: DNS.pm 570 2006-02-21 11:58:00Z olaf $
 #
 use strict;
 
@@ -41,7 +41,7 @@ BEGIN {
     @ISA     = qw(Exporter DynaLoader);
 
     
-    $VERSION = '0.56';
+    $VERSION = '0.57';
     $HAVE_XS = eval { 
 	local $SIG{'__DIE__'} = 'DEFAULT';
 	__PACKAGE__->bootstrap(); 1 
@@ -129,6 +129,7 @@ use Carp;
     # The following 4 RRs are impemented in Net::DNS::SEC
     'DS'        => 43,      # RFC 4034
     'SSHFP'     => 44,      # draft-ietf-secsh-dns (No RFC # yet at time of coding)
+#    'IPSECKEY'  => 45,      # RFC 4025
     'RRSIG'     => 46,      # RFC 4034
     'NSEC'      => 47,      # RFC 4034
     'DNSKEY'    => 48,      # RFC 4034

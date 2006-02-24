@@ -1,4 +1,4 @@
-# $Id: 11-inet6.t 542 2005-12-14 14:54:52Z olaf $ -*-perl-*-
+# $Id: 11-inet6.t 570 2006-02-21 11:58:00Z olaf $ -*-perl-*-
 
 
 my $has_inet6;
@@ -21,7 +21,7 @@ BEGIN { use_ok('Net::DNS');
 
 
 SKIP: { skip "Socket6 and or IO::Socket::INET6 not loaded\n".
-	    "You will need to install these modules for IPv6 transport support", 9 unless $has_inet6;
+	    "You will need to install these modules for IPv6 transport support", 10 unless $has_inet6;
 
 	diag "";
 	diag "The libraries needed for IPv6 support have been found\n";
