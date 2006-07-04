@@ -1,4 +1,4 @@
-# $Id: 00-load.t 549 2005-12-20 20:45:03Z olaf $ -*-perl-*-
+# $Id: 00-load.t 593 2006-05-25 09:40:39Z olaf $ -*-perl-*-
 
 
 use Test::More tests => 77;
@@ -19,7 +19,7 @@ sub is_rr_loaded {
 	return $INC{"Net/DNS/RR/$rr.pm"} ? 1 : 0;
 }
 
-my %skip = map { $_ => 1 } qw(SIG NXT KEY DS NSEC RRSIG DNSKEY);
+my %skip = map { $_ => 1 } qw(SIG NXT KEY DS NSEC RRSIG DNSKEY DLV);
 
 my @rrs = grep { !$skip{$_} } keys %Net::DNS::RR::RR;
 

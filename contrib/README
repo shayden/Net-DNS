@@ -5,10 +5,18 @@ problems or questions, please contact the contributor.
 
 File			Contributor
 ------			-----------
-check_zone		Dennis Glatting <dennis.glatting@software-munitions.com>
-dnswalk			Dave Barr <barr@cis.ohio-state.edu>
-loc2earth.fcgi		Christopher Davis <ckd@kei.com>
-loclist.pl		Christopher Davis <ckd@kei.com>
+check_soa		Dick Franks <rwfranks@acm.org>
+                                A 'parallel implementation' of the
+                                check_soa script in the examples
+                                directory
+
+check_zone              Dennis Glatting <dennis.glatting@software-munitions.com>
+
+dnswalk	                Dave Barr <barr@cis.ohio-state.edu>
+
+loc2earth.fcgi	        Christopher Davis <ckd@kei.com>
+
+loclist.pl              Christopher Davis <ckd@kei.com>
 
 ---
-$Id: README 264 2005-04-06 09:16:15Z olaf $
+$Id: README 586 2006-05-03 15:14:40Z olaf $

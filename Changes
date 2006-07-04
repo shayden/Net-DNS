@@ -2,6 +2,75 @@
 Revision history for Net::DNS                                     -*-text-*-
 =============================
 
+*** 0.58 July 4, 2006
+
+Feature: hooks for DLV support in Net::DNS::SEC
+
+   added hooks for DLV support which is/will be available in
+   Net::DNS::SEC as of subversion version 592 (Tests are done agains
+   the subversion number, not against the perl release version)
+   Net::DNS::SEC version 0.15 will have DLV support.
+
+Partly Fixed rt.cpan.org 18940
+
+   djhale noticed a number of error conditions under which de
+   udp_connection in Nameserver dies. We now print a warning instead
+   of dying.
+
+
+Fix rt.cpan.org 18958
+
+   Fixed typebyname croak for SIGZERO. Acknowledgements to djhale.
+
+
+Optimize rt.cpan.org 11931
+
+   Hanno Stock optimized the method to get the list of available
+   interfaces in Win32.  I have only done very rudimentary tests on
+   my Windows XP system.
+
+Fix dependency on "CC" rt.cpan.org 19352
+
+   The Makefile.PL depended on availabliltity of "cc" and would bail
+   out on systems where gcc is exclusivly available. Thanks to Rob
+   Windsor for noticing and patching.
+
+Fix compressed dnames in NAPTR/SRV
+
+    Clayton O'Neill noted that the the domain names in in the NAPTR
+    and SRV RRs rdata were subject to name compression which is not
+    conform the specs. Also see RFC 2782 and 2915.
+
+
+Fix rt.cpan.org 18897
+
+   Zero-length rdata in TXT fixed (Acknowledgements to Roy Arends)
+
+Fix rt.cpan.org 18785
+
+   SPF would not work unless the TXT RR was not loaded first. No
+   wonder, SPF fully inherits TXT and loading of TXT.pm is therefore a
+   prerequisit.
+
+
+Fix rt.cpan.org 18713
+
+    Net::DNS::Resolver now deals gracefully with persistent sockets
+    that got disconnected. It will first try to connect again to the
+    socket and if that fails it will try to connect to the next
+    available nameserver. tcp_timeout() is the parameter that
+    determines how long to wait during a reconnect.
+
+Fix rt.cpan.org 18268
+
+     Added reference to RFC in croak message for label length > 63 in
+     dn_comp().
+
+Fix rt.cpan.org  18113
+
+    The inet6 tests contained another bug when online-tests were disabled.
+    Klaus Heinz discovered and provided a patch.
+
 *** 0.57 February 24, 2006
 
 Fix rt.cpan.org 17783
@@ -1087,4 +1156,4 @@ Olaf Kolkman <olaf@net-dns.org>
 Chris Reinhardt 
 Michael Fuhr 
 
-$Id: Changes 575 2006-02-24 12:51:55Z olaf $
+$Id: Changes 596 2006-07-04 07:42:36Z olaf $

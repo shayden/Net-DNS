@@ -1,6 +1,6 @@
 package Net::DNS::RR::NAPTR;
 #
-# $Id: NAPTR.pm 551 2005-12-22 11:10:37Z olaf $
+# $Id: NAPTR.pm 583 2006-05-03 12:24:18Z olaf $
 #
 use strict;
 BEGIN { 
@@ -9,7 +9,7 @@ BEGIN {
 use vars qw(@ISA $VERSION);
 
 @ISA     = qw(Net::DNS::RR);
-$VERSION = (qw$LastChangedRevision: 551 $)[1];
+$VERSION = (qw$LastChangedRevision: 583 $)[1];
 
 
 
@@ -129,9 +129,9 @@ sub rr_rdata {
 		$rdata .= pack("C", length $self->{"regexp"});
 		$rdata .= $self->{"regexp"};
 
-		$rdata .= $packet->dn_comp($self->{"replacement"},
-					   $offset + length $rdata);
-	}
+		$rdata .= $self->_name2wire ($self->{"replacement"});
+
+	      }
 
 	return $rdata;
 }

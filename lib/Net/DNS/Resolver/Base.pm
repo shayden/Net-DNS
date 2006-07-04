@@ -1,6 +1,6 @@
 package Net::DNS::Resolver::Base;
 #
-# $Id: Base.pm 546 2005-12-16 15:23:03Z olaf $
+# $Id: Base.pm 581 2006-04-21 07:46:45Z olaf $
 #
 
 use strict;
@@ -25,7 +25,7 @@ use Net::IP qw(ip_is_ipv4 ip_is_ipv6 ip_normalize);
 use Net::DNS;
 use Net::DNS::Packet;
 
-$VERSION = (qw$LastChangedRevision: 546 $)[1];
+$VERSION = (qw$LastChangedRevision: 581 $)[1];
 
 
 #
@@ -574,7 +574,16 @@ sub send_tcp {
 	      if ($self->persistent_tcp && $self->{'sockets'}[AF_UNSPEC]{$sock_key}) {
 		      $sock = $self->{'sockets'}[AF_UNSPEC]{$sock_key};
 		      print ";; using persistent socket\n"
+			if $self->{'debug'};
+		      unless ($sock->connected){
+			print ";; persistent socket disconnected (trying to reconnect)" 
 			  if $self->{'debug'};
+			undef($sock);
+			$sock= $self->_create_tcp_socket($ns);
+			next NAMESERVER unless $sock;
+			$self->{'sockets'}[AF_UNSPEC]{$sock_key} = $sock;
+		      }
+		      
 	      } else {
 		      $sock= $self->_create_tcp_socket($ns);
 		      next NAMESERVER unless $sock;

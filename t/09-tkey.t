@@ -1,3 +1,5 @@
+#  $Id: 09-tkey.t 581 2006-04-21 07:46:45Z olaf $    -*-perl-*-
+
 use Test::More tests => 7;
 use strict;
 use Digest::HMAC_MD5;

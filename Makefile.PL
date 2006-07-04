@@ -1,4 +1,4 @@
-# $Id: Makefile.PL 313 2005-05-28 06:57:49Z olaf $ -*-perl-*-
+# $Id: Makefile.PL 587 2006-05-22 18:51:29Z olaf $ -*-perl-*-
 
 use strict;
 $^W = 1;
@@ -191,7 +191,7 @@ EOF
 	
 	close(F) or return;
 
-	my $ret = system("$Config{'make'} compile$Config{obj_ext}");
+	my $ret = system("$Config{'cc'}  -c compile.c -o compile$Config{obj_ext}");
 	
 	foreach my $file (glob('compile*')) {
 		unlink($file) || warn "Could not delete $file: $!\n";
