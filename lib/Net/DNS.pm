@@ -1,6 +1,7 @@
+
 package Net::DNS;
 #
-# $Id: DNS.pm 596 2006-07-04 07:42:36Z olaf $
+# $Id: DNS.pm 606 2006-09-16 08:03:35Z olaf $
 #
 use strict;
 
@@ -41,7 +42,7 @@ BEGIN {
     @ISA     = qw(Exporter DynaLoader);
 
     
-    $VERSION = '0.58';
+    $VERSION = '0.59';
     $HAVE_XS = eval { 
 	local $SIG{'__DIE__'} = 'DEFAULT';
 	__PACKAGE__->bootstrap(); 1 
@@ -144,6 +145,7 @@ use Carp;
     'MAILB'     => 253,     # RFC 1035 (MB, MG, MR)
     'MAILA'     => 254,     # RFC 1035 (obsolete - see MX)
     'ANY'       => 255,     # RFC 1035
+    'NSEC3'     => 65324,    # draft-ietf-dnsext-nsec3-07 (experimental typecode, not permanent)
     'DLV'       => 32769    # RFC 4431  in Net::DNS::SEC		
 );
 %typesbyval = reverse %typesbyname;

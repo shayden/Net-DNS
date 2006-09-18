@@ -2,6 +2,44 @@
 Revision history for Net::DNS                                     -*-text-*-
 =============================
 
+*** 0.59 September 18, 2006
+
+
+
+Fix rt.cpan.org 20836, 20857, 20994, and 21402
+
+    These tickets all revolved around proper reverse mapping of IPv6
+    addresses.
+
+    Acknowledgements to Dick Franks who has provided elegant solutions and
+    cleaned a bit of code.
+
+    Note that directly calling Question->new() withouth arguments will
+    cause the qclass,qtype to be IN, A instead of ANY, ANY.
+
+    Net::DNS::Resolver's search() method would always gracefully
+    interpret a qname in the form of an IPv4 address. It would go out
+    and do a PTR query in the reverse address tree. This behavior has
+    also been applied to IPv6 addresses in their many shapes and
+    forms. 
+
+    This change did two things, 1) root zone not implicitly added to
+    search list when looking up short name, 2) default domain appended
+    to short name if DEFNAMES and not DNSRCH.
+
+
+Fix rt.cpan.org 18113
+
+   Minor error due to unapplied part of patch fixed.
+
+Feature: Experimental NSEC3 hooks. 
+
+   Added hook for future support of (experimental) NSEC3 suppport
+   (NSEC3 having an experimental type code).
+
+
+
+
 *** 0.58 July 4, 2006
 
 Feature: hooks for DLV support in Net::DNS::SEC
@@ -1156,4 +1194,4 @@ Olaf Kolkman <olaf@net-dns.org>
 Chris Reinhardt 
 Michael Fuhr 
 
-$Id: Changes 596 2006-07-04 07:42:36Z olaf $
+$Id: Changes 609 2006-09-18 10:48:22Z olaf $

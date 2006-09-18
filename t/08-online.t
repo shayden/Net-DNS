@@ -1,4 +1,4 @@
-# $Id: 08-online.t 490 2005-10-05 13:14:07Z olaf $ -*-perl-*-
+# $Id: 08-online.t 605 2006-09-13 13:12:33Z olaf $ -*-perl-*-
 
 use Test::More;
 use strict;
@@ -113,7 +113,7 @@ $res = Net::DNS::Resolver->new(
 	searchlist => ['t.net-dns.org', 'net-dns.org'],
 );
 
-
+#$res->debug(1);
 #
 # test the search() and query() append the default domain and 
 # searchlist correctly.
@@ -135,6 +135,7 @@ $res = Net::DNS::Resolver->new(
 			method => 'query',
 			name   => 'a',
 		},
+
 	);
 
 

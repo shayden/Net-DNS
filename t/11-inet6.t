@@ -1,4 +1,4 @@
-# $Id: 11-inet6.t 579 2006-04-18 09:12:04Z olaf $ -*-perl-*-
+# $Id: 11-inet6.t 600 2006-07-17 07:06:12Z olaf $ -*-perl-*-
 
 
 my $has_inet6;
@@ -60,7 +60,7 @@ my $AAAA_address;
 my $A_address;
 
 
-SKIP: { skip "online tests are not enabled", 2 unless -e 't/online.enabled';
+SKIP: { skip "online tests are not enabled", 3 unless -e 't/online.enabled';
 
 	# First use the local resolver to query for the AAAA record of a 
         # well known nameserver, than use v6 transport to get to that record.

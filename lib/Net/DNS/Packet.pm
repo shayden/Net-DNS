@@ -1,6 +1,6 @@
 package Net::DNS::Packet;
 #
-# $Id: Packet.pm 579 2006-04-18 09:12:04Z olaf $
+# $Id: Packet.pm 605 2006-09-13 13:12:33Z olaf $
 #
 use strict;
 
@@ -22,7 +22,7 @@ require Exporter;
 @EXPORT_OK = qw(dn_expand);
 
 
-$VERSION = (qw$LastChangedRevision: 579 $)[1];
+$VERSION = (qw$LastChangedRevision: 605 $)[1];
 
 
 
@@ -223,16 +223,9 @@ sub new {
 			$rrobj->print if $debug;
 		}
 	} else {
-		my ($qname, $qtype, $qclass) = @_;
-
-		$qtype  = "A"  unless defined $qtype;
-		$qclass = "IN" unless defined $qclass;
-
 		$self{"header"} = Net::DNS::Header->new;
 		$self{"header"}->qdcount(1);
-		$self{"question"} = [ Net::DNS::Question->new($qname,
-							      $qtype,
-							      $qclass) ];
+		$self{"question"} = [ Net::DNS::Question->new(@_) ];
 		$self{"answer"}     = [];
 		$self{"authority"}  = [];
 		$self{"additional"} = [];

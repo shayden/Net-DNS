@@ -6,9 +6,6 @@ problems or questions, please contact the contributor.
 File			Contributor
 ------			-----------
 check_soa		Dick Franks <rwfranks@acm.org>
-                                A 'parallel implementation' of the
-                                check_soa script in the examples
-                                directory
 
 check_zone              Dennis Glatting <dennis.glatting@software-munitions.com>
 
@@ -19,4 +16,4 @@ loc2earth.fcgi	        Christopher Davis <ckd@kei.com>
 loclist.pl              Christopher Davis <ckd@kei.com>
 
 ---
-$Id: README 586 2006-05-03 15:14:40Z olaf $
+$Id: README 607 2006-09-17 18:20:28Z olaf $
