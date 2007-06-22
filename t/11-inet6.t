@@ -1,4 +1,4 @@
-# $Id: 11-inet6.t 600 2006-07-17 07:06:12Z olaf $ -*-perl-*-
+# $Id: 11-inet6.t 616 2006-10-18 09:15:48Z olaf $ -*-perl-*-
 
 
 my $has_inet6;

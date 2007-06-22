@@ -1,4 +1,4 @@
-# $Id: 11-escapedchars.t 382 2005-06-15 13:01:08Z olaf $		 -*-perl-*-
+# $Id: 11-escapedchars.t 616 2006-10-18 09:15:48Z olaf $		 -*-perl-*-
 
 use Test::More; 
 use strict;

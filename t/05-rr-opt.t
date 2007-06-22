@@ -1,4 +1,4 @@
-# $Id: 05-rr-txt.t 264 2005-04-06 09:16:15Z olaf $   -*-perl-*-
+# $Id: 05-rr-opt.t 616 2006-10-18 09:15:48Z olaf $   -*-perl-*-
 
 use Test::More tests => 7;
 use strict;

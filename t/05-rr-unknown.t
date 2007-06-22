@@ -1,4 +1,4 @@
-# $Id: 05-rr-unknown.t 264 2005-04-06 09:16:15Z olaf $
+# $Id: 05-rr-unknown.t 639 2007-05-25 12:00:15Z olaf $   -*-perl-*-
 #
 # RFC 3597 Unknown typecode implemntation test code.
 # O.M. Kolkman RIPE NCC.

@@ -1,4 +1,4 @@
-# $Id: Makefile.PL 587 2006-05-22 18:51:29Z olaf $ -*-perl-*-
+# $Id: Makefile.PL 630 2007-02-09 11:04:36Z olaf $ -*-perl-*-
 
 use strict;
 $^W = 1;
@@ -59,7 +59,7 @@ GetOptions(
 
 #
 # Get our makefile started...
-#
+#  NB Net::IP is still needed for tests.
 my %Makefile = (
 	NAME          => 'Net::DNS',
 	VERSION_FROM  => 'lib/Net/DNS.pm',
@@ -68,9 +68,8 @@ my %Makefile = (
 		'IO::Socket'       => 0,
 		'MIME::Base64'     => 2.11,
 		'Digest::MD5'      => 2.12,
+		'Net::IP'          => 1.2,
 		'Digest::HMAC_MD5' => 1.00,
-		"Net::IP"          => 1.20,
-
 	},
 	XS            => {},
 	C             => [],
@@ -103,9 +102,6 @@ unless (defined $use_xs) {
 	if (test_cc()) {
 		print "You have a working compiler.\n";
 		$use_xs = 1;
-	        $Makefile{'MYEXTLIB'}    = 'netdns$(LIB_EXT)',
-
-
 	} else {
 		$use_xs = 0;
 		print <<END;
@@ -131,7 +127,8 @@ END
 
 if ($use_xs) {
 	# turn the XS bits on.
-	print "Activating XS Magic...\n" if DEBUG; 
+        print "Activating XS Magic...\n" if DEBUG; 
+	$Makefile{'MYEXTLIB'}    = 'netdns$(LIB_EXT)';
 	delete $Makefile{'XS'};
 	delete $Makefile{'C'};
 }
@@ -210,7 +207,7 @@ sub metafile {
 }
 
 
-
+use Config qw(%Config);
 sub postamble {
     my $content;
 
@@ -222,9 +219,10 @@ test_cover : pure_all
 
 
 
-netdns$(LIB_EXT): netdns.o
-	$(AR) cr netdns$(LIB_EXT) netdns.o
-	$(RANLIB) netdns$(LIB_EXT)
+
+netdns$(LIB_EXT): netdns$(OBJ_EXT)
+	$(AR) '.($^O eq 'MSWin32' && $Config{'cc'} eq 'cl'?'/OUT:':'cr ').
+	  'netdns$(LIB_EXT) netdns$(OBJ_EXT)
 
 
 ';

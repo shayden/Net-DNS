@@ -1,6 +1,6 @@
-# $Id: 05-rr-txt.t 264 2005-04-06 09:16:15Z olaf $
+# $Id: 05-rr-txt.t 657 2007-06-21 12:57:58Z olaf $
 
-use Test::More tests => 28;
+use Test::More tests => 33;
 use strict;
 
 my $uut;
@@ -116,4 +116,20 @@ ok( $uut->rdatastr() eq q|"no" "quotes"|, 		# 31
     "RR->new_from_hash with txtdata -- Response (rdatastr())");
 
 ok( $uut->rr_rdata() eq $rdata , "TXT->rr_rdata" );	# 32
+
+
+
+
+# And HINFO inherits its parsing from TXT and should therefore work OK as well
+my $rr = Net::DNS::RR->new("SRI-NIC.ARPA. HINFO 'DEC-2060 2006' TOPS20");
+is($rr->cpu,"DEC-2060 2006","Character string in quotes 1");
+is($rr->os,"TOPS20","Character string in quotes 2");
+my $rr2 = Net::DNS::RR->new("SRI-NIC.ARPA. HINFO DEC-2060 2006 TOPS20");
+ok( !defined($rr2), "Failed parsing of to many HINFO strings");
+
+my $rr3 = Net::DNS::RR->new("SRI-NIC.ARPA. HINFO DEC-2060  TOPS20");
+
+is($rr3->cpu,"DEC-2060","Character string in quotes 3");
+is($rr3->os,"TOPS20","Character string in quotes 4");
+
 

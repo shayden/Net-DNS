@@ -1,4 +1,4 @@
-# $Id: 01-resolver-env.t 265 2005-04-11 14:10:18Z olaf $
+# $Id: 01-resolver-env.t 616 2006-10-18 09:15:48Z olaf $
 
 
 use Test::More tests => 13;

@@ -1,6 +1,6 @@
 package Net::DNS::Question;
 #
-# $Id: Question.pm 610 2006-09-18 16:46:43Z olaf $
+# $Id: Question.pm 659 2007-06-21 14:26:19Z olaf $
 #
 use strict;
 BEGIN { 
@@ -12,7 +12,7 @@ use vars qw($VERSION $AUTOLOAD);
 use Carp;
 use Net::DNS;
 
-$VERSION = (qw$LastChangedRevision: 610 $)[1];
+$VERSION = (qw$LastChangedRevision: 659 $)[1];
 
 =head1 NAME
 
@@ -36,60 +36,60 @@ question section of a DNS packet.
 Creates a question object from the domain, type, and class passed
 as arguments.
 
+RFC4291 and RFC4632 IP address/prefix notation is supported for
+queries in in-addr.arpa and ip6.arpa subdomains.
+
 =cut
 
 sub new {
 	my $class = shift;
 
-	my $qname = shift || '';
+	my $qname = defined ($_ = shift) ? $_ : '';
 	my $qtype = uc shift || 'A';
 	my $qclass = uc shift || 'IN';
 
 	$qname =~ s/\.+$//o;	# strip gratuitous trailing dot
 
-
-
  	# Check if the caller has the type and class reversed.
  	# We are not that kind for unknown types.... :-)
- 	if ((!exists $Net::DNS::typesbyname{$qtype} ||
- 	     !exists $Net::DNS::classesbyname{$qclass})
- 	    && exists $Net::DNS::classesbyname{$qtype}
- 	    && exists $Net::DNS::typesbyname{$qclass}) {
-	  ($qtype, $qclass) = ($qclass, $qtype);
-  	}
+	($qtype, $qclass) = ($qclass, $qtype)
+		if exists $Net::DNS::classesbyname{$qtype}
+		and exists $Net::DNS::typesbyname{$qclass};
 
-
-	# if name is an IP address do appropriate PTR query
-	if ( $qname =~ m/:|\d$/ ) {
-		($qname, $qtype) = ($_, 'PTR') if $_ = dns_addr($qname);
+	# if argument is an IP address, do appropriate reverse lookup
+	if ( $qname =~ m/\d$|[:\/]/o ) {
+		my $type = $qtype =~ m/^(A|AAAA)$/o ? 'PTR' : $qtype;
+		($qname, $qtype) = ($_, $type) if $_ = dns_addr($qname);
 	}
 
-
-	
-
-	my %self = (	qname	=> $qname,
+	my $self = {	qname	=> $qname,
 			qtype	=> $qtype,
 			qclass	=> $qclass
-			);
+			};
 
-	bless \%self, $class;
+	bless $self, $class;
 }
 
 
 sub dns_addr {
-	my $arg = shift;	# name or IP6/IP4 address
+	my $arg = shift;	# name or IP address
 
 	# If arg looks like IP4 address then map to in-addr.arpa space
-	if ( $arg =~ /(\d+)\.(\d+)\.(\d+)\.(\d+)$/o ) {
-		return "$4.$3.$2.$1.in-addr.arpa"
+	if ( $arg =~ /((^|\d+\.)+\d+)($|\/(\d*))/o ) {
+		my @parse = split /\./, $1;
+		my $last = ($_ = ($4 || @parse<<3)) > 24 ? 3 : ($_-1)>>3;
+		return join '.', reverse( (@parse,(0)x3)[0 .. $last] ), 'in-addr.arpa';
 	}
 
 	# If arg looks like IP6 address then map to ip6.arpa space
-	if ( $arg =~ /^((\w*:)+)(\w*)$/o ) {
-		my @parse = split /:/, (reverse "${1}0${3}"), 8;
-		my $hex = pack 'A4'x8, map{/^$/ ? ('0000')x(9-@parse) : $_.'000'} @parse;
-		return join '.', split(//, $hex), 'ip6.arpa';
+	if ( $arg =~ /^((\w*:)+)(\w*)($|\/(\d*))/o ) {
+		my @parse = split /:/, (reverse "0${1}0${3}"), 9;
+		my @xpand = map{/^$/ ? ('0')x(9-@parse) : $_} @parse;
+		my $hex = pack 'A4'x8, map{$_.'000'} ('0')x(8-@xpand), @xpand;
+		my $len = ($_ = ($5 || @xpand<<4)) > 124 ? 32 : ($_+3)>>2;
+		return join '.', split(//, substr($hex,-$len) ), 'ip6.arpa';
 	}
+
 	return undef;
 }
 
@@ -129,26 +129,16 @@ known as C<zclass> and refers to the zone's class.
 =cut
 
 sub AUTOLOAD {
-	my ($self) = @_;
-	
+	my $self = shift;
+
 	my $name = $AUTOLOAD;
 	$name =~ s/.*://o;
 
 	Carp::croak "$name: no such method" unless exists $self->{$name};
 
-	no strict q/refs/;
-	
-	*{$AUTOLOAD} = sub {
-		my ($self, $new_val) = @_;
-		
-		if (defined $new_val) {
-			$self->{"$name"} = $new_val;
-		}
-		
-		return $self->{"$name"};
-	};
-	
-	goto &{$AUTOLOAD};	
+	return $self->{$name} unless @_;
+
+	$self->{$name} = shift;
 }
 
 
@@ -164,7 +154,7 @@ Prints the question record on the standard output.
 
 =cut
 
-sub print {	print $_[0]->string, "\n"; }
+sub print {	print shift->string, "\n"; }
 
 =head2 string
 
@@ -196,10 +186,10 @@ domain names.
 sub data {
 	my ($self, $packet, $offset) = @_;
 
-	my $data = $packet->dn_comp($self->{"qname"}, $offset);
+	my $data = $packet->dn_comp($self->{qname}, $offset);
 
-	$data .= pack("n", Net::DNS::typesbyname(uc($self->{"qtype"})));
-	$data .= pack("n", Net::DNS::classesbyname(uc($self->{"qclass"})));
+	$data .= pack 'n', Net::DNS::typesbyname(uc $self->{qtype});
+	$data .= pack 'n', Net::DNS::classesbyname(uc $self->{qclass});
 	
 	return $data;
 }
@@ -210,7 +200,7 @@ Copyright (c) 1997-2002 Michael Fuhr.
 
 Portions Copyright (c) 2002-2004 Chris Reinhardt.
 
-Portions Copyright (c) 2003,2006 Dick Franks.
+Portions Copyright (c) 2003,2006-2007 Dick Franks.
 
 All rights reserved.  This program is free software; you may redistribute
 it and/or modify it under the same terms as Perl itself.

@@ -1,4 +1,4 @@
-# $Id: 10-recurse.t 566 2006-02-20 12:00:50Z olaf $ -*-perl-*-
+# $Id: 10-recurse.t 616 2006-10-18 09:15:48Z olaf $ -*-perl-*-
 
 use Test::More;
 use strict;

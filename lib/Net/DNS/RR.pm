@@ -1,6 +1,6 @@
 package Net::DNS::RR;
 #
-# $Id: RR.pm 607 2006-09-17 18:20:28Z olaf $
+# $Id: RR.pm 665 2007-06-21 14:55:45Z olaf $
 #
 use strict;
 
@@ -8,13 +8,15 @@ BEGIN {
     eval { require bytes; }
 } 
 
+
 use vars qw($VERSION $AUTOLOAD     %rrsortfunct );
 use Carp;
 use Net::DNS;
 use Net::DNS::RR::Unknown;
 
 
-$VERSION = (qw$LastChangedRevision: 607 $)[1];
+
+$VERSION = (qw$LastChangedRevision: 665 $)[1];
 
 =head1 NAME
 
@@ -80,6 +82,7 @@ BEGIN {
 		OPT
 		SSHFP
 		SPF
+		IPSECKEY
 	);
 
 	#  Only load DNSSEC if available
@@ -175,10 +178,25 @@ BEGIN {
 		unless ($@) {
 		  $RR{'NSEC3'} =1;
 		} else {
-		  # Die only if we are dealing with a version for which NSEC3 is 
-		  # available 
+		  # Die only if we are dealing with a version for which NSEC3 is		  # available 
 		  die $@ if defined ($Net::DNS::SEC::HAS_NSEC3);
 		}
+		
+		
+	 	eval { 
+		  local $SIG{'__DIE__'} = 'DEFAULT';
+		  require Net::DNS::RR::NSEC3PARAM; 
+		};
+
+		unless ($@) {
+		  $RR{'NSEC3PARAM'} =1;
+		} else {
+		  # Die only if we are dealing with a version for which NSEC3 is 
+		  # available 
+
+		  die $@ if defined($Net::DNS::SEC::SVNVERSION) &&  $Net::DNS::SEC::SVNVERSION > 619;   # In the code since. (for users of the SVN trunk)
+		}
+
 
 
     }
@@ -322,8 +340,6 @@ sub new_from_string {
 	$rdata =~ s/\s+$//o if $rdata;
 	$name  =~ s/\.$//o  if $name;
 
-	
-
 
 
 	# RFC3597 tweaks
@@ -441,19 +457,15 @@ sub new_from_string {
 
 sub new_from_hash {
 	my $class    = shift;
-	my %tempself = @_;
+	my %keyval   = @_;
 	my $self     = {};
-	
-	my ($key, $val);
 
-	while (($key, $val) = each %tempself) {
-		$self->{lc($key)} = $val;
+	while ( my ($key, $val) = each %keyval ) {
+		( $self->{lc $key} = $val ) =~ s/\.+$// if defined $val;
 	}
 
-	Carp::croak('RR name not specified')
-		unless exists $self->{'name'};
-	Carp::croak('RR type not specified')
-		unless exists $self->{'type'};
+	croak('RR name not specified') unless defined $self->{name};
+	croak('RR type not specified') unless defined $self->{type};
 
 	$self->{'ttl'}   ||= 0;
 	$self->{'class'} ||= 'IN';
@@ -499,10 +511,7 @@ B<string> method to get the RR's string representation.
 =cut
 #' someone said that emacs gets screwy here.  Who am I to claim otherwise...
 
-sub print {
-	my $self = shift;
-	print $self->string, "\n";
-}
+sub print { print shift->string, "\n"; }
 
 =head2 string
 
@@ -515,14 +524,9 @@ B<rdatastr> method to get the RR-specific data.
 
 sub string {
 	my $self = shift;
-
-	return join("\t",
-		"$self->{'name'}.",
-	 	 $self->{'ttl'},
-		 $self->{'class'},
-		 $self->{'type'},
-		 (defined $self->rdatastr and length $self->rdatastr) ? $self->rdatastr : '; no data',
-   );
+	my $data = $self->rdatastr || '; no data';
+  
+	join "\t", "$self->{name}.", $self->{ttl}, $self->{class}, $self->{type}, $data;
 }
 
 =head2 rdatastr
@@ -634,13 +638,14 @@ sub data {
 	if (uc($self->{'type'}) eq 'TSIG' || uc($self->{'type'}) eq 'TKEY') {
 		my $tmp_packet = Net::DNS::Packet->new('');
 		$data = $tmp_packet->dn_comp($self->{'name'}, 0);
+		return undef unless defined $data;
 	} elsif (uc($self->{'type'}) eq 'OPT') {
 		my $tmp_packet = Net::DNS::Packet->new('');
 		$data = $tmp_packet->dn_comp('', 0);
 	} else {
 		$data  = $packet->dn_comp($self->{'name'}, $offset);
+		return undef unless defined $data;	
 	}
-
 
 	my $qtype     = uc($self->{'type'});
 	my $qtype_val = ($qtype =~ m/^\d+$/o) ? $qtype : Net::DNS::typesbyname($qtype);

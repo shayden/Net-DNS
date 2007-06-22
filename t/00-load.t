@@ -1,8 +1,10 @@
-# $Id: 00-load.t 604 2006-09-07 18:47:16Z olaf $ -*-perl-*-
+# -*-perl-*-
+# $Id: 00-load.t 666 2007-06-21 15:08:49Z olaf $ 
 
 
-use Test::More tests => 77;
+use Test::More tests => 79;
 use strict;
+
 
 BEGIN { 
     use_ok('Net::DNS'); 
@@ -12,6 +14,11 @@ BEGIN {
     # can't test windows, has registry stuff
 }
 
+diag("\nThese tests were ran with:\n");
+diag("Net::DNS::VERSION:               ".
+     $Net::DNS::VERSION);
+diag("set environment variable NET_DNS_DEBUG to get all versions");
+
 
 sub is_rr_loaded {
 	my ($rr) = @_;
@@ -19,15 +26,15 @@ sub is_rr_loaded {
 	return $INC{"Net/DNS/RR/$rr.pm"} ? 1 : 0;
 }
 
-my %skip = map { $_ => 1 } qw(SIG NXT KEY DS NSEC RRSIG DNSKEY DLV NSEC3);
+# Skip all Net::DNS::SEC related records.
+my %skip = map { $_ => 1 } qw(SIG NXT KEY DS NSEC RRSIG DNSKEY DLV NSEC3 NSEC3PARAM);
 
 my @rrs = grep { !$skip{$_} } keys %Net::DNS::RR::RR;
 
 
 
 #
-# Make sure that we haven't loaded any of the RR classes yet.
-#
+# Make sure that we haven't loaded any of the RR classes
 foreach my $rr (@rrs) {
 	ok(!is_rr_loaded($rr), "Net::DNS::RR::$rr is not loaded");
 }
@@ -37,11 +44,15 @@ foreach my $rr (@rrs) {
 #
 foreach my $rr (@rrs) {
 	my $class;
+	my $version;
 	eval { $class = Net::DNS::RR->_get_subclass($rr); };
 
 	diag($@) if $@;
 
 	ok(is_rr_loaded($rr), "$class loaded");
+
+	next unless is_rr_loaded($rr);
+
 }
 
 #

@@ -1,5 +1,5 @@
 /*
- * $Id: DNS.xs 384 2005-06-20 11:15:07Z olaf $
+ * $Id: DNS.xs 639 2007-05-25 12:00:15Z olaf $
  *
  *
  * Copyright (c) 2005 Olaf Kolkman
@@ -51,13 +51,13 @@ PROTOTYPES: DISABLE
 void
 dn_expand_XS(sv_buf, offset) 
 	SV * sv_buf
-	unsigned int offset
+	int offset
 
   PPCODE:
 	STRLEN len;
 	u_char * buf;
 	u_char name[MAXDNAME];
-	unsigned int pos;
+	int pos;
 	
 	if (SvROK(sv_buf)) 
 		sv_buf = SvRV(sv_buf);

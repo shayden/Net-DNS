@@ -1,4 +1,4 @@
-# $Id: 01-resolver.t 479 2005-07-31 14:19:41Z olaf $  -*-perl-*-
+# $Id: 01-resolver.t 630 2007-02-09 11:04:36Z olaf $  -*-perl-*-
 
 use Test::More tests => 44;
 use strict;
@@ -94,11 +94,13 @@ SKIP: {
 	
 	$res->nameservers('a.t.net-dns.org');
 	my $ip = ($res->nameservers)[0];
-	is($ip, '10.0.1.128', 'Nameservers() looks up IP.');
+	is($ip, '10.0.1.128', 'Nameservers() looks up IP.') or
+	    diag ($res->errorstring . $res->print) ;
 	
 	$res->nameservers('cname.t.net-dns.org');
 	$ip = ($res->nameservers)[0];
-	is($ip, '10.0.1.128', 'Nameservers() looks up cname.');
+	is($ip, '10.0.1.128', 'Nameservers() looks up cname.') or
+	    diag ($res->errorstring . $res->print) ;
 }	
 
 

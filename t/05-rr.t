@@ -1,9 +1,9 @@
-# $Id: 05-rr.t 607 2006-09-17 18:20:28Z olaf $   -*-perl-*-
+# $Id: 05-rr.t 643 2007-05-25 15:19:19Z olaf $   -*-perl-*-
 
 use Test::More;
 use strict;
-
-use vars qw( $HAS_DNSSEC $HAS_DLV $HAS_NSEC3);
+use Net::DNS;
+use vars qw( $HAS_DNSSEC $HAS_DLV $HAS_NSEC3 $HAS_NSEC3PARAM);
 
 my $keypathrsa="Kexample.com.+005+24866.private";
 my $rsakeyrr;
@@ -13,16 +13,19 @@ BEGIN {
 	eval {require Net::DNS::SEC;}
 	){
 	$HAS_DNSSEC=1;
-	if (defined ($HAS_DLV=$Net::DNS::SEC::HAS_DLV))
+	if (
+	    defined($Net::DNS::SEC::SVNVERSION) && 
+	    $Net::DNS::SEC::SVNVERSION > 619 
+	    )
 	{
-	    plan tests => 254;
-	    $HAS_NSEC3=$Net::DNS::SEC::HAS_NSEC3;
+	    $HAS_NSEC3PARAM=1;
+	    plan tests => 301;  # Hook
 	}else{
-	    plan tests => 253;
+	    plan tests => 301;
 	}
     }else{
 	$HAS_DNSSEC=0;
-	plan tests => 226;
+	plan tests => 270;
     }
 };
 
@@ -64,9 +67,11 @@ open (RSA,">$keypathrsa") or die "Could not open $keypathrsa";
 	ok( $dlv, "DLV RR created");
     }
 
-    if ($HAS_NSEC3){
-	diag("NSEC3 Supported in this version of Net::DNS::SEC (no tests yet)");
+
+    if ($HAS_NSEC3PARAM){
+	diag("NSEC3PARAM / NSEC3 Supported in this version of Net::DNS::SEC (no tests yet)");
     }
+
 
 }
 
@@ -230,6 +235,53 @@ my @rrs = (
 		txtdata      => 'txt-txtdata',
 	},
 	
+#   38.2.0.192.in-addr.arpa. 7200 IN     IPSECKEY ( 10 1 2
+#                    192.0.2.38
+#                    AQNRU3mG7TVTO2BkR47usntb102uFJtugbo6BSGvgqt4AQ== )
+
+	{	#[26]
+	        type           => 'IPSECKEY',
+		precedence     => 10,
+		algorithm      => 2,
+		gatetype       => 1,
+		gateway        => '192.0.2.38',
+		pubkey         => "AQNRU3mG7TVTO2BkR47usntb102uFJtugbo6BSGvgqt4AQ==",
+	},
+
+
+
+	{	#[27]
+	        type           => 'IPSECKEY',
+		precedence     => 10,
+		algorithm      => 2,
+		gatetype       => 0,
+		gateway        => '.',
+		pubkey         => "AQNRU3mG7TVTO2BkR47usntb102uFJtugbo6BSGvgqt4AQ==",
+	},
+
+
+	{	#[28]
+	        type           => 'IPSECKEY',
+		precedence     => 10,
+		algorithm      => 1,
+		gatetype       => 2,
+		gateway        => '2001:db8:0:8002:0:2000:1:0',
+		pubkey         => "AQNRU3mG7TVTO2BkR47usntb102uFJtugbo6BSGvgqt4AQ==",
+	},
+
+
+
+	{	#[28]
+	        type           => 'IPSECKEY',
+		precedence     => 10,
+		algorithm      => 2,
+		gatetype       => 3,
+		gateway        => 'gateway.example.com',
+		pubkey         => "AQNRU3mG7TVTO2BkR47usntb102uFJtugbo6BSGvgqt4AQ==",
+	},
+
+
+
 );
 
 
@@ -249,7 +301,8 @@ foreach my $data (@rrs) {
 	   name => $name,
 	   ttl  => $ttl,
 	   %{$data});
-       
+
+
        if ($HAS_DNSSEC){
 	   my $sigrr= create Net::DNS::RR::RRSIG( [ $RR ],
 						  $keypathrsa,
@@ -257,7 +310,7 @@ foreach my $data (@rrs) {
 						   ttl => 360, 
 						   sigval => 100,
 						  ));
-	   $sigrr->print;
+#	   $sigrr->print;
 	   push  @rrsigs, $sigrr;
        }
        
@@ -290,14 +343,13 @@ while (@answer and @rrs) {
 	my $data = shift @rrs;
 	my $rr   = shift @answer;
 	my $type = $data->{'type'};
-	
+
 	ok($rr,                         "$type - RR defined");    
 	is($rr->name,    $name,       	"$type - name() correct");         
 	is($rr->class,   $class,      	"$type - class() correct");  
-	is($rr->ttl,     $ttl,        	"$type - ttl() correct");                
-	
+	is($rr->ttl,     $ttl,        	"$type - ttl() correct");              
+ 
 	foreach my $meth (keys %{$data}) {
-		
 		is($rr->$meth(), $data->{$meth}, "$type - $meth() correct");
 	}
 	

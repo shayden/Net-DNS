@@ -1,6 +1,6 @@
 package Net::DNS::Header;
 #
-# $Id: Header.pm 546 2005-12-16 15:23:03Z olaf $
+# $Id: Header.pm 622 2006-12-22 11:11:18Z olaf $
 #
 
 use strict;
@@ -16,7 +16,7 @@ use Net::DNS;
 
 use constant MAX_ID => 65535;
 
-$VERSION = (qw$LastChangedRevision: 546 $)[1];
+$VERSION = (qw$LastChangedRevision: 622 $)[1];
 
 =head1 NAME
 
@@ -52,10 +52,9 @@ the data is incomplete).
 
 
 {
-	my $id = int rand(MAX_ID);
 	
 	sub nextid {
-		return $id++ % (MAX_ID + 1);
+		int rand(MAX_ID);
 	}
 }
 

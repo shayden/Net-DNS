@@ -316,7 +316,7 @@ Thanks to Mike for letting me take care of his baby.
 
 Thanks to Chris for maintaing Net::DNS for a couple of years.
 
-Thanks to Rob Brown for all his patches and input.
+Thanks to Rob Brown and Dick Franks for all their patches and input.
 
 Thanks to all who have used Net::DNS and reported bugs, made
 suggestions, contributed code, and encouraged me to add certain
@@ -341,7 +341,7 @@ he has done on BIND 9.
 Olaf acknowledges the RIPE NCC for allowing Net::DNS maintenance to
 take place as part of 'the job'.
 
-Thanks to the team that maintains ethereal, without its marvelous
+Thanks to the team that maintains wireshark, without its marvelous
 interface debuging of bugs in wireformat would be so much more
 difficult.
 
@@ -350,4 +350,4 @@ I've always developed Net::DNS using open-source systems and I'm
 proud to make Net::DNS freely available to the world 
 
 ----
-$Id: README 519 2005-12-07 12:30:16Z olaf $
+$Id: README 654 2007-06-20 15:02:50Z olaf $

@@ -1,6 +1,6 @@
 package Net::DNS::Resolver::Base;
 #
-# $Id: Base.pm 610 2006-09-18 16:46:43Z olaf $
+# $Id: Base.pm 630 2007-02-09 11:04:36Z olaf $
 #
 
 use strict;
@@ -21,11 +21,10 @@ use Socket;
 use IO::Socket;
 use IO::Select;
 
-use Net::IP qw(ip_is_ipv4 ip_is_ipv6 ip_normalize); 
 use Net::DNS;
 use Net::DNS::Packet;
 
-$VERSION = (qw$LastChangedRevision: 610 $)[1];
+$VERSION = (qw$LastChangedRevision: 630 $)[1];
 
 
 #
@@ -321,12 +320,12 @@ sub nameservers {
 	my @a;
 	foreach my $ns (@_) {
 	    if ($ns =~ /^(\d+(:?\.\d+){0,3})$/) {
-		if ( ip_is_ipv4($ns) ) {
+		if ( _ip_is_ipv4($ns) ) {
 		    push @a, ($1 eq '0') ? '0.0.0.0' : $1;
 		}
 		
 	    }
-	    elsif ( ip_is_ipv6($ns) ) {
+	    elsif ( _ip_is_ipv6($ns) ) {
 		push @a, ($ns eq '0') ? '::0' : $ns;
 		
 	    } else  {
@@ -357,7 +356,7 @@ sub nameservers {
     }
     my @returnval;
     foreach my $ns (@{$self->{'nameservers'}}){
-	next if ip_is_ipv6($ns) && (! $has_inet6 || $self->force_v4() );
+	next if _ip_is_ipv6($ns) && (! $has_inet6 || $self->force_v4() );
 	push @returnval, $ns;
     }
     
@@ -474,6 +473,7 @@ sub send {
 	    
 	} else {
 	    $ans = $self->send_udp($packet, $packet_data);
+
 	    if ($ans && $ans->header->tc && !$self->{'igntc'}) {
 			print ";;\n;; packet truncated: retrying using TCP\n" if $self->{'debug'};
 			$ans = $self->send_tcp($packet, $packet_data);
@@ -754,7 +754,7 @@ sub send_udp {
 	      push @ns,[$ns_address,$dst_sockaddr,$sockfamily];
 	      
 	  }else{
-	      next NSADDRESS unless( ip_is_ipv4($ns_address));
+	      next NSADDRESS unless( _ip_is_ipv4($ns_address));
 	      my $dst_sockaddr = sockaddr_in($dstport, inet_aton($ns_address));
 	      push @ns, [$ns_address,$dst_sockaddr,AF_INET];
 	  }
@@ -870,7 +870,6 @@ sub send_udp {
 				  } elsif (defined $err) {
 				      $self->errorstring($err);
 				  }
-				  
 				  return $ans;
 			      } else {
 				  $self->errorstring($!);
@@ -963,7 +962,7 @@ sub bgsend {
 	}else{
 	    $sockfamily=AF_INET;
 	    
-	    if (! ip_is_ipv4($ns_address)){
+	    if (! _ip_is_ipv4($ns_address)){
 		$self->errorstring("bgsend(ipv4 only):$ns_address does not seem to be a valid IPv4 address");
 		return;
 	    }
@@ -1075,9 +1074,10 @@ sub make_query_packet {
 						Class        => $self->{'udppacketsize'},  # Decimal UDPpayload
 						ednsflags    => 0x8000, # first bit set see RFC 3225 
 				   );
-				 
-	    $packet->push('additional', $optrr);
-	    
+
+	
+	    $packet->push('additional', $optrr) unless defined  $packet->{'optadded'} ;
+	    $packet->{'optadded'}=1;
 	} elsif ($self->{'udppacketsize'} > Net::DNS::PACKETSZ()) {
 	    print ";; Adding EDNS extention with UDP packetsize  $self->{'udppacketsize'}.\n" if $self->{'debug'};
 	    # RFC 3225
@@ -1088,7 +1088,8 @@ sub make_query_packet {
 						TTL          => 0x0000 # RCODE 32bit Hex
 				    );
 				    
-	    $packet->push('additional', $optrr);
+	    $packet->push('additional', $optrr) unless defined  $packet->{'optadded'} ;
+	    $packet->{'optadded'}=1;
 	}
 	
 
@@ -1410,7 +1411,7 @@ sub _create_tcp_socket {
 	#my $old_wflag = $^W;
 	#$^W = 0;
 	
-	if ($has_inet6 && ! $self->force_v4() && ip_is_ipv6($ns) ){
+	if ($has_inet6 && ! $self->force_v4() && _ip_is_ipv6($ns) ){
 		# XXX IO::Socket::INET6 fails in a cryptic way upon send()
 		# on AIX5L if "0" is passed in as LocalAddr
 		# $srcaddr="0" if $srcaddr eq "0.0.0.0";  # Otherwise the INET6 socket will just fail
@@ -1441,7 +1442,7 @@ sub _create_tcp_socket {
 	# Try v4.
 	
 	unless($sock){
-		if (ip_is_ipv6($ns)){
+		if (_ip_is_ipv6($ns)){
 			$self->errorstring(
 					   'connection failed (trying IPv6 nameserver without having IPv6)');
 			print 
@@ -1474,6 +1475,60 @@ sub _create_tcp_socket {
 	return $sock;
 }
 
+# The next two is lightweight versions of subroutines from Net::IP module
+
+sub _ip_is_ipv4 {
+    $_ = shift;
+
+    return 0 if !m/^[\d\.]+$/ || m/^\./ || m/\.$/;
+
+
+    # Single Numbers are considered to be IPv4
+    return 1 if m/^(\d+)$/ && $1 < 256;
+
+    # Count quads
+    my $n = tr/\./\./;
+
+    # IPv4 must have from 1 to 4 quads
+    # remember 1.1 expands to 1.0.0.1 and is legal.
+    return 0 unless $n >= 0 && $n < 4 && !m/\.\./;
+
+    foreach (split /\./) { # Check for invalid quads
+	return 0 unless $_ >= 0 && $_ < 256;
+    }
+
+    1;
+}
+
+sub _ip_is_ipv6 {
+    $_ = shift;
+
+    # Count octets
+    my $n = tr/:/:/;
+    return 0 unless $n > 0 && $n < 8;
+
+    # Does the IP address start/finishes with : || have more than one '::' pattern ?
+    return 0 if m/^:[^:]/ || m/[^:]:$/ || s/:(?=:)//g > 1;
+
+    # $k is a counter
+    my $k;
+
+    foreach (split /:/) {
+        $k++;
+
+        next unless $_; # Empty octet ?
+    
+        next if /^[a-f\d]{1,4}$/i; # Normal v6 octet ?
+        
+        if ($k == $n + 1) { # Last octet - is it IPv4 ?
+            next if _ip_is_ipv4($_);
+        }
+
+        return 0;
+    }
+
+    1;
+}
 
 
 
