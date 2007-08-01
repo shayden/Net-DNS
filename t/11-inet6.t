@@ -1,4 +1,4 @@
-# $Id: 11-inet6.t 616 2006-10-18 09:15:48Z olaf $ -*-perl-*-
+# $Id: 11-inet6.t 676 2007-08-01 11:42:18Z olaf $ -*-perl-*-
 
 
 my $has_inet6;
@@ -73,7 +73,8 @@ SKIP: { skip "online tests are not enabled", 3 unless -e 't/online.enabled';
 	is (($nsanswer->answer)[0]->type, "NS","Preparing  for v6 transport, got NS records for ripe.net");
 
 	foreach my $ns ($nsanswer->answer){
-	    next if $ns->nsdname !~ /ripe\.net/; # User ripe.net only
+#	    print $ns->nsdname ."\n";
+	    next if $ns->nsdname !~ /ripe\.net/i; # User ripe.net only
 	    my $a_answer=$res->send($ns->nsdname,"A","IN");
 	    next if ($a_answer->header->ancount == 0);
 	    is (($a_answer->answer)[0]->type,"A", "Preparing  for v4 transport, got A records for ". $ns->nsdname);
@@ -86,8 +87,8 @@ SKIP: { skip "online tests are not enabled", 3 unless -e 't/online.enabled';
 
 
 
-	foreach my $ns ($nsanswer->answer){
-	    next if $ns->nsdname !~ /ripe\.net/; # User ripe.net only
+foreach my $ns ($nsanswer->answer){
+	    next if $ns->nsdname !~ /ripe\.net/i; # User ripe.net only
 	    my $aaaa_answer=$res->send($ns->nsdname,"AAAA","IN");
 	    next if ($aaaa_answer->header->ancount == 0);
 	    is (($aaaa_answer->answer)[0]->type,"AAAA", "Preparing  for v6 transport, got AAAA records for ". $ns->nsdname);
@@ -99,7 +100,7 @@ SKIP: { skip "online tests are not enabled", 3 unless -e 't/online.enabled';
 	}
 
 	$res->nameservers($AAAA_address);
-	# $res->print;
+#        $res->print;
 	$answer=$res->send("ripe.net","SOA","IN");
 	if($res->errorstring =~ /Send error: /){
 	    diag "\n\t\t Connection failed: " . $res->errorstring ;
@@ -117,6 +118,8 @@ SKIP: { skip "online tests are not enabled", 3 unless -e 't/online.enabled';
 	 # $answer->print;
 	 is (($answer->answer)[0]->type, "SOA","Query over udp6 succeeded");
 }
+
+
  SKIP: { skip "online tests are not enabled", 2 unless -e 't/online.enabled';
 	 $res->usevc(1);
 	 $res->force_v4(1);
@@ -165,7 +168,7 @@ SKIP: { skip "online tests are not enabled", 2 unless -e 't/online.enabled';
 	is (($nsanswer->answer)[0]->type, "NS","Preparing  for v6 transport, got NS records for net-dns.org");
 	my $AAAA_address;
 	foreach my $ns ($nsanswer->answer){
-#	    next if $ns->nsdname !~ /ripe\.net/; # User rupe.net only
+#	    next if $ns->nsdname !~ /ripe\.net/; # User ripe.net only
 	    my $aaaa_answer=$res2->send($ns->nsdname,"AAAA","IN");
 	    next if ($aaaa_answer->header->ancount == 0);
 	    is (($aaaa_answer->answer)[0]->type,"AAAA", "Preparing  for v6 transport, got AAAA records for ". $ns->nsdname);

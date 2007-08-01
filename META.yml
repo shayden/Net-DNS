@@ -1,17 +1,19 @@
-# http://module-build.sourceforge.net/META-spec.html
-#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
-name:         Net-DNS
-version:      0.60
-version_from: lib/Net/DNS.pm
-installdirs:  site
-requires:
+--- #YAML:1.0
+name:                Net-DNS
+version:             0.61
+abstract:            Perl DNS resolver module
+license:             ~
+generated_by:        ExtUtils::MakeMaker version 6.36
+distribution_type:   module
+requires:     
     Digest::HMAC_MD5:              1
     Digest::MD5:                   2.12
     IO::Socket:                    0
     MIME::Base64:                  2.11
     Net::IP:                       1.2
     Test::More:                    0.18
-
-distribution_type: module
-generated_by: ExtUtils::MakeMaker version 6.17
-license: perl
+meta-spec:
+    url:     http://module-build.sourceforge.net/META-spec-v1.2.html
+    version: 1.2
+author:
+    - Olaf Kolkman <olaf@net-dns.org>

@@ -1,6 +1,6 @@
-# $Id: 01-resolver.t 630 2007-02-09 11:04:36Z olaf $  -*-perl-*-
+# $Id: 01-resolver.t 673 2007-08-01 09:56:57Z olaf $  -*-perl-*-
 
-use Test::More tests => 44;
+use Test::More tests => 45;
 use strict;
 use File::Spec;
 
@@ -11,6 +11,11 @@ my $res = Net::DNS::Resolver->new();
 ok($res,                           'new() returned something');
 isa_ok($res, 'Net::DNS::Resolver', 'new() returns an object of the correct class.');
 ok(scalar $res->nameservers,       'nameservers() works');
+
+
+
+
+
 
 my $searchlist = [qw(t.net-dns.org t2.net-dns.org)];
 
@@ -75,6 +80,7 @@ my %bad_input = (
 use Net::IP;
 
 use IO::Socket::INET;
+
 my $sock = IO::Socket::INET->new(PeerAddr => '193.0.14.129', # k.root-servers.net.
 				 PeerPort => '25',
 				 Proto    => 'udp');
@@ -84,10 +90,10 @@ my $ip=Net::IP->new(inet_ntoa($sock->sockaddr));
 	    
 
 SKIP: {
-	skip 'Online tests disabled.', 2
+	skip 'Online tests disabled.', 3
 		unless -e 't/online.enabled';
 
-	skip 'Tests may not run succesful from private IP('.$ip->ip() .')', 2
+	skip 'Tests may not run succesful from private IP('.$ip->ip() .')', 3
 	    if ($ip->iptype() ne "PUBLIC");
 
 	my $res = Net::DNS::Resolver->new;
@@ -101,6 +107,31 @@ SKIP: {
 	$ip = ($res->nameservers)[0];
 	is($ip, '10.0.1.128', 'Nameservers() looks up cname.') or
 	    diag ($res->errorstring . $res->print) ;
+
+
+	# Test to trigger a bug in release 0.59 of Question.pm
+	# (rt.cpan.org #28198) (modification of $_ value in various
+	# places
+	my $die = 0;
+	undef ($res); # default values again
+	$res = Net::DNS::Resolver->new();
+
+	eval{
+	    
+	    local $^W = 1;
+	    local $SIG{__DIE__} = sub { $die++ };
+
+	    for (0)   # Sets $_ to 0
+	    {
+		my  $q=$res->send("net-dns.org","SOA");
+	    }
+	    
+	    
+	    
+	};
+	is($die, 0, 'No deaths because of \$_');
+
+
 }	
 
 
