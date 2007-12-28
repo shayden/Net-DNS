@@ -1,6 +1,6 @@
 package Net::DNS::Resolver::Base;
 #
-# $Id: Base.pm 673 2007-08-01 09:56:57Z olaf $
+# $Id: Base.pm 698 2007-12-28 16:42:16Z olaf $
 #
 
 use strict;
@@ -24,7 +24,7 @@ use IO::Select;
 use Net::DNS;
 use Net::DNS::Packet;
 
-$VERSION = (qw$LastChangedRevision: 673 $)[1];
+$VERSION = (qw$LastChangedRevision: 698 $)[1];
 
 
 #
@@ -319,7 +319,7 @@ sub nameservers {
     if (@_) {
 	my @a;
 	foreach my $ns (@_) {
-
+	    next unless defined($ns);
 	    if ( _ip_is_ipv4($ns) ) {
 		push @a, ($ns eq '0') ? '0.0.0.0' : $ns;
 
@@ -350,6 +350,7 @@ sub nameservers {
 	    }
 	}
 	
+
 	$self->{'nameservers'} = [ @a ];
     }
     my @returnval;
@@ -429,7 +430,10 @@ sub search {
 
 		my $packet = $self->send($fqname, @_) || return undef;
 
+		next unless ($packet->header->rcode eq "NOERROR"); # something 
+								 #useful happened
 		return $packet if $packet->header->ancount;	# answer found
+		next unless $packet->header->qdcount;           # question empty?
 
 		last if ($packet->question)[0]->qtype eq 'PTR';	# abort search if IP
 	}
@@ -1029,6 +1033,8 @@ sub bgread {
 		
 		if (defined $ans) {
 			$self->errorstring($ans->header->rcode);
+			$ans->answerfrom($sock->peerhost);
+			$ans->answersize(length($buf));
 		} elsif (defined $err) {
 			$self->errorstring($err);
 		}
@@ -1480,12 +1486,15 @@ sub _ip_is_ipv4 {
 	my @field = split /\./, shift;
 
 	return 0 if @field > 4;				# too many fields
+	return 0 if @field == 0;			# no fields at all
 
 	foreach ( @field ) {
 		return 0 unless /./;			# reject if empty
 		return 0 if /[^0-9]/;			# reject non-digit
 		return 0 if $_ > 255;			# reject bad value
 	}
+
+
 	return 1;
 }
 

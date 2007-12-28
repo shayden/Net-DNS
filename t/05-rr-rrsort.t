@@ -1,11 +1,10 @@
-# $Id: 05-rr-rrsort.t 616 2006-10-18 09:15:48Z olaf $   -*-perl-*-
+# $Id: 05-rr-rrsort.t 682 2007-09-27 07:50:27Z olaf $   -*-perl-*-
 
 use Test::More;
 use strict;
+use Net::DNS qw(rrsort);
+
 plan tests => 22;
-BEGIN{
-    use_ok('Net::DNS', qw(rrsort));
-};
 
 my $rr1=Net::DNS::RR->new("example.com.  600     IN      SRV     0 0 5060 A.example.com.");
 is(ref($rr1),"Net::DNS::RR::SRV","SRV RR1 created");

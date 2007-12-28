@@ -1,4 +1,4 @@
-# $Id: 00-version.t 666 2007-06-21 15:08:49Z olaf $ -*-perl-*-
+# $Id: 00-version.t 685 2007-10-10 13:54:34Z olaf $ -*-perl-*-
 
 use Test::More;
 use File::Spec;
@@ -10,6 +10,9 @@ my @files;
 my $blib = File::Spec->catfile(qw(blib lib));
 	
 find( sub { push(@files, $File::Find::name) if /\.pm$/}, $blib);
+
+plan skip_all => 'No versions from git checkouts' if -e '.git';
+
 
 my $can = eval { MM->can('parse_version') };
 

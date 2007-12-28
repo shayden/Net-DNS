@@ -1,7 +1,100 @@
-$Id: Changes 675 2007-08-01 10:44:07Z olaf $
+
+$Id: Changes 699 2007-12-28 19:15:23Z olaf $
 
 Revision history for Net::DNS                                     -*-text-*-
 =============================
+
+
+
+*** 0.62, 28 December 2007
+
+
+Features: Move of some functionality out of the Packet to the Question
+   and RR classes; parsing of elements in the packet is now performed
+   by calling the appropriate subclasses.
+
+   New methods were introduced:
+   * Net::DNS::Packet->parse()
+   * Net::DNS::RR->parse()
+   * Net::DNS::Question->parse()
+
+   The Packet class now defers parsing of authority/additional until
+   their content is really needed. This should cause a bit of
+   performance improvement.
+
+   Dick Franks is acknowledged for this Good Work (TM).
+
+Feature: the Net::DNS::Packet's answersize() method will from now on
+    ignore its arguments and just return the size of the packet.
+
+Feature: The Net::DNS::RR->new() method used to call
+    Net::DNS::RR->new_from_data() whenever called with the appropriate
+    combination of arguments. That (undocumented) behavior has been deprecated.
+    Use Net::DNS::RR->new_from_data() directly if you depended on that.
+
+Feature: Net::DNS::Packets unique_push now ignores the TTL in
+    comparison of uniqueness, this is closer to the intend of
+    RFC2181, but not yet fully compliant.
+
+Fix rt.cpan.org #29816
+    Acquiring the IP address for the Resolver under Cygwin is made
+    more resilient.
+
+Fix rt.cpan.org #31425
+    Empty question section in Base.pm search method detected
+
+Fix rt.cpan.org #31042
+    Makefile corrected to add a library target.
+
+Fix rt.cpan.org #29818
+    10-recurse.t used to fail in very specific environment (where a query for
+    qname="." and qtype="NS" would return with an empty additional section).
+    Fixed by adding the hints explicitly; this also forces the tests to take
+    place under the root served by a-m.root-servers.net
+    
+
+Fix rt.cpan.org #29877
+    Made 00-version.t recognize a "GIT" environment.
+
+
+
+
+Fix rt.cpan.org #29878
+
+   SPF.pm did not evaluate as true. Thanks Bjorn Hansen.
+
+
+Fix rt.cpan.org #21398
+   answersize() and answerfrom() set for persistent sockets
+
+Fix rt.cpan.org #29883
+   Fix various tests only available through SVN, so they are 
+   more robust (Acknowledgements Bjoern Hansen)
+
+
+Fix rt.cpan.org #24343
+   Resolver's nameserver() method would do silly things with undefined 
+   arguments.
+
+Fix rt.cpan.org #29531
+   Nameserver.pm, Packet.pm and Question.pm modified to avoid erroneous PTR
+   lookup in response to mischievous query packet containing an IP address.
+
+
+Fix rt.cpan.org #27970 better netdns.o
+
+    Marek Rouchal provided two minor improvements for linking the C
+    code sniplets
+
+
+Fix rt.cpan 28345
+
+    A fix in Test::Simple revealed an off by 1 error in the testplan
+    for 05-rr-rrsort.t. The fix is to remove a test, creating a dependency
+    on Test::Simple 0.71 seemed overkill.
+
+
+
 *** 0.61, 1 August 2007
 
 Fix rt.cpan.org #28106, 28198, and 28590

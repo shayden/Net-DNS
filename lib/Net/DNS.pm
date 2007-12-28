@@ -1,7 +1,7 @@
 
 package Net::DNS;
 #
-# $Id: DNS.pm 673 2007-08-01 09:56:57Z olaf $
+# $Id: DNS.pm 693 2007-12-27 22:48:19Z olaf $
 #
 use strict;
 
@@ -43,8 +43,8 @@ BEGIN {
     @ISA     = qw(Exporter DynaLoader);
 
     
-    $VERSION = '0.61';
-    $SVNVERSION = (qw$LastChangedRevision: 673 $)[1];
+    $VERSION = '0.62';
+    $SVNVERSION = (qw$LastChangedRevision: 693 $)[1];
 
     $HAVE_XS = eval { 
 	local $SIG{'__DIE__'} = 'DEFAULT';
@@ -136,8 +136,8 @@ use Carp;
     'RRSIG'     => 46,      # RFC 4034 in Net::DNS::SEC
     'NSEC'      => 47,      # RFC 4034 in Net::DNS::SEC
     'DNSKEY'    => 48,      # RFC 4034 in Net::DNS::SEC
-    'NSEC3'     => 50,   # draft-ietf-dnsext-nsec3-10 (assignment not made at time of code release !!!!)
-    'NSEC3PARAM' => 51,  # draft-ietf-dnsext-nsec3-10 (assignment not made at time of code release !!!!)
+    'NSEC3'     => 50,   # draft-ietf-dnsext-nsec3-10 (assignment made at time of code release) 
+    'NSEC3PARAM' => 51,  # draft-ietf-dnsext-nsec3-10 (assignment made at time of code release)
 
     'SPF'       => 99,      # RFC 4408
     'UINFO'     => 100,     # non-standard

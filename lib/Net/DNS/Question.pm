@@ -1,6 +1,6 @@
 package Net::DNS::Question;
 #
-# $Id: Question.pm 673 2007-08-01 09:56:57Z olaf $
+# $Id: Question.pm 690 2007-12-27 20:39:40Z olaf $
 #
 use strict;
 BEGIN { 
@@ -12,7 +12,7 @@ use vars qw($VERSION $AUTOLOAD);
 use Carp;
 use Net::DNS;
 
-$VERSION = (qw$LastChangedRevision: 673 $)[1];
+$VERSION = (qw$LastChangedRevision: 690 $)[1];
 
 =head1 NAME
 
@@ -49,16 +49,16 @@ sub new {
 	my $qclass = uc shift || 'IN';
 
 	$qname = '' unless defined $qname;	# || ''; is NOT same!
-	$qname =~ s/\.+$//o;	# strip gratuitous trailing dot
+	$qname =~ s/\.+$//o;			# strip gratuitous trailing dot
 
- 	# Check if the caller has the type and class reversed.
- 	# We are not that kind for unknown types.... :-)
+	# Check if the caller has the type and class reversed.
+	# We are not that kind for unknown types.... :-)
 	($qtype, $qclass) = ($qclass, $qtype)
 		if exists $Net::DNS::classesbyname{$qtype}
 		and exists $Net::DNS::typesbyname{$qclass};
 
 	# if argument is an IP address, do appropriate reverse lookup
-	my $reverse = dns_addr($qname) if $qname =~ m/\d$|[:\/]/o;
+	my $reverse = _dns_addr($qname) if $qname =~ m/:|\d$/o;
 	if ( $reverse ) {
 		$qname = $reverse;
 		$qtype = 'PTR' if $qtype =~ m/^(A|AAAA)$/o;
@@ -73,22 +73,25 @@ sub new {
 }
 
 
-sub dns_addr {
+sub _dns_addr {
 	my $arg = shift;	# name or IP address
 
-	# If arg looks like IP4 address then map to in-addr.arpa space
-	if ( $arg =~ /((^|\d+\.)+\d+)($|\/(\d*))/o ) {
-		my @parse = split /\./, $1;
-		my $prefx = $4 || @parse<<3;
+	# IP address must contain address characters only
+	return undef if $arg =~ m#[^a-fA-F0-9:./]#o;
+
+	# if arg looks like IPv4 address then map to in-addr.arpa space
+	if ( $arg =~ m#(^|:.*:)((^|\d+\.)+\d+)(/(\d+))?$#o ) {
+		my @parse = split /\./, $2;
+		my $prefx = $5 || @parse<<3;
 		my $last = $prefx > 24 ? 3 : ($prefx-1)>>3;
 		return join '.', reverse( (@parse,(0)x3)[0 .. $last] ), 'in-addr.arpa';
 	}
 
-	# If arg looks like IP6 address then map to ip6.arpa space
-	if ( $arg =~ /^((\w*:)+)(\w*)($|\/(\d*))/o ) {
+	# if arg looks like IPv6 address then map to ip6.arpa space
+	if ( $arg =~ m#^((\w*:)+)(\w*)(/(\d+))?$#o ) {
 		my @parse = split /:/, (reverse "0${1}0${3}"), 9;
-		my @xpand = map{/^$/ ? ('0')x(9-@parse) : $_} @parse;
-		my $prefx = $5 || @xpand<<4;
+		my @xpand = map{/./ ? $_ : ('0')x(9-@parse)} @parse;	# expand ::
+		my $prefx = $5 || @xpand<<4;		# implicit length if unspecified
 		my $hex = pack 'A4'x8, map{$_.'000'} ('0')x(8-@xpand), @xpand;
 		my $len = $prefx > 124 ? 32 : ($prefx+3)>>2;
 		return join '.', split(//, substr($hex,-$len) ), 'ip6.arpa';
@@ -98,6 +101,39 @@ sub dns_addr {
 }
 
 
+=head2 parse
+
+    ($question, $offset) = Net::DNS::Question->parse(\$data, $offset);
+
+Parses a question section record at the specified location within a DNS packet.
+The first argument is a reference to the packet data.
+The second argument is the offset within the packet where the question record begins.
+
+Returns a Net::DNS::Question object and the offset of the next location in the packet.
+
+Returns undef if the question object could not be created (e.g., corrupt or insufficient data).
+
+=cut
+
+sub parse {
+	my ($class, $data, $offset) = @_;
+
+	my ($qname, $index) = Net::DNS::Packet::dn_expand($data, $offset);
+	return undef unless defined $qname;
+
+	my $next = $index + 4;		# + length pack('n2', 1, 2);
+	return undef if length $$data < $next;
+	my ($qtype, $qclass) = unpack("\@$index n2", $$data);
+
+	my $self = {	qname	=> $qname,
+			qtype	=> Net::DNS::typesbyval($qtype),
+			qclass	=> Net::DNS::classesbyval($qclass)
+			};
+
+	bless $self, $class;
+
+	return wantarray ? ($self, $next) : $self;
+}
 
 
 #
@@ -132,23 +168,33 @@ known as C<zclass> and refers to the zone's class.
 
 =cut
 
+sub qname  {
+	my $self = shift;
+
+	return $self->{qname} unless @_;
+
+	my $qname = shift;
+	$qname =~ s/\.+$//o if defined ($qname);			# strip gratuitous trailing dot
+	$self->{qname} = $qname;
+}
+
+sub zname  { &qname;  }
+sub ztype  { &qtype;  }
+sub zclass { &qclass; }
+
+
 sub AUTOLOAD {
 	my $self = shift;
 
 	my $name = $AUTOLOAD;
 	$name =~ s/.*://o;
 
-	Carp::croak "$name: no such method" unless exists $self->{$name};
+	croak "$AUTOLOAD: no such method" unless exists $self->{$name};
 
-	return $self->{$name} unless @_;
+	return $self->{$name} = shift if @_;
 
-	$self->{$name} = shift;
+	return $self->{$name};
 }
-
-
-sub zname  { &qname;  }
-sub ztype  { &qtype;  }
-sub zclass { &qclass; }
 
 =head2 print
 
@@ -192,9 +238,9 @@ sub data {
 
 	my $data = $packet->dn_comp($self->{qname}, $offset);
 
-	$data .= pack 'n', Net::DNS::typesbyname(uc $self->{qtype});
-	$data .= pack 'n', Net::DNS::classesbyname(uc $self->{qclass});
-	
+	$data .= pack('n2',	Net::DNS::typesbyname(uc $self->{qtype}),
+				Net::DNS::classesbyname(uc $self->{qclass})
+				);
 	return $data;
 }
 

@@ -1,4 +1,4 @@
-# $Id: 04-packet-unique-push.t 616 2006-10-18 09:15:48Z olaf $
+# $Id: 04-packet-unique-push.t 688 2007-12-27 20:23:29Z olaf $
 
 use Test::More tests => 75;
 use strict;
@@ -22,7 +22,7 @@ my $tests = sub {
 			Net::DNS::RR->new_from_string('bar.example.com 60 IN A 10.0.0.1'),
 		],
 		[ 
-			2,
+			1,
 			Net::DNS::RR->new_from_string('foo.example.com 60 IN A 10.0.0.1'),
 			Net::DNS::RR->new_from_string('foo.example.com 60 IN A 10.0.0.1'),
 			Net::DNS::RR->new_from_string('foo.example.com 90 IN A 10.0.0.1'),
