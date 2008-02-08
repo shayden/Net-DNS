@@ -1,6 +1,6 @@
 package Net::DNS::Nameserver;
 #
-# $Id: Nameserver.pm 688 2007-12-27 20:23:29Z olaf $
+# $Id: Nameserver.pm 709 2008-02-06 22:40:42Z olaf $
 #
 
 use Net::DNS;
@@ -10,39 +10,34 @@ use IO::Select;
 use Carp qw(cluck);
 
 use strict;
-use vars qw($VERSION
- 	    $has_inet6
- 	    @DEFAULT_ADDR       
- 	    $DEFAULT_PORT
- 	    );
+use vars qw(	$VERSION
+ 		$has_inet6
+ 		);
+
+use constant	FORCE_INET4 => 0;
+
+use constant	DEFAULT_ADDR => 0;
+use constant	DEFAULT_PORT => 53;
 
 use constant	STATE_ACCEPTED => 1;
 use constant	STATE_GOT_LENGTH => 2;
 use constant	STATE_SENDING => 3;
 
-$VERSION = (qw$LastChangedRevision: 688 $)[1];
+$VERSION = (qw$LastChangedRevision: 709 $)[1];
 
-#@DEFAULT_ADDR is set in the BEGIN block 
-$DEFAULT_PORT=53;
- 	    
- 
- 
+
+
 BEGIN {
-    my $force_inet4_only=0;
-    
-    if ($force_inet4_only){
- 	$has_inet6=0;
-    }elsif ( eval {require Socket6;} &&
- 	     # INET6 more recent than 2.01 will not work; sorry.
- 	     eval {require IO::Socket::INET6; IO::Socket::INET6->VERSION("2.00");}) {
- 	import Socket6;
- 	$has_inet6=1;
- 	no  strict 'subs';
- 	@DEFAULT_ADDR= ( 0  );
-    }else{
- 	$has_inet6=0;
- 	@DEFAULT_ADDR= ( INADDR_ANY );
-    }
+	if ( FORCE_INET4 ) {
+		$has_inet6 = 0;
+	} elsif ( eval {require Socket6;} &&
+			# INET6 earlier than V2.01 will not work; sorry.
+			eval {require IO::Socket::INET6; IO::Socket::INET6->VERSION("2.01");} ) {
+ 		import Socket6;
+		$has_inet6 = 1;
+	} else {
+		$has_inet6=0;
+	}
 }
 
 
@@ -56,8 +51,7 @@ BEGIN {
 sub new {
 	my ($class, %self) = @_;
 
-
-	if (!$self{"ReplyHandler"} || !ref($self{"ReplyHandler"})) {
+	unless ( ref $self{ReplyHandler} ) {
 		cluck "No reply handler!";
 		return;
 	}
@@ -65,10 +59,11 @@ sub new {
 	# local server addresses must also be accepted by a resolver
 	my @LocalAddr = ref $self{LocalAddr} ? @{$self{LocalAddr}} : ($self{LocalAddr});
 	my $resolver = Net::DNS::Resolver->new;
-	$resolver->nameservers(@DEFAULT_ADDR);
+	$resolver->force_v4(1) unless $has_inet6;
+	$resolver->nameservers(undef);
 	my @localaddresses = $resolver->nameservers(@LocalAddr);
 
-	my $port = $self{LocalPort} || $DEFAULT_PORT;
+	my $port = $self{LocalPort} || DEFAULT_PORT;
 
 	my @sock_tcp;	# All the TCP sockets we will listen to.
 	my @sock_udp;	# All the UDP sockets we will listen to.
@@ -76,16 +71,14 @@ sub new {
 	# while we are here, print incomplete lines as they come along.
 	local $| = 1 if $self{Verbose};
 
-	foreach my $addr (@localaddresses){
-
-		print "Setting up listening sockets for $addr...\n" if $self{Verbose};
-
-		print "Creating TCP socket for $addr - " if $self{Verbose};
+	foreach my $addr ( @localaddresses ? @localaddresses : DEFAULT_ADDR ){
 
  	    #--------------------------------------------------------------------------
  	    # Create the TCP socket.
  	    #--------------------------------------------------------------------------
  		
+ 	    print "\nCreating TCP socket $addr#$port - " if $self{Verbose};
+
 	    my $sock_tcp = inet_new(
  						    LocalAddr => $addr,
  						    LocalPort => $port,
@@ -104,7 +97,7 @@ sub new {
  	    # Create the UDP Socket.
  	    #--------------------------------------------------------------------------
  	    
- 	    print "Creating UDP socket for $addr - " if $self{Verbose};
+ 	    print "Creating UDP socket $addr#$port - " if $self{Verbose};
  	    
  	    my $sock_udp = inet_new(
  						   LocalAddr => $addr,
@@ -121,20 +114,17 @@ sub new {
 
  	}
  	
-  	#--------------------------------------------------------------------------
-  	# Create the Select object.
-  	#--------------------------------------------------------------------------
-  
-  	$self{"select"} = IO::Select->new;
- 
- 	foreach my $sock_tcp  (@sock_tcp){
- 	    $self{"select"}->add($sock_tcp);
- 	}
- 
- 	foreach my $sock_udp  (@sock_udp){
- 	    $self{"select"}->add($sock_udp);
- 	}
-  
+	#--------------------------------------------------------------------------
+	# Create the Select object.
+	#--------------------------------------------------------------------------
+
+ 	my $select = $self{select} = IO::Select->new;
+
+ 	$select->add(@sock_tcp);
+ 	$select->add(@sock_udp);
+
+	return undef unless $select->count;
+
 	#--------------------------------------------------------------------------
 	# Return the object.
 	#--------------------------------------------------------------------------
@@ -167,7 +157,7 @@ sub make_reply {
 
 	my $headermask;
 	
-	if (not $query) {
+	unless ($query) {
 		print "ERROR: invalid packet\n" if $self->{"Verbose"};
 		$reply->header->rcode("FORMERR");
 		return $reply;
@@ -180,14 +170,16 @@ sub make_reply {
 
 
 	# question section returned to caller
-	my @q =  $query->question  ;
+	my @q = $query->question;
 	@q=( Net::DNS::Question->new('', 'ANY', 'ANY') ) unless @q;
 
 	$reply->push("question", @q);
 
-	if ($query->header->opcode eq "QUERY") {
+	if ($query->header->opcode eq "QUERY" ||
+	    $query->header->opcode eq "NS_NOTIFY_OP"   #RFC1996
+	    ) {
 		if ($query->header->qdcount == 1) {
-			my ($qr) = $q[0];
+			my ($qr) = @q;
 			my $qname = $qr->qname;
 			my $qtype = $qr->qtype;
 			my $qclass = $qr->qclass;
@@ -197,9 +189,15 @@ sub make_reply {
 			
 			my ($rcode, $ans, $auth, $add);
 			
-			($rcode, $ans, $auth, $add, $headermask) =
-				&{$self->{"ReplyHandler"}}($qname, $qclass, $qtype, $peerhost, $query);
-			
+			if  ($query->header->opcode eq "QUERY"){
+			  ($rcode, $ans, $auth, $add, $headermask) =
+			      &{$self->{"ReplyHandler"}}($qname, $qclass, $qtype, $peerhost, $query);
+			}else{
+			  $reply->header->rcode("SERVFAIL") unless 
+			     ( ref $self->{"NotifyHandler"} eq "CODE");
+			  ($rcode, $ans, $auth, $add, $headermask) =
+			      &{$self->{"NotifyHandler"}}($qname, $qclass, $qtype, $peerhost, $query);
+			}
 			print "$rcode\n" if $self->{"Verbose"};
 			
 			$reply->header->rcode($rcode);
@@ -520,6 +518,9 @@ Creates a nameserver object.  Attributes are:
   LocalPort		Port on which to listen.  	Defaults to 53.
   ReplyHandler		Reference to reply-handling 
 			subroutine			Required.
+  NotifyHandler         Reference to reply-handling
+                        subroutine for queries with
+                        opdcode NS_NOTIFY (RFC1996)
   Verbose		Print info about received 
 			queries.			Defaults to 0 (off).
 
@@ -533,8 +534,8 @@ IPv6 and IPv4);
 
 
 The ReplyHandler subroutine is passed the query name, query class,
-query type and optionally an argument containing header bit settings
-(see below).  It must return the response code and references to the
+query type and optionally an argument containing the peerhost the
+incoming query. It must return the response code and references to the
 answer, authority, and additional sections of the response.  Common
 response codes are:
 
@@ -545,7 +546,7 @@ response codes are:
   NOTIMP	Not implemented
   REFUSED	Query refused
 
-For advanced usage there is an optional argument containing an
+For advanced usage it may also contain a headermaks containing an
 hashref with the settings for the C<aa>, C<ra>, and C<ad> 
 header bits. The argument is of the form 
 C<< { ad => 1, aa => 0, ra => 1 } >>. 
@@ -632,8 +633,12 @@ additional filtering on its basis may be applied.
  use warnings;
  
  sub reply_handler {
-	 my ($qname, $qclass, $qtype, $peerhost) = @_;
+	 my ($qname, $qclass, $qtype, $peerhost,$query) = @_;
 	 my ($rcode, @ans, @auth, @add);
+
+	 print "Received query from $peerhost\n";
+	 $query->print;
+
 	 
 	 if ($qtype eq "A" && $qname eq "foo.example.com" ) {
 		 my ($ttl, $rdata) = (3600, "10.1.2.3");
@@ -646,6 +651,7 @@ additional filtering on its basis may be applied.
   	          $rcode = "NXDOMAIN";
 	 }
 	 
+
 	 # mark the answer as authoritive (by setting the 'aa' flag
 	 return ($rcode, \@ans, \@auth, \@add, { aa => 1 });
  }

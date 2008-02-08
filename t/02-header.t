@@ -1,4 +1,4 @@
-# $Id: 02-header.t 616 2006-10-18 09:15:48Z olaf $
+# $Id: 02-header.t 704 2008-02-06 21:30:59Z olaf $
 
 use Test::More tests => 18;
 use strict;
@@ -37,7 +37,7 @@ is($header->rcode,  'NOERROR', 'rcode() works');
 
 my $data = $header->data;
 
-my $header2 = Net::DNS::Header->new(\$data);
+my $header2 = Net::DNS::Header->parse(\$data);
 
 is_deeply($header, $header2, 'Headers are the same');
 

@@ -1,6 +1,6 @@
 package Net::DNS::RR::RP;
 #
-# $Id: RP.pm 632 2007-03-12 13:24:21Z olaf $
+# $Id: RP.pm 702 2008-01-21 10:01:21Z olaf $
 #
 use strict;
 BEGIN { 
@@ -9,7 +9,7 @@ BEGIN {
 use vars qw(@ISA $VERSION);
 
 @ISA     = qw(Net::DNS::RR);
-$VERSION = (qw$LastChangedRevision: 632 $)[1];
+$VERSION = (qw$LastChangedRevision: 702 $)[1];
 
 sub new {
 	my ($class, $self, $data, $offset) = @_;
@@ -37,8 +37,11 @@ sub new_from_string {
 
 sub rdatastr {
 	my $self = shift;
-
-	return $self->{"mbox"} ? "$self->{mbox}. $self->{txtdname}." : '';
+	if (exists $self->{"mbox"}) {
+		return "$self->{mbox}. $self->{txtdname}.";
+	}
+	return '';
+	
 }
 
 sub rr_rdata {

@@ -1,7 +1,7 @@
 
 package Net::DNS;
 #
-# $Id: DNS.pm 693 2007-12-27 22:48:19Z olaf $
+# $Id: DNS.pm 710 2008-02-08 15:22:21Z olaf $
 #
 use strict;
 
@@ -43,8 +43,8 @@ BEGIN {
     @ISA     = qw(Exporter DynaLoader);
 
     
-    $VERSION = '0.62';
-    $SVNVERSION = (qw$LastChangedRevision: 693 $)[1];
+    $VERSION = '0.63';
+    $SVNVERSION = (qw$LastChangedRevision: 710 $)[1];
 
     $HAVE_XS = eval { 
 	local $SIG{'__DIE__'} = 'DEFAULT';

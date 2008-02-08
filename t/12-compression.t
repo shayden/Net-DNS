@@ -1,4 +1,4 @@
-# $Id: 12-compression.t 657 2007-06-21 12:57:58Z olaf $   -*-perl-*-
+# $Id: 12-compression.t 704 2008-02-06 21:30:59Z olaf $   -*-perl-*-
 # build DNS packet which has an endless loop in compression
 # check it against XS and PP implementation of dn_expand
 # both should return (undef,undef) as a sign that the packet
@@ -30,12 +30,12 @@ my ($name,$offset);
 # XS implementation
 SKIP: {
      skip("No dn_expand_xs available",1) if ! $Net::DNS::HAVE_XS; 
-     my ($name,$offset) = Net::DNS::Packet::dn_expand( \$pkt,$start_offset );
+     my ($name,$offset) = eval { Net::DNS::Packet::dn_expand( \$pkt,$start_offset ) };
      ok( !defined($name) && !defined($offset), 'XS detected invalid packet' );
  }
 $Net::DNS::HAVE_XS = 0;
 undef $name; undef $offset;
-($name,$offset) = Net::DNS::Packet::dn_expand( \$pkt,$start_offset );
+($name,$offset) = eval { Net::DNS::Packet::dn_expand( \$pkt,$start_offset ) };
 ok( !defined($name) && !defined($offset), 'PP detected invalid packet' );
 
 
