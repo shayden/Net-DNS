@@ -1,6 +1,6 @@
 package Net::DNS::Packet;
 #
-# $Id: Packet.pm 704 2008-02-06 21:30:59Z olaf $
+# $Id: Packet.pm 729 2008-12-16 12:03:01Z olaf $
 #
 use strict;
 
@@ -22,7 +22,7 @@ require Exporter;
 @EXPORT_OK = qw(dn_expand);
 
 
-$VERSION = (qw$LastChangedRevision: 704 $)[1];
+$VERSION = (qw$LastChangedRevision: 729 $)[1];
 
 
 
@@ -542,7 +542,7 @@ sub dn_comp {
 			$compname .= pack('n', 0xc000 | $pointer);
 			last;
 		}
-		$namehash->{$dname} = $offset;
+		$namehash->{$dname} = $offset if ($offset < 0x4000);
 
 		my $label  = shift @names;
 		my $length = length $label || next;	# skip if null

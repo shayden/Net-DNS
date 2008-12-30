@@ -1,30 +1,29 @@
-# $Id: 10-recurse.t 695 2007-12-28 11:17:12Z olaf $ -*-perl-*-
+# $Id: 10-recurse.t 744 2008-12-18 22:42:10Z olaf $ -*-perl-*-
 
 use Test::More;
 use strict;
 
 BEGIN {
-	if (-e 't/online.enabled') {
+	if (-e 't/online.enabled' && ! -e 't/online.disabled' ) {
 
 	    #
 	    # Some people try to run these on private address space."
 	    use IO::Socket::INET;
 	    my $sock = IO::Socket::INET->new(PeerAddr => '193.0.14.129', # k.root-servers.net.
-					  PeerPort => '25',
+					  PeerPort => '53',
 					  Proto    => 'udp');
 	    
 	    
 	    unless($sock){
 		plan skip_all => "Cannot bind to socket:\n\t".$!."\n";
-		diag "This is an indication you do not have network problems";
+		diag "This is an indication you do have network problems";
 		exit;
 	    }else{
-
 		use Net::IP;
 		my $ip=Net::IP->new(inet_ntoa($sock->sockaddr));
-	    
 		if ($ip->iptype() ne "PUBLIC"){
 		    plan skip_all => 'Cannot run these tests from this IP:' .$ip->ip() ;		
+		    exit;
 		}else{
 		    plan tests => 12;
 		}
@@ -48,7 +47,7 @@ BEGIN { use_ok('Net::DNS::Resolver::Recurse'); }
 
 	isa_ok($res, 'Net::DNS::Resolver::Recurse');
 
-	$res->debug(0);	
+	$res->debug(1);	
 	$res->udp_timeout(20);
 	
 	# Hard code A and K.ROOT-SERVERS.NET hint 
@@ -73,14 +72,7 @@ BEGIN { use_ok('Net::DNS::Resolver::Recurse'); }
 # test the callback
 
 
-
-{
-	my $res = Net::DNS::Resolver::Recurse->new ;
-	my $count;
-	$res->debug(1);
-	# Hard code root hints, there are some environments that will fail
-	# the test otherwise
-	$res->hints( qw(
+my @HINTS= qw(
 			
 			192.33.4.12
 			128.8.10.90
@@ -96,18 +88,37 @@ BEGIN { use_ok('Net::DNS::Resolver::Recurse'); }
 			198.41.0.4
 			192.228.79.201
 
-			));
- 
+			);
 
+my $res2 = Net::DNS::Resolver::Recurse->new ;
+$res2->nameservers( @HINTS );
+my $ans_at=$res2->send("a.t.", "A");
+if ($ans_at->header->ancount == 1 ){
+    diag "We are going to skip a bunch of checks.";
+    diag "There seems to be a middle box in the path that modifies your packets";
+}
+SKIP: {
+    skip "Modifying middlebox detected ",4 if ($ans_at->header->ancount == 1 );
+    
+    {
+	my $res = Net::DNS::Resolver::Recurse->new ;
+	my $count;
+	$res->debug(1);
+	# Hard code root hints, there are some environments that will fail
+	# the test otherwise
+	$res->hints( @HINTS );
+	
+	
 	$res->recursion_callback(sub {
-		my $packet = shift;
-		
-		isa_ok($packet, 'Net::DNS::Packet');
-		
-		$count++;
-	});
-
+	    my $packet = shift;
+	    
+	    isa_ok($packet, 'Net::DNS::Packet');
+	    
+	    $count++;
+				 });
+	
 	$res->query_dorecursion('a.t.net-dns.org', 'A');
 	
 	is($count, 3);
-}
+    }
+} 

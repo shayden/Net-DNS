@@ -1,6 +1,6 @@
 package Net::DNS::RR::DNAME;
 #
-# $Id: DNAME.pm 388 2005-06-22 10:06:05Z olaf $
+# $Id: DNAME.pm 718 2008-02-26 21:49:20Z olaf $
 #
 use strict;
 BEGIN { 
@@ -9,7 +9,7 @@ BEGIN {
 use vars qw(@ISA $VERSION);
 
 @ISA     = qw(Net::DNS::RR);
-$VERSION = (qw$LastChangedRevision: 388 $)[1];
+$VERSION = (qw$LastChangedRevision: 718 $)[1];
 
 sub new {
 	my ($class, $self, $data, $offset) = @_;
@@ -48,6 +48,20 @@ sub rr_rdata {
 
 	return $rdata;
 }
+
+
+
+
+
+sub _normalize_dnames {
+	my $self=shift;
+	$self->_normalize_ownername();
+	$self->{'dname'}=Net::DNS::stripdot($self->{'dname'}) if defined $self->{'dname'};
+
+
+}
+
+
 
 1;
 __END__

@@ -1,6 +1,6 @@
 package Net::DNS::RR;
 #
-# $Id: RR.pm 705 2008-02-06 21:59:18Z olaf $
+# $Id: RR.pm 758 2008-12-23 21:22:02Z olaf $
 #
 use strict;
 
@@ -9,14 +9,13 @@ BEGIN {
 } 
 
 
-use vars qw($VERSION $AUTOLOAD     %rrsortfunct );
+use vars qw($VERSION $AUTOLOAD %rrsortfunct );
 use Carp;
-use Net::DNS;
+use Net::DNS qw (wire2presentation name2labels stripdot);
 use Net::DNS::RR::Unknown;
 
 
-
-$VERSION = (qw$LastChangedRevision: 705 $)[1];
+$VERSION = (qw$LastChangedRevision: 758 $)[1];
 
 =head1 NAME
 
@@ -80,9 +79,11 @@ BEGIN {
 		TXT
 		X25
 		OPT
+		APL
 		SSHFP
 		SPF
 		IPSECKEY
+
 	);
 
 	#  Only load DNSSEC if available
@@ -331,7 +332,7 @@ sub new_from_string {
 	my $rdata   = $5 || '';
 
 	$rdata =~ s/\s+$//o if $rdata;
-	$name  =~ s/\.$//o  if $name;
+	$name  = stripdot($name)  if $name;
 
 
 
@@ -452,7 +453,7 @@ sub new_from_hash {
 	my $self     = {};
 
 	while ( my ($key, $val) = each %keyval ) {
-		( $self->{lc $key} = $val ) =~ s/\.+$// if defined $val;
+	        $self->{lc $key} = $val ;
 	}
 
 	croak('RR name not specified') unless defined $self->{name};
@@ -466,11 +467,12 @@ sub new_from_hash {
 
 	if ($RR{$self->{'type'}}) {
 		my $subclass = $class->_get_subclass($self->{'type'});
-	   
+		
 	    if (uc $self->{'type'} ne 'OPT') {
-			bless $self, $subclass;
-			
-			return $self;
+		        bless $self, $subclass;
+			$self->_normalize_dnames();
+			return _normalize_rdata($self);
+
 	    } else {  
 			# Special processing of OPT. Since TTL and CLASS are
 			# set by other variables. See Net::DNS::RR::OPT 
@@ -484,6 +486,52 @@ sub new_from_hash {
 	 	bless $self, $class;
 	 	return $self;
 	}
+}
+
+
+
+# Normalizes the content of the rdata so that comparing can be done between
+# RRs created via various methods.
+
+# Based on first creating packet format and then parsing it.
+
+sub _normalize_rdata {
+	my $self     = shift;
+
+	# There are a bunch of META RR types we do not want to mess with
+	return $self if ( ( uc $self ->{'type'} eq "TSIG" )||
+			  ( uc $self ->{'type'} eq "TKEY" )
+			);
+
+
+	my $pkt = {	header		=> Net::DNS::Header->new,
+			question	=> [],
+			answer		=> [],
+			authority	=> [],
+			additional	=> []	};
+	
+	bless $pkt, "Net::DNS::Packet";
+	$pkt->push( answer => $self );
+	my $pkt2 = Net::DNS::Packet->new( \$pkt->data );
+	undef ($self);
+	return ($pkt2->answer)[0];
+}
+
+# When new_from_hash is used to generate the objects then it may be
+# that the names passed are not consistently FQDN or not.  Note that
+# the internal storage is without trailing dot.  this function
+# normalizes the domain names and is implemented in the records
+# themselves if more specific handling is needed
+
+sub _normalize_dnames {
+	my $self=shift;
+	$self->_normalize_ownername();
+}
+
+
+sub _normalize_ownername {
+	my $self=shift;	
+	return $self->{'name'}=stripdot($self->{'name'});
 }
 
 
@@ -554,8 +602,7 @@ sub print {	print &string, "\n"; }
 
     print $rr->string, "\n";
 
-Returns a string representation of the RR.  Calls the
-B<rdatastr> method to get the RR-specific data.
+Returns a string representation of the RR.  Calls the B<rdatastr> method to get the RR-specific data. Domain names are returned in RFC1035 format, i.e. all non letter, digit, hyphen characters are represented as \DDD.
 
 =cut
 
@@ -966,7 +1013,6 @@ sub get_rrsort_func {
 
     return $sortsub;
 }
-
 
 
 

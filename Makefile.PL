@@ -1,5 +1,5 @@
 
-# $Id: Makefile.PL 686 2007-11-29 21:12:40Z olaf $ -*-perl-*-
+# $Id: Makefile.PL 756 2008-12-22 21:32:51Z olaf $ -*-perl-*-
 
 use strict;
 $^W = 1;
@@ -15,37 +15,25 @@ sub DEBUG { 0; }
 unlink('Makefile');
 # clean up the online testing flag file.
 unlink("t/online.enabled"); 
+unlink("t/online.disabled"); 
+# clean up the IPv6 testing flag file.
+unlink("t/IPv6.enabled");
+unlink("t/IPv6.disabled");
 
 warn <<AMEN if $] < 5.005;
 
-This verion of Net::DNS has not been tested against perl v$]
+This version of Net::DNS has not been tested against perl v$]
 The author is confident that this package will function 
 properly with older perls such as yours, but bugs may lurk. 
 
 
 AMEN
 
-#
-# Test to see if V6 is available.
-#    
-unless(    eval {require Socket6;} &&
-	   # INET6 prior to 2.01 will not work; sorry.
-	   eval {require IO::Socket::INET6; IO::Socket::INET6->VERSION("2.00");}	   ){
-print <<V6WARNING;
-
-
-The libraries needed to support IPv6 transport have not been found. 
-You will need recent versions of the IO::Socket::INET6 and Socket6 
-libraries (from CPAN). 
-
-V6WARNING
-}
-
 
 #
 # Get the command line args
 #
-my ($use_xs, $online_tests);
+my ($use_xs, $online_tests, $IPv6_tests);
 
 GetOptions(
 	'xs!'           => \$use_xs,
@@ -54,7 +42,27 @@ GetOptions(
 		$use_xs = 0;
 	},
 	'online-tests!' => \$online_tests,
+	'IPv6-tests!'   => \$IPv6_tests,
 );
+
+
+
+#
+# Test to see if IPv6 is available, unless IPv6 testing has been declined.
+#    
+if (!defined $IPv6_tests || $IPv6_tests == 1) {
+    unless(    eval {require IO::Socket::INET6; IO::Socket::INET6->VERSION("2.01");}	   ){
+		print <<V6WARNING;
+
+
+The libraries needed to support IPv6 transport have not been found. 
+You will need recent versions of the IO::Socket::INET6 and Socket6 
+libraries (from CPAN). 
+
+V6WARNING
+		$IPv6_tests = 0;
+	}
+}
 
 
 
@@ -74,7 +82,7 @@ my %Makefile = (
 	},
 	XS            => {},
 	C             => [],
-	clean         => { FILES => 't/online.enabled compile.* DNS.o DNS.c DNS.bs' },
+	clean         => { FILES => 't/IPv6.enabled t/online.enabled compile.* DNS.o DNS.c DNS.bs' },
 
 
 );
@@ -82,7 +90,26 @@ my %Makefile = (
 
 
 if ($^O eq 'MSWin32') {
-	$Makefile{'PREREQ_PM'}->{'Win32::Registry'} = 0;
+    unless(    eval {require WIN32::API; }	   ){
+	warn <<AMEN; 
+I can not find WIN32::API version 0.55 or higher.
+
+I will add WIN32::API to the list of prerequisites.
+
+Note that, WIN32::API is included in recent versions
+of ActivePerl (5.10 since build 1003) and recent
+versions of Strawberry perl (at least in the October
+version of 5.10.0.3) and the module has not be 
+tested with other versions. In case of failure please
+consider upgrading.
+	
+AMEN
+
+    }
+    $Makefile{'PREREQ_PM'}->{'enum'} = 1.0;  # Dependency for Win32::IPHelper
+    $Makefile{'PREREQ_PM'}->{'Win32::IPHelper'} = 0.05;
+    $Makefile{'PREREQ_PM'}->{'Win32::API'} = 0.55;
+    $Makefile{'PREREQ_PM'}->{'Win32::Registry'} = 0;
 }
 
 
@@ -164,6 +191,18 @@ if ($online_tests) {
 	print "Activating Online Tests...\n" if DEBUG; 
 	open(ENABLED, ">t/online.enabled") || die "Can't touch ./t/online.enabled $!";
 	close(ENABLED)                     || die "Can't touch ./t/online.enabled $!";
+}
+
+
+
+unless (defined $IPv6_tests) {
+	$IPv6_tests = prompt('Would you like to enable IPv6 tests?', 'y') =~ /^y/i ? 1 : 0;
+}
+
+if ($IPv6_tests) {
+	print "Activating IPv6 Tests...\n" if DEBUG; 
+	open(ENABLED, '>t/IPv6.enabled') || die "Can't touch ./t/IPv6.enabled $!";
+	close(ENABLED)                   || die "Can't touch ./t/IPv6.enabled $!";
 }
 
 WriteMakefile(%Makefile);

@@ -1,8 +1,150 @@
-$Id: Changes 710 2008-02-08 15:22:21Z olaf $                       -*-text-*-
+$Id: Changes 768 2008-12-30 16:19:04Z olaf $                       -*-text-*-
 
 
 Revision history for Net::DNS               
 =============================
+**** 0.64 December 30, 2008
+
+Feature rt.cpan.org #36656
+
+    Added support for the APL record (RFC 3123)
+    The module consists of a list of Address Prefix Item objects
+    as defined in the Net::DNS::RR::APL::ApItem class.
+    NOTE: Class and its interface may be subject to change.
+
+    
+Fix rt.cpan.org #11931 Wrong nameserver list handling in
+                       Net::DNS::Resolver::Win32
+
+
+    The init method has been rewritten to be based on WIN32::IPhelper for
+    the selection of the domain and the IP addresses. This is believed to 
+    be more portable than trying to fetch the data from the registry.
+    We still trying to get the searchlist from the registry.
+
+    WARNING: If you use Perl under WIN32 (eg ActivePerl or Strawberry Perl)
+    then your module dependency graph has changed drastically
+
+Fix IPv6 modules
+    When IO::Socket::INET6 was available but Socket6 was not the code would
+    recurse to infinity.
+
+Fix rt.cpan.org #21757 and Feature: Connectivity during test
+    Addition of --no-IPv6-tests and --IPv6-tests option in Makefile.PL.
+    Note: This causes two questions to be asked when building the
+    Makefile instead of one.
+
+    Besides the test suites are constructed so that all the connectivity testing
+    happen in 001-connectivity.t and inavailability of connectivity over a certain
+    transport is signalled over files t/online.disabled and t/IPv6.disabled respectivly.
+    Both files are removed by t/99-cleanup
+
+Fix rt.cpan.org #34511
+    Priming query logic contained unneeded recursion. 
+    Now also fals back to hardcoded hints if there are no nameservers whatsoever.
+
+Fix rt.cpan.org #38390 and 37089
+    Added CD and AD bit control to the resolver.
+
+    The CD flag defaults to being unset and the AD flags is set by default
+    whenever DNSSEC is available. 
+    Both flags default to unset in absence of DNSSEC.
+
+
+Fix rt.cpan.org #37282
+   Improved error reporting during client disconnect from the nameserver
+
+NOTE rt.cpan.org # 40249
+
+   Release 0.62 introduced a feature to parse data inside a packet only 
+   when needed. This can the following to happen:
+
+   Eception: corrupt or incomplete data at
+                     /usr/lib/perl5/Net/DNS/RR.pm line 510.  
+   caught at -e line 1
+
+   This may happen when you have undefined your packet data before all the
+   sections have been fully parsed. Such as in:
+
+   $packet = Net::DNS::Packet->new(\$data);
+   undef($data);
+
+   The workaround is to force parcing by calling the methods that 
+   parse the data. e.g.
+
+   $packet = Net::DNS::Packet->new(\$data);
+   $packet->answer; $packet->additional; $packet->authority;
+   undef ($data) 
+
+
+Fix rt.cpan.org # 41076 and # 41071
+
+  Net::DNS::RR->new_from_hash function would not normalize the content
+  of the data so that a method getting a string representation would
+  get inconsistent results depending on whether a RR was created from
+  a string of from a hash. 
+
+Fix rt.cpan.org # 41296
+
+  Compression buggy for large packets. Fix by Kim Minh.
+
+
+Fix rt.cpan.org # 35752
+
+  Perl 5.10.0 gave a number of issues on several platforms, prefering
+  XSLoader over Dynaloader seemed to fix those.
+ 
+
+Bug rt.cpan.org #34510
+  Buggy setting of "Recursion too deep, aborted" corrected.
+  
+Feature (rt.cpan.org #39284)
+
+  The ReplyHandler now also receives a variable with an annonymous has with the connection details. Variables
+  supplied to the Reply handler are:  $qname, $qclass, $qtype, $peerhost, $query, $conn	
+  The hash referenced by $conn contains the following buckets: sockhost, sockport,  peerhost, and peerport.
+  
+
+
+Feature t/08-online.t and t/10-recurse.t
+
+  In particular environments a query for a.t. will resolve and or
+  middleboxes will replace DNS packet content for queries to the root.
+  A bunch of test is skipped when this (broken) environment is
+  detected.
+  
+
+
+Feature/Bug rt.cpan.org #22019 
+
+  The initial fix for rt 22019 was to strip a trailing dot from all
+  attributes that where povided as argument for the
+  Net::DNS::RR::new_from_hash function.  We have introduced
+  Net::DNS::stripdot, a function that will strip the dots of domain
+  names, taking into account possible escapes (e.g. labels like
+  foo\\\..).  As a side effect the new_from_string method will now
+  convert possible spaces that are not trapped by some of the
+  new_from_string functions and convert them to \032 escapes.
+
+  For information: The internal storage of domain names is using
+  presentation format without trailing dots. 
+
+
+
+Bug
+  @EXPORT and @EXPORT_OK moved to a BEGIN block so that Net::DNS::SEC 
+  can make use of exported functions
+
+
+Feature/Bug
+
+  The Notify handler introduced in 0.63 did not set the OPCODE on the
+  reply appropriately. This has been solved generically by allowing the
+  "Headermask" that is returned as 4th element by the reply or notify
+  handler in the nameserver also allows for the opcode to be set.
+  e.g. as in return ("NXDOMAIN",[],[],[],{ opcode => "NS_NOTIFY_OP" }
+  );
+
 
 *** 0.63, 8 Feb 2008
 
@@ -56,6 +198,8 @@ Features: Move of some functionality out of the Packet to the Question
    performance improvement.
 
    Dick Franks is acknowledged for this Good Work (TM).
+
+   Added 20081216 see NOTE above under  rt.cpan.org # 40249
 
 Feature: the Net::DNS::Packet's answersize() method will from now on
     ignore its arguments and just return the size of the packet.

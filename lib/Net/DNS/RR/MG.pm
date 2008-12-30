@@ -1,6 +1,6 @@
 package Net::DNS::RR::MG;
 #
-# $Id: MG.pm 632 2007-03-12 13:24:21Z olaf $
+# $Id: MG.pm 718 2008-02-26 21:49:20Z olaf $
 #
 use strict;
 BEGIN { 
@@ -9,7 +9,7 @@ BEGIN {
 use vars qw(@ISA $VERSION);
 
 @ISA     = qw(Net::DNS::RR);
-$VERSION = (qw$LastChangedRevision: 632 $)[1];
+$VERSION = (qw$LastChangedRevision: 718 $)[1];
 
 sub new {
 	my ($class, $self, $data, $offset) = @_;
@@ -25,8 +25,7 @@ sub new_from_string {
 	my ($class, $self, $string) = @_;
 
 	if ($string) {
-		$string =~ s/\.+$//;
-		$self->{"mgmname"} = $string;
+		$self->{"mgmname"} = Net::DNS::stripdot($string);
 	}
 
 	return bless $self, $class;
@@ -47,6 +46,13 @@ sub rr_rdata {
 	}
 
 	return $rdata;
+}
+
+
+sub _normalize_dnames {
+	my $self=shift;
+	$self->_normalize_ownername();
+	$self->{'mgmname'}=Net::DNS::stripdot($self->{'mgmname'}) if defined $self->{'mgmname'};
 }
 
 

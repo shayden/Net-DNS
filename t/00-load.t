@@ -1,8 +1,8 @@
 # -*-perl-*-
-# $Id: 00-load.t 666 2007-06-21 15:08:49Z olaf $ 
+# $Id: 00-load.t 758 2008-12-23 21:22:02Z olaf $ 
 
 
-use Test::More tests => 79;
+use Test::More tests => 81;
 use strict;
 
 
@@ -17,6 +17,7 @@ BEGIN {
 diag("\nThese tests were ran with:\n");
 diag("Net::DNS::VERSION:               ".
      $Net::DNS::VERSION);
+diag("Net::DNS::SEC seems to be available") if $Net::DNS::DNSSEC;
 diag("set environment variable NET_DNS_DEBUG to get all versions");
 
 

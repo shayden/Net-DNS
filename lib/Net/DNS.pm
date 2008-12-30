@@ -1,7 +1,7 @@
 
 package Net::DNS;
 #
-# $Id: DNS.pm 710 2008-02-08 15:22:21Z olaf $
+# $Id: DNS.pm 762 2008-12-24 09:30:57Z olaf $
 #
 use strict;
 
@@ -38,17 +38,38 @@ use vars qw(
 
 
 BEGIN {
-    require DynaLoader;
+
     require Exporter;
-    @ISA     = qw(Exporter DynaLoader);
+    @ISA     = qw(Exporter );
+    # these need to live here because of dependencies further on.
+    @EXPORT = qw(mx yxrrset nxrrset yxdomain nxdomain rr_add rr_del);
+    @EXPORT_OK= qw(name2labels wire2presentation rrsort stripdot);
+
+
 
     
-    $VERSION = '0.63';
-    $SVNVERSION = (qw$LastChangedRevision: 710 $)[1];
+    $VERSION = '0.64';
+    $SVNVERSION = (qw$LastChangedRevision: 762 $)[1];
+
+
+
 
     $HAVE_XS = eval { 
 	local $SIG{'__DIE__'} = 'DEFAULT';
-	__PACKAGE__->bootstrap(); 1 
+
+
+	eval {
+		require XSLoader;
+		XSLoader::load('Net::DNS', $VERSION);
+		1;
+	} or do {
+
+		require DynaLoader;
+		push @ISA, 'DynaLoader';
+		bootstrap Net::DNS $VERSION;
+		1;
+	};
+
 	} ? 1 : 0;
 
 }
@@ -75,8 +96,6 @@ use Net::DNS::Question;
 use Net::DNS::RR;   # use only after $Net::DNS::DNSSEC has been evaluated
 use Carp;
 
-@EXPORT = qw(mx yxrrset nxrrset yxdomain nxdomain rr_add rr_del);
-@EXPORT_OK= qw(name2labels wire2presentation rrsort);
 
 
 #
@@ -130,15 +149,16 @@ use Carp;
     'CERT'      => 37,      # RFC 2538
     'DNAME'     => 39,      # RFC 2672
     'OPT'       => 41,      # RFC 2671
+    'APL'       => 42,      # RFC 3123		
     'DS'        => 43,      # RFC 4034   # in Net::DNS::SEC
-    'SSHFP'     => 44,      # draft-ietf-secsh-dns (No RFC # yet at time of coding)
+    'SSHFP'     => 44,      # RFC 4255
     'IPSECKEY'  => 45,      # RFC 4025
     'RRSIG'     => 46,      # RFC 4034 in Net::DNS::SEC
     'NSEC'      => 47,      # RFC 4034 in Net::DNS::SEC
     'DNSKEY'    => 48,      # RFC 4034 in Net::DNS::SEC
-    'NSEC3'     => 50,   # draft-ietf-dnsext-nsec3-10 (assignment made at time of code release) 
-    'NSEC3PARAM' => 51,  # draft-ietf-dnsext-nsec3-10 (assignment made at time of code release)
-
+    'NSEC3'     => 50,      # RFC5155
+    'NSEC3PARAM' => 51,     # RFC5155
+#   'HIP'       => 55,      # RFC5205 NOT IMPLEMENTED (yet)
     'SPF'       => 99,      # RFC 4408
     'UINFO'     => 100,     # non-standard
     'UID'       => 101,     # non-standard
@@ -433,6 +453,25 @@ sub wire2presentation {
 
     return $presentation;
     
+}
+
+
+
+
+sub stripdot {
+	# Strips the final non-escaped dot from a domain name.  Note
+	# that one could have a label that looks like "foo\\\\\.\.."
+	# although not likely one wants to deal with that cracefully.
+	# This utilizes 2 functions in the DNS module to deal with
+	# thing cracefully.
+
+	my @labels=name2labels(shift);
+	my $name;
+	foreach my $label (@labels){
+		$name .= wire2presentation($label) . ".";
+	}
+	chop($name);
+	return $name;
 }
 
 

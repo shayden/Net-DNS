@@ -1,6 +1,6 @@
 package Net::DNS::RR::RT;
 #
-# $Id: RT.pm 632 2007-03-12 13:24:21Z olaf $
+# $Id: RT.pm 718 2008-02-26 21:49:20Z olaf $
 #
 use strict;
 BEGIN { 
@@ -9,7 +9,7 @@ BEGIN {
 use vars qw(@ISA $VERSION);
 
 @ISA     = qw(Net::DNS::RR);
-$VERSION = (qw$LastChangedRevision: 632 $)[1];
+$VERSION = (qw$LastChangedRevision: 718 $)[1];
 
 # Highest preference sorted first.
 __PACKAGE__->set_rrsort_func("preference",
@@ -44,8 +44,7 @@ sub new_from_string {
 
 	if ($string && ($string =~ /^(\d+)\s+(\S+)$/)) {
 		$self->{"preference"}   = $1;
-		$self->{"intermediate"} = $2;
-		$self->{"intermediate"} =~ s/\.+$//;
+		$self->{"intermediate"} = Net::DNS::stripdot($2);
 	}
 
 	return bless $self, $class;
@@ -72,8 +71,16 @@ sub rr_rdata {
 	return $rdata;
 }
 
+
+sub _normalize_dnames {
+	my $self=shift;
+	$self->_normalize_ownername();
+	$self->{'intermediate'}=Net::DNS::stripdot($self->{'intermediate'}) if defined $self->{'intermediate'};
+}
+
+
 sub _canonicalRdata {
-	my ($self, $packet, $offset) = @_;
+	my $self  = shift;
 	my $rdata = "";
 
 	if (exists $self->{"preference"}) {

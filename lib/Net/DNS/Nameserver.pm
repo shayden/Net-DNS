@@ -1,6 +1,6 @@
 package Net::DNS::Nameserver;
 #
-# $Id: Nameserver.pm 709 2008-02-06 22:40:42Z olaf $
+# $Id: Nameserver.pm 749 2008-12-19 15:20:22Z olaf $
 #
 
 use Net::DNS;
@@ -23,17 +23,14 @@ use constant	STATE_ACCEPTED => 1;
 use constant	STATE_GOT_LENGTH => 2;
 use constant	STATE_SENDING => 3;
 
-$VERSION = (qw$LastChangedRevision: 709 $)[1];
+$VERSION = (qw$LastChangedRevision: 749 $)[1];
 
 
 
 BEGIN {
 	if ( FORCE_INET4 ) {
 		$has_inet6 = 0;
-	} elsif ( eval {require Socket6;} &&
-			# INET6 earlier than V2.01 will not work; sorry.
-			eval {require IO::Socket::INET6; IO::Socket::INET6->VERSION("2.01");} ) {
- 		import Socket6;
+	} elsif ( eval {require IO::Socket::INET6; IO::Socket::INET6->VERSION("2.01");} ) {
 		$has_inet6 = 1;
 	} else {
 		$has_inet6=0;
@@ -50,7 +47,6 @@ BEGIN {
 
 sub new {
 	my ($class, %self) = @_;
-
 	unless ( ref $self{ReplyHandler} ) {
 		cluck "No reply handler!";
 		return;
@@ -150,7 +146,7 @@ sub inet_new {
 #------------------------------------------------------------------------------
 
 sub make_reply {
-	my ($self, $query, $peerhost) = @_;
+	my ($self, $query, $peerhost,$conn) = @_;
 	
 	my $reply = Net::DNS::Packet->new();	# create empty reply packet
 	$reply->header->qr(1);
@@ -191,12 +187,12 @@ sub make_reply {
 			
 			if  ($query->header->opcode eq "QUERY"){
 			  ($rcode, $ans, $auth, $add, $headermask) =
-			      &{$self->{"ReplyHandler"}}($qname, $qclass, $qtype, $peerhost, $query);
+			      &{$self->{"ReplyHandler"}}($qname, $qclass, $qtype, $peerhost, $query, $conn);
 			}else{
 			  $reply->header->rcode("SERVFAIL") unless 
 			     ( ref $self->{"NotifyHandler"} eq "CODE");
-			  ($rcode, $ans, $auth, $add, $headermask) =
-			      &{$self->{"NotifyHandler"}}($qname, $qclass, $qtype, $peerhost, $query);
+		  ($rcode, $ans, $auth, $add, $headermask) =
+			      &{$self->{"NotifyHandler"}}($qname, $qclass, $qtype, $peerhost, $query, $conn);
 			}
 			print "$rcode\n" if $self->{"Verbose"};
 			
@@ -225,6 +221,9 @@ sub make_reply {
 		$reply->header->aa(1) if $headermask->{'aa'};
 		$reply->header->ra(1) if $headermask->{'ra'};
 		$reply->header->ad(1) if $headermask->{'ad'};
+		if (defined $Net::DNS::opcodesbyname{$headermask->{'opcode'}}){
+			$reply->header->opcode( $headermask->{'opcode'} );
+		}
 	}
 	
 	
@@ -310,7 +309,13 @@ sub tcp_connection {
 			my $qbuf = substr($self->{"_tcp"}{$sock}{"inbuffer"}, 0, $self->{"_tcp"}{$sock}{"querylength"});
 			substr($self->{"_tcp"}{$sock}{"inbuffer"}, 0, $self->{"_tcp"}{$sock}{"querylength"}) = "";
 		  	my $query = Net::DNS::Packet->new(\$qbuf);
-		  	my $reply = $self->make_reply($query, $sock->peerhost);
+			my $conn = {
+				    sockhost => $sock->sockhost(),
+				    sockport => $sock->sockport(),
+				    peerhost => $sock->peerhost(),
+				    peerport => $sock->peerport()
+				   };
+		  	my $reply = $self->make_reply($query, $sock->peerhost, $conn);
 		  	if (not defined $reply) {
 		    		print "I couldn't create a reply for $peer. Closing socket.\n"
 		    			if $self->{"Verbose"};
@@ -342,13 +347,18 @@ sub udp_connection {
 	my $buf = "";
 
  	$sock->recv($buf, &Net::DNS::PACKETSZ);
- 	my ($peerhost,$peerport) = ($sock->peerhost, $sock->peerport);
- 
- 	print "UDP connection from $peerhost:$peerport\n" if $self->{"Verbose"};
+ 	my ($peerhost,$peerport,$sockhost) = ($sock->peerhost, $sock->peerport, $sock->sockhost);
+	
+ 	print "UDP connection from $peerhost:$peerport to $sockhost\n" if $self->{"Verbose"};
 
 	my $query = Net::DNS::Packet->new(\$buf);
-
-	my $reply = $self->make_reply($query, $peerhost) || return;
+	my $conn = {
+		    sockhost => $sock->sockhost,
+		    sockport => $sock->sockport,
+		    peerhost => $sock->peerhost,
+		    peerport => $sock->peerport
+		   };
+	my $reply = $self->make_reply($query, $peerhost, $conn) || return;
 	my $reply_data = $reply->data;
 
 	local $| = 1 if $self->{"Verbose"};
@@ -421,7 +431,7 @@ sub loop_once {
 	  # If we have buffered output, then send as much as the OS will accept
 	  # and wait with the rest
 	  my $len = length $self->{"_tcp"}{$s}{"outbuffer"};
-	  my $charssent = $sock->syswrite($self->{"_tcp"}{$s}{"outbuffer"});
+	  my $charssent = $sock->syswrite($self->{"_tcp"}{$s}{"outbuffer"}) || 0;
 	  print "Sent $charssent of $len octets to ",$self->{"_tcp"}{$s}{"peer"},".\n"
 	      if $self->{"Verbose"};
 	  substr($self->{"_tcp"}{$s}{"outbuffer"}, 0, $charssent) = "";
@@ -534,10 +544,10 @@ IPv6 and IPv4);
 
 
 The ReplyHandler subroutine is passed the query name, query class,
-query type and optionally an argument containing the peerhost the
-incoming query. It must return the response code and references to the
-answer, authority, and additional sections of the response.  Common
-response codes are:
+query type and optionally an argument containing the peerhost, the
+incoming query, and the name of the incomming socket (sockethost). It
+must return the response code and references to the answer, authority,
+and additional sections of the response.  Common response codes are:
 
   NOERROR	No error
   FORMERR	Format error
@@ -633,10 +643,10 @@ additional filtering on its basis may be applied.
  use warnings;
  
  sub reply_handler {
-	 my ($qname, $qclass, $qtype, $peerhost,$query) = @_;
+	 my ($qname, $qclass, $qtype, $peerhost,$query,$conn) = @_;
 	 my ($rcode, @ans, @auth, @add);
 
-	 print "Received query from $peerhost\n";
+	 print "Received query from $peerhost to ". $conn->{"sockhost"}. "\n";
 	 $query->print;
 
 	 

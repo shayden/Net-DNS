@@ -1,6 +1,6 @@
 package Net::DNS::Resolver::Base;
 #
-# $Id: Base.pm 704 2008-02-06 21:30:59Z olaf $
+# $Id: Base.pm 750 2008-12-19 15:48:56Z olaf $
 #
 
 use strict;
@@ -24,7 +24,7 @@ use IO::Select;
 use Net::DNS;
 use Net::DNS::Packet;
 
-$VERSION = (qw$LastChangedRevision: 704 $)[1];
+$VERSION = (qw$LastChangedRevision: 750 $)[1];
 
 
 #
@@ -58,11 +58,8 @@ $VERSION = (qw$LastChangedRevision: 704 $)[1];
  
 BEGIN {
     if ( 
-	 eval {require Socket6;} &&
-	 # INET6 prior to 2.01 will not work; sorry.
 	 eval {require IO::Socket::INET6; IO::Socket::INET6->VERSION("2.00");}
 	 ) {
- 	import Socket6;
  	$has_inet6=1;
     }else{
  	$has_inet6=0;
@@ -107,7 +104,8 @@ BEGIN {
 		persistent_udp => 0,
 		dnssec         => 0,
 		udppacketsize  => 0,  # The actual default is lower bound by Net::DNS::PACKETSZ
-		cdflag         => 1,  # this is only used when {dnssec} == 1
+	        cdflag         => 0,  # this is only used when {dnssec} == 1
+	        adflag         => 1,  # this is only used when {dnssec} == 1
 		force_v4       => 0,  # force_v4 is only relevant when we have
                                       # v6 support available
 		ignqrid        => 0,  # normally packets with non-matching ID 
@@ -325,8 +323,13 @@ sub nameservers {
 	    } elsif ( _ip_is_ipv6($ns) ) {
 		push @a, ($ns eq '0') ? '::0' : $ns;
 
-	    } else  {
-		my $defres = Net::DNS::Resolver->new;
+	} else  {
+
+		my $defres = Net::DNS::Resolver->new ();
+		$defres->{"debug"}=$self->{"debug"};
+
+		
+
 		my @names;
 		
 		if ($ns !~ /\./) {
@@ -364,6 +367,9 @@ sub nameservers {
 sub nameserver { &nameservers }
 
 sub cname_addr {
+	# TODO 20081217
+	# This code does not follow CNAME chanes, it only looks inside the packet. Out of bailiwick will fail.
+	# Also it is not IP agnostic
 	my $names  = shift;
 	my $packet = shift;
 	my @addr;
@@ -378,6 +384,8 @@ sub cname_addr {
 			push(@names, $rr->cname);
 		} elsif ($rr->type eq 'A') {
 			# Run a basic taint check.
+			# Remark olaf 20081217: This taint check seems to be unneeded (albeit harmless). The packet
+			# came from the wire and all parsing (untainting) has been done in Net::DNS::RR::A
 			next RR unless $rr->address =~ m/^($oct2\.$oct2\.$oct2\.$oct2)$/o;
 			
 			push(@addr, $1)
@@ -697,7 +705,6 @@ sub send_udp {
  						   LocalPort => ($srcport || undef),
  						   Proto     => 'udp',
  						   ) ;
- 	    
  	    #$^W = $old_wflag;
 	}
 	
@@ -733,7 +740,7 @@ sub send_udp {
 	      
 
 
-	      my @res = getaddrinfo($ns_address, $dstport, AF_UNSPEC, SOCK_DGRAM, 
+	      my @res = Socket6::getaddrinfo($ns_address, $dstport, AF_UNSPEC, SOCK_DGRAM, 
 				    0, AI_NUMERICHOST);
 	      
 	      $^W=$old_wflag ;
@@ -941,9 +948,15 @@ sub bgsend {
 	    no strict 'subs';   # Because of the eval statement in the BEGIN
 	                      # AI_NUMERICHOST is not available at compile time.
 
+	      my $old_wflag = $^W; 		#circumvent perl -w warnings about 'udp'
+	      $^W = 0;
+	      
+
 	    # The AI_NUMERICHOST surpresses lookups.
-	    my @res = getaddrinfo($ns_address, $dstport, AF_UNSPEC, SOCK_DGRAM,
+	    my @res = Socket6::getaddrinfo($ns_address, $dstport, AF_UNSPEC, SOCK_DGRAM,
 				  0 , AI_NUMERICHOST);
+
+	    $^W=$old_wflag;
 
 	    use strict 'subs';
 
@@ -1045,6 +1058,11 @@ sub bgisready {
 	return @ready > 0;
 }
 
+
+
+#
+# Keep this method around. Folk depend on it although its not documented and exported.
+#
 sub make_query_packet {
 	my $self = shift;
 	my $packet;
@@ -1064,7 +1082,10 @@ sub make_query_packet {
     	print ";; Adding EDNS extention with UDP packetsize $self->{'udppacketsize'} and DNS OK bit set\n" 
     		if $self->{'debug'};
     	
-    	my $optrr = Net::DNS::RR->new(
+    
+	$packet->header->cd($self->{'cdflag'});
+	$packet->header->cd($self->{'adflag'});
+	my $optrr = Net::DNS::RR->new(
 						Type         => 'OPT',
 						Name         => '',
 						Class        => $self->{'udppacketsize'},  # Decimal UDPpayload

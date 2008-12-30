@@ -1,6 +1,6 @@
 package Net::DNS::RR::SRV;
 #
-# $Id: SRV.pm 583 2006-05-03 12:24:18Z olaf $
+# $Id: SRV.pm 718 2008-02-26 21:49:20Z olaf $
 #
 use strict;
 BEGIN { 
@@ -9,7 +9,7 @@ BEGIN {
 use vars qw(@ISA $VERSION);
 
 @ISA     = qw(Net::DNS::RR);
-$VERSION = (qw$LastChangedRevision: 583 $)[1];
+$VERSION = (qw$LastChangedRevision: 718 $)[1];
 
 
 
@@ -90,6 +90,15 @@ sub rr_rdata {
 	
 	return $rdata;
 }
+
+sub _normalize_dnames {
+	my $self=shift;
+	$self->_normalize_ownername();
+	$self->{'target'}=Net::DNS::stripdot($self->{'target'}) if defined $self->{'target'};
+}
+
+
+
 
 
 1;

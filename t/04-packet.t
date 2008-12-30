@@ -1,4 +1,4 @@
-# $Id: 04-packet.t 704 2008-02-06 21:30:59Z olaf $	-*-perl-*-
+# $Id: 04-packet.t 729 2008-12-16 12:03:01Z olaf $	-*-perl-*-
 
 use Test::More tests => 80;
 use strict;
@@ -89,6 +89,13 @@ foreach my $section ( qw(answer authority additional) ) {
 	is($count2,	2,	"push() returns $section RR count");
 }
 
+# Add enough distinct labels to render compression unusable at some point
+for (0..255) {
+    $update->push('answer',
+		  Net::DNS::RR->new("X$_ TXT \"" . pack("A255", "x").'"'));
+}
+$update->push('answer', Net::DNS::RR->new('XY TXT ""'));
+$update->push('answer', Net::DNS::RR->new('VW.XY TXT ""'));
 
 #	Parse data and compare with original
 my $buffer = $update->data;

@@ -1,23 +1,49 @@
 package Net::DNS::Resolver::Recurse;
 #
-# $Id: Recurse.pm 591 2006-05-22 21:32:38Z olaf $
+# $Id: Recurse.pm 740 2008-12-17 23:20:53Z olaf $
 #
 use strict;
 use Net::DNS::Resolver;
 
 use vars qw($VERSION @ISA);
 
-$VERSION = (qw$LastChangedRevision: 591 $)[1];
+$VERSION = (qw$LastChangedRevision: 740 $)[1];
 @ISA = qw(Net::DNS::Resolver);
+
+
+my @hardcodedhints = qw (
+198.41.0.4 
+192.58.128.30
+192.112.36.4
+202.12.27.33
+192.5.5.241
+128.63.2.53
+192.36.148.17
+192.33.4.12
+192.228.79.201
+199.7.83.42
+128.8.10.90
+193.0.14.129
+192.203.230.10
+2001:503:ba3e::2:30
+2001:500:2f::f
+2001:500:1::803f:235
+2001:503:c27::2:30
+2001:500:3::42
+2001:dc3::35
+);
 
 sub hints {
   my $self = shift;
   my @hints = @_;
   print ";; hints(@hints)\n" if $self->{'debug'};
-  if (!@hints && $self->nameservers) {
-    $self->hints($self->nameservers);
+  
+  if (!@hints && !$self->nameservers){
+	  return $self->hints( @hardcodedhints )
+  }elsif (!@hints && $self->nameservers) {
+	  return $self->hints($self->nameservers);
   } else {
-    $self->nameservers(@hints);
+	  $self->nameservers(@hints);
   }
 
   print ";; verifying (root) zone...\n" if $self->{'debug'};
@@ -83,7 +109,10 @@ sub hints {
       }
     }
   } else {
-    warn "Server [".($self->nameservers)[0]."] did not give answers";
+    warn "Servers [". join " ",($self->nameservers),"] did not give answers";
+    print ";; Unsetting hints and nameservers, trying with hardcoded nameservers\n" if  $self->{'debug'};
+    print $self->nameservers([]);
+    return $self->hints();
   }
   
   # Disable recursion flag.
@@ -138,7 +167,7 @@ sub _dorecursion {
   if ( $depth > 255 ) {
       print ";; _dorecursion() Recursion too deep, aborting...\n" if
 	  $self->{'debug'};
-      $self->errorstring="Recursion to deep, abborted";
+      $self->errorstring("Recursion too deep, abborted");
       return undef;
   }
   
@@ -407,7 +436,7 @@ Portions Copyright (c) 2005, Olaf M Kolkman.
 This module is free software; you can redistribute
 it and/or modify it under the same terms as Perl itself.
 
-$Id: Recurse.pm 591 2006-05-22 21:32:38Z olaf $
+$Id: Recurse.pm 740 2008-12-17 23:20:53Z olaf $
 
 =cut
 

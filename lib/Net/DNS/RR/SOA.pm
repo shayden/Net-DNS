@@ -1,6 +1,6 @@
 package Net::DNS::RR::SOA;
 #
-# $Id: SOA.pm 632 2007-03-12 13:24:21Z olaf $
+# $Id: SOA.pm 718 2008-02-26 21:49:20Z olaf $
 #
 use strict;
 BEGIN { 
@@ -9,7 +9,7 @@ BEGIN {
 use vars qw(@ISA $VERSION);
 
 @ISA     = qw(Net::DNS::RR);
-$VERSION = (qw$LastChangedRevision: 632 $)[1];
+$VERSION = (qw$LastChangedRevision: 718 $)[1];
 
 sub new {
 	my ($class, $self, $data, $offset) = @_;
@@ -35,8 +35,8 @@ sub new_from_string {
 
 		@{$self}{qw(mname rname serial refresh retry expire minimum)} = $string =~ /(\S+)/g;
 
-		$self->{'mname'} =~ s/\.+$//;
-		$self->{'rname'} =~ s/\.+$//;
+		$self->{'mname'} = Net::DNS::stripdot($self->{'mname'});
+		$self->{'rname'} = Net::DNS::stripdot($self->{'rname'});
 	}
 
 	return bless $self, $class;
@@ -77,6 +77,13 @@ sub rr_rdata {
 	return $rdata;
 }
 
+
+sub _normalize_dnames {
+	my $self=shift;
+	$self->_normalize_ownername();
+	$self->{'mname'}=Net::DNS::stripdot($self->{'mname'}) if defined $self->{'mname'};
+	$self->{'rname'}=Net::DNS::stripdot($self->{'rname'}) if defined $self->{'rname'};
+}
 
 
 sub _canonicalRdata {

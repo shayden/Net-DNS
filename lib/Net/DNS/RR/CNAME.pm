@@ -1,6 +1,6 @@
 package Net::DNS::RR::CNAME;
 #
-# $Id: CNAME.pm 632 2007-03-12 13:24:21Z olaf $
+# $Id: CNAME.pm 718 2008-02-26 21:49:20Z olaf $
 #
 use strict;
 BEGIN { 
@@ -10,7 +10,7 @@ BEGIN {
 use vars qw(@ISA $VERSION);
 
 @ISA     = qw(Net::DNS::RR);
-$VERSION = (qw$LastChangedRevision: 632 $)[1];
+$VERSION = (qw$LastChangedRevision: 718 $)[1];
 
 sub new {
 	my ($class, $self, $data, $offset) = @_;
@@ -26,8 +26,7 @@ sub new_from_string {
 	my ($class, $self, $string) = @_;
 
 	if ($string) {
-		$string =~ s/\.+$//;
-		$self->{"cname"} = $string;
+		$self->{"cname"} = Net::DNS::stripdot($string);
 	}
 
 	return bless $self, $class;
@@ -50,7 +49,16 @@ sub rr_rdata {
 	return $rdata;
 }
 
-# rdata contains a compressed domainname... we should not have that.
+
+sub _normalize_dnames {
+	my $self=shift;
+	$self->_normalize_ownername();
+	$self->{'cname'}=Net::DNS::stripdot($self->{'cname'}) if defined $self->{'cname'};
+
+
+}
+
+
 sub _canonicalRdata {	
 	my ($self) = @_;
 	return $self->_name2wire(lc($self->{"cname"}));

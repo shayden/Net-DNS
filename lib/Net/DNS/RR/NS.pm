@@ -1,5 +1,5 @@
 #
-# $Id: NS.pm 707 2008-02-06 22:27:28Z olaf $
+# $Id: NS.pm 718 2008-02-26 21:49:20Z olaf $
 #
 package Net::DNS::RR::NS;
 
@@ -10,7 +10,7 @@ BEGIN {
 use vars qw(@ISA $VERSION);
 
 @ISA     = qw(Net::DNS::RR);
-$VERSION = (qw$LastChangedRevision: 707 $)[1];
+$VERSION = (qw$LastChangedRevision: 718 $)[1];
 
 sub new {
 	my ($class, $self, $data, $offset) = @_;
@@ -26,8 +26,7 @@ sub new_from_string {
 	my ($class, $self, $string) = @_;
 
 	if ($string) {
-		$string =~ s/\.+$//;
-		$self->{"nsdname"} = $string;
+		$self->{"nsdname"} = Net::DNS::stripdot($string);
 	}
 
 	return bless $self, $class;
@@ -50,6 +49,13 @@ sub rr_rdata {
 	return $rdata;
 }
 
+
+
+sub _normalize_dnames {
+	my $self=shift;
+	$self->_normalize_ownername();
+	$self->{'nsdname'}=Net::DNS::stripdot($self->{'nsdname'}) if defined $self->{'nsdname'};
+}
 
 
 sub _canonicalRdata {

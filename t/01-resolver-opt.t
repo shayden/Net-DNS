@@ -1,7 +1,7 @@
-# $Id: 01-resolver-opt.t 616 2006-10-18 09:15:48Z olaf $
+# $Id: 01-resolver-opt.t 737 2008-12-17 11:32:10Z olaf $    -*-perl-*-
 
 
-use Test::More tests => 60;
+use Test::More tests => 62;
 use strict;
 use File::Spec;
 
@@ -60,6 +60,8 @@ my %test_config = (
 	udp_timeout    => 60,
 	persistent_tcp => 1,
 	dnssec         => 1,
+        cdflag         => 0,
+        adflag         => 1,
 );
 
 $res = Net::DNS::Resolver->new(%test_config);

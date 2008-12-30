@@ -1,6 +1,6 @@
 package Net::DNS::RR::NAPTR;
 #
-# $Id: NAPTR.pm 583 2006-05-03 12:24:18Z olaf $
+# $Id: NAPTR.pm 718 2008-02-26 21:49:20Z olaf $
 #
 use strict;
 BEGIN { 
@@ -9,7 +9,7 @@ BEGIN {
 use vars qw(@ISA $VERSION);
 
 @ISA     = qw(Net::DNS::RR);
-$VERSION = (qw$LastChangedRevision: 583 $)[1];
+$VERSION = (qw$LastChangedRevision: 718 $)[1];
 
 
 
@@ -86,8 +86,7 @@ sub new_from_string {
 		$self->{"flags"}       = $3;
 		$self->{"service"}     = $4;
 		$self->{"regexp"}      = $5;
-		$self->{"replacement"} = $6;
-		$self->{"replacement"} =~ s/\.+$//;
+		$self->{"replacement"} = Net::DNS::stripdot($6);
 	}
 
 	return bless $self, $class;
@@ -135,6 +134,15 @@ sub rr_rdata {
 
 	return $rdata;
 }
+
+
+sub _normalize_dnames {
+	my $self=shift;
+	$self->_normalize_ownername();
+	$self->{'replacement'}=Net::DNS::stripdot($self->{'replacement'}) if defined $self->{'replacement'};
+}
+
+
 
 1;
 __END__

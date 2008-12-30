@@ -1,6 +1,6 @@
 package Net::DNS::RR::RP;
 #
-# $Id: RP.pm 702 2008-01-21 10:01:21Z olaf $
+# $Id: RP.pm 718 2008-02-26 21:49:20Z olaf $
 #
 use strict;
 BEGIN { 
@@ -9,7 +9,7 @@ BEGIN {
 use vars qw(@ISA $VERSION);
 
 @ISA     = qw(Net::DNS::RR);
-$VERSION = (qw$LastChangedRevision: 702 $)[1];
+$VERSION = (qw$LastChangedRevision: 718 $)[1];
 
 sub new {
 	my ($class, $self, $data, $offset) = @_;
@@ -26,10 +26,8 @@ sub new_from_string {
 	my ($class, $self, $string) = @_;
 
 	if ($string && ($string =~ /^(\S+)\s+(\S+)$/)) {
-		$self->{"mbox"}     = $1;
-		$self->{"txtdname"} = $2;
-		$self->{"mbox"}     =~ s/\.+$//;
-		$self->{"txtdname"} =~ s/\.+$//;
+		$self->{"mbox"}     = Net::DNS::stripdot($1);
+		$self->{"txtdname"} = Net::DNS::stripdot($2);
 	}
 
 	return bless $self, $class;
@@ -55,6 +53,15 @@ sub rr_rdata {
 	}
 
 	return $rdata;
+}
+
+
+
+sub _normalize_dnames {
+	my $self=shift;
+	$self->_normalize_ownername();
+	$self->{'mbox'}=Net::DNS::stripdot($self->{'mbox'}) if defined $self->{'mbox'};
+	$self->{'txtdname'}=Net::DNS::stripdot($self->{'txtdname'}) if defined $self->{'txtdname'};
 }
 
 
