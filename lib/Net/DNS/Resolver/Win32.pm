@@ -1,6 +1,6 @@
 package Net::DNS::Resolver::Win32;
 #
-# $Id: Win32.pm 756 2008-12-22 21:32:51Z olaf $
+# $Id: Win32.pm 795 2009-01-26 17:28:44Z olaf $
 #
 
 use strict;
@@ -9,14 +9,14 @@ use vars qw(@ISA $VERSION);
 use Net::DNS::Resolver::Base ();
 
 @ISA     = qw(Net::DNS::Resolver::Base);
-$VERSION = (qw$LastChangedRevision: 756 $)[1];
+$VERSION = (qw$LastChangedRevision: 795 $)[1];
 
 use Win32::IPHelper;
 use Win32::Registry;
 use Data::Dumper;
 sub init {
   
-        my $debug=1;
+        my $debug=0;
 	my ($class) = @_;
 	
 	my $defaults = $class->defaults;
@@ -61,7 +61,7 @@ sub init {
 
 	my ($resobj, %keys);
 
-	my $root = 'SYSTEM\CurrentControlSet\Services\Tcplp\Parameters';
+	my $root = 'SYSTEM\CurrentControlSet\Services\Tcpip\Parameters';
 	my $opened_registry =1;
 	unless ($main::HKEY_LOCAL_MACHINE->Open($root, $resobj)) {
 		# Didn't work, maybe we are on 95/98/Me?
