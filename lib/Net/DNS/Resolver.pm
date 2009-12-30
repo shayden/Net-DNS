@@ -1,20 +1,20 @@
 package Net::DNS::Resolver;
 #
-# $Id: Resolver.pm 737 2008-12-17 11:32:10Z olaf $
+# $Id: Resolver.pm 830 2009-12-23 16:31:13Z olaf $
 #
 
 use strict;
 use vars qw($VERSION @ISA);
 
-$VERSION = (qw$LastChangedRevision: 737 $)[1];
+$VERSION = (qw$LastChangedRevision: 830 $)[1];
 
 BEGIN {
 	if ($^O eq 'MSWin32') {
 		require Net::DNS::Resolver::Win32;
 		@ISA = qw(Net::DNS::Resolver::Win32);
 	} elsif ($^O eq 'cygwin') {
-		require Net::DNS::Resolver::Cygwin;
-		@ISA = qw(Net::DNS::Resolver::Cygwin);
+		require Net::DNS::Resolver::Win32;
+		@ISA = qw(Net::DNS::Resolver::Win32);
 	} else {   
 		require Net::DNS::Resolver::UNIX;
 		@ISA = qw(Net::DNS::Resolver::UNIX);
@@ -398,6 +398,9 @@ The program must determine when the socket is ready for reading and
 call C<< $res->bgread >> to get the response packet.  You can use C<<
 $res->bgisready >> or C<IO::Select> to find out if the socket is ready
 before reading it.
+
+bgsend does not support persistent sockets.
+
 
 =head2 bgread
 

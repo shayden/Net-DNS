@@ -1,6 +1,6 @@
 package Net::DNS::RR::AAAA;
 #
-# $Id: AAAA.pm 795 2009-01-26 17:28:44Z olaf $
+# $Id: AAAA.pm 831 2009-12-28 15:57:43Z olaf $
 #
 use strict;
 BEGIN { 
@@ -10,7 +10,7 @@ BEGIN {
 use vars qw(@ISA $VERSION);
 
 @ISA     = qw(Net::DNS::RR);
-$VERSION = (qw$LastChangedRevision: 795 $)[1];
+$VERSION = (qw$LastChangedRevision: 831 $)[1];
 
 sub new {
 	my ($class, $self, $data, $offset) = @_;
@@ -24,7 +24,7 @@ sub new {
 
 sub new_from_string {
 	my ($class, $self, $string) = @_;
-	$self->{"address"}=$string;
+	$self->{"address"}=$string if $string;
 	bless $self, $class;
 	return $self->_normalize_AAAA();
 }
@@ -38,8 +38,8 @@ sub rdatastr {
 sub rr_rdata {
 	my $self = shift;
 	my $rdata = "";
-	$self->_normalize_AAAA();
 	if (exists $self->{"address"}) {
+		$self->_normalize_AAAA();
 		my @addr = split(/:/, $self->{"address"});
 		$rdata .= pack("n8", map { hex $_ } @addr);
 	}
@@ -50,8 +50,9 @@ sub rr_rdata {
 
 
 
-sub _normalize_AAAA {
+sub _normalize_AAAA{
 	my $self=shift();
+	return $self unless exists $self->{"address"};
 	return $self->{"address"} if $self->{normalized};
 	
 	my $string=$self->{"address"};
@@ -64,7 +65,8 @@ sub _normalize_AAAA {
 			$string = $front . sprintf(":%x:%x",
 						   ($a << 8 | $b),
 						   ($c << 8 | $d));
-		}elsif($string =~ /^(.*)::(.*)$/) {
+		}
+		if($string =~ /^(.*)::(.*)$/) {
 			my ($front, $back) = ($1, $2);
 			my @front = split(/:/, $front);
 			my @back  = split(/:/, $back);

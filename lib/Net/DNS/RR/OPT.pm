@@ -1,6 +1,6 @@
 package Net::DNS::RR::OPT;
 #
-# $Id: OPT.pm 393 2005-07-01 19:21:52Z olaf $
+# $Id: OPT.pm 803 2009-11-20 11:35:04Z olaf $
 #
 
 use strict;
@@ -12,7 +12,7 @@ use vars qw(@ISA $VERSION %extendedrcodesbyname %extendedrcodesbyval $EDNSVERSIO
 use Carp;
 
 @ISA     = qw(Net::DNS::RR);
-$VERSION = (qw$LastChangedRevision: 393 $)[1];
+$VERSION = (qw$LastChangedRevision: 803 $)[1];
 
 $EDNSVERSION = 0;
 
@@ -208,15 +208,15 @@ RR from string.
 One may create the object from a hash. See RFC 2671 for details for
 the meaning of the hash keys.
 
- $rr= new Net::DNS::RR {
-    name => "",     # Ignored and set to ""
+ $rr= Net::DNS::RR->new (
+    name => "",                # Ignored and set to ""
     type => "OPT",  
-    class => 1024,    # sets UDP payload size
+    class => 1024,             # sets UDP payload size
     extendedrcode =>  0x00,    # sets the extended RCODE 1 octets
     ednsflags     =>  0x0000,  # sets the ednsflags (2octets)  
-    optioncode   =>   0x0      # 2 octets
+    optioncode   =>   0x0,     # 2 octets
     optiondata   =>   0x0      # optionlength octets
- }    
+ );
 
 The ednsversion is set to 0 for now. The ttl value is determined from 
 the extendedrcode, the ednsversion and the ednsflag.

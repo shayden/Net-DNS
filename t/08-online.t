@@ -1,4 +1,4 @@
-# $Id: 08-online.t 744 2008-12-18 22:42:10Z olaf $ -*-perl-*-
+# $Id: 08-online.t 807 2009-11-20 15:04:30Z olaf $ -*-perl-*-
 
 use Test::More;
 use strict;
@@ -106,14 +106,15 @@ is(scalar mx('mx2.t.net-dns.org'), 2,  "mx() works in scalar context");
     foreach my $test (@tests) {
 	foreach my $method (qw(search query)) {
 	    my $packet = $res->$method($test->{'ip'});
+
 	    
-	    isa_ok($packet, 
-		   'Net::DNS::Packet') or
-		       diag ($res->errorstring);
-	    
-	    next unless $packet;
-	    
-	    is(lc(($packet->answer)[0]->ptrdname),lc($test->{'host'}), "$method($test->{'ip'}) works");
+	  SKIP: {
+	      skip "Packet returned for $method is undefined, error returned: ".$res->errorstring, 2, if !defined ($packet);
+	      isa_ok($packet,  'Net::DNS::Packet');
+	      
+	      
+	      is(lc(($packet->answer)[0]->ptrdname),lc($test->{'host'}), "$method($test->{'ip'}) works");
+	    }
 	}
     }
 }

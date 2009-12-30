@@ -1,11 +1,11 @@
-# $Id: 05-rr-unknown.t 639 2007-05-25 12:00:15Z olaf $   -*-perl-*-
+# $Id: 05-rr-unknown.t 828 2009-12-23 15:03:29Z olaf $   -*-perl-*-
 #
 # RFC 3597 Unknown typecode implemntation test code.
 # O.M. Kolkman RIPE NCC.
 #
 
 
-use Test::More tests => 18;
+use Test::More tests => 19;
 use strict;
 
 
@@ -92,3 +92,7 @@ is (
 
 
 
+
+
+my $rr = Net::DNS::RR->new('atma.example IN TYPE34 \# 4  0A0000 01  ');
+is($rr->string,'atma.example.	0	IN	ATMA	\# 4 0a000001',"ATMA, is known but undefined");

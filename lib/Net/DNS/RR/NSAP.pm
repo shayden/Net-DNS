@@ -1,6 +1,6 @@
 package Net::DNS::RR::NSAP;
 #
-# $Id: NSAP.pm 388 2005-06-22 10:06:05Z olaf $
+# $Id: NSAP.pm 824 2009-12-10 13:24:59Z olaf $
 #
 use strict;
 BEGIN { 
@@ -9,7 +9,7 @@ BEGIN {
 use vars qw(@ISA $VERSION);
 
 @ISA     = qw(Net::DNS::RR);
-$VERSION = (qw$LastChangedRevision: 388 $)[1];
+$VERSION = (qw$LastChangedRevision: 824 $)[1];
 
 sub new {
 	my ($class, $self, $data, $offset) = @_;
@@ -110,7 +110,7 @@ sub rdatastr {
 
 	if (exists $self->{"afi"}) {
 		if ($self->{"afi"} eq "47") {
-			$rdatastr = join('', $self->idp, $self->dsp);
+			$rdatastr = "0x".join('.', $self->idp, $self->dsp);
 		} else {
 			$rdatastr = "; AFI $self->{'afi'} not supported";
 		}
@@ -256,11 +256,14 @@ Returns the RR's system identifier.
 
 Returns the RR's NSAP selector.
 
+=head1 NOTE
+
 =head1 COPYRIGHT
 
 Copyright (c) 1997-2002 Michael Fuhr. 
 
 Portions Copyright (c) 2002-2004 Chris Reinhardt.
+
 
 All rights reserved.  This program is free software; you may redistribute
 it and/or modify it under the same terms as Perl itself.. 

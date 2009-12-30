@@ -1,6 +1,6 @@
 package Net::DNS::RR::A;
 #
-# $Id: A.pm 546 2005-12-16 15:23:03Z olaf $
+# $Id: A.pm 820 2009-11-30 12:13:45Z olaf $
 #
 use strict;
 BEGIN { 
@@ -13,7 +13,7 @@ use vars qw(@ISA $VERSION);
 use Socket;
 
 @ISA     = qw(Net::DNS::RR);
-$VERSION = (qw$LastChangedRevision: 546 $)[1];
+$VERSION = (qw$LastChangedRevision: 820 $)[1];
 
 sub new {
 	my ($class, $self, $data, $offset) = @_;
@@ -33,7 +33,6 @@ sub new_from_string {
 	    && ($2 >= 0) && ($2 <= 255)
 	    && ($3 >= 0) && ($3 <= 255)
 	    && ($4 >= 0) && ($4 <= 255) ) {
-
 		$self->{"address"} = "$1.$2.$3.$4";
 	}
 

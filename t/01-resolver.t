@@ -1,4 +1,4 @@
-# $Id: 01-resolver.t 744 2008-12-18 22:42:10Z olaf $  -*-perl-*-
+# $Id: 01-resolver.t 805 2009-11-20 13:15:12Z olaf $  -*-perl-*-
 
 use Test::More tests => 49;
 use strict;
@@ -70,7 +70,7 @@ use Net::IP;
 use IO::Socket::INET;
 
 my $sock = IO::Socket::INET->new(PeerAddr => '193.0.14.129', # k.root-servers.net.
-				 PeerPort => '25',
+				 PeerPort => '53',
 				 Proto    => 'udp');
 
 

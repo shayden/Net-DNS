@@ -1,6 +1,6 @@
 package Net::DNS::RR::PTR;
 #
-# $Id: PTR.pm 718 2008-02-26 21:49:20Z olaf $
+# $Id: PTR.pm 812 2009-11-26 15:04:14Z olaf $
 #
 use strict;
 BEGIN { 
@@ -9,7 +9,7 @@ BEGIN {
 use vars qw(@ISA $VERSION);
 
 @ISA     = qw(Net::DNS::RR);
-$VERSION = (qw$LastChangedRevision: 718 $)[1];
+$VERSION = (qw$LastChangedRevision: 812 $)[1];
 
 sub new {
 	my ($class, $self, $data, $offset) = @_;
@@ -33,8 +33,8 @@ sub new_from_string {
 
 sub rdatastr {
 	my $self = shift;
-
-	return $self->{"ptrdname"} ? "$self->{ptrdname}." : '';
+	return "" unless defined $self->{ptrdname};
+	return "$self->{ptrdname}." ;
 }
 
 sub rr_rdata {

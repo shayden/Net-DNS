@@ -1,6 +1,6 @@
 package Net::DNS::RR::HINFO;
 #
-# $Id: HINFO.pm 639 2007-05-25 12:00:15Z olaf $
+# $Id: HINFO.pm 833 2009-12-28 16:25:09Z olaf $
 #
 use strict;
 BEGIN { 
@@ -10,7 +10,7 @@ use vars qw(@ISA $VERSION);
 use Net::DNS::RR::TXT;
 
 @ISA     = qw(Net::DNS::RR Net::DNS::RR::TXT);
-$VERSION = (qw$LastChangedRevision: 639 $)[1];
+$VERSION = (qw$LastChangedRevision: 833 $)[1];
 
 sub new {
 	my ($class, $self, $data, $offset) = @_;
@@ -39,7 +39,7 @@ sub new_from_string {
 	my ( $class, $self, $rdata_string ) = @_ ;
 	
 	bless $self, $class;
-        
+        return $self unless $rdata_string;
 	$self->_build_char_str_list($rdata_string);
 	my @elements= $self->char_str_list();
 	if (@elements==2){
@@ -52,7 +52,7 @@ sub new_from_string {
 	}
 	
 	
-	return bless $self, $class;
+	return $self;
 }
 
 sub rdatastr {

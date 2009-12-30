@@ -1,8 +1,8 @@
 # -*-perl-*-
-# $Id: 00-load.t 758 2008-12-23 21:22:02Z olaf $ 
+# $Id: 00-load.t 828 2009-12-23 15:03:29Z olaf $ 
 
 
-use Test::More tests => 81;
+use Test::More tests => 87;
 use strict;
 
 

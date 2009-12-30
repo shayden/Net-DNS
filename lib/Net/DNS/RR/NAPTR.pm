@@ -1,6 +1,6 @@
 package Net::DNS::RR::NAPTR;
 #
-# $Id: NAPTR.pm 718 2008-02-26 21:49:20Z olaf $
+# $Id: NAPTR.pm 801 2009-10-02 16:02:37Z olaf $
 #
 use strict;
 BEGIN { 
@@ -9,7 +9,7 @@ BEGIN {
 use vars qw(@ISA $VERSION);
 
 @ISA     = qw(Net::DNS::RR);
-$VERSION = (qw$LastChangedRevision: 718 $)[1];
+$VERSION = (qw$LastChangedRevision: 801 $)[1];
 
 
 
@@ -76,19 +76,18 @@ sub new_from_string {
 
 	if ($string && $string =~ /^      (\d+)      \s+
 				          (\d+)      \s+
-				     ['"] (.*?) ['"] \s+
-				     ['"] (.*?) ['"] \s+
-				     ['"] (.*?) ['"] \s+
-				          (\S+) $/x) {
+				     (['"]) (.*?) \3 \s+
+				     (['"]) (.*?) \5 \s+
+				     (['"]) (.*?) \7 \s+
+				          (\S+) $/xo) {
 
 		$self->{"order"}       = $1;
 		$self->{"preference"}  = $2;
-		$self->{"flags"}       = $3;
-		$self->{"service"}     = $4;
-		$self->{"regexp"}      = $5;
-		$self->{"replacement"} = Net::DNS::stripdot($6);
+		$self->{"flags"}       = $4;
+		$self->{"service"}     = $6;
+		$self->{"regexp"}      = $8;
+		$self->{"replacement"} = Net::DNS::stripdot($9);
 	}
-
 	return bless $self, $class;
 }
 

@@ -1,6 +1,6 @@
 package Net::DNS::RR;
 #
-# $Id: RR.pm 758 2008-12-23 21:22:02Z olaf $
+# $Id: RR.pm 828 2009-12-23 15:03:29Z olaf $
 #
 use strict;
 
@@ -15,7 +15,7 @@ use Net::DNS qw (wire2presentation name2labels stripdot);
 use Net::DNS::RR::Unknown;
 
 
-$VERSION = (qw$LastChangedRevision: 758 $)[1];
+$VERSION = (qw$LastChangedRevision: 828 $)[1];
 
 =head1 NAME
 
@@ -38,7 +38,6 @@ any of its methods.  If you call an unknown method, you'll get a nasty
 warning message and C<Net::DNS::RR> will return C<undef> to the caller.
 
 =cut
-#' Stupid Emacs (I Don't even USE emacs!) '
 
 # %RR needs to be available within the scope of the BEGIN block.
 # $RR_REGEX is a global just to be on the safe side.  
@@ -53,10 +52,12 @@ BEGIN {
 		AFSDB
 		CNAME
 		CERT
+		DHCID
 		DNAME
 		EID
 		HINFO
 		ISDN
+		KX
 		LOC
 		MB
 		MG
@@ -81,6 +82,7 @@ BEGIN {
 		OPT
 		APL
 		SSHFP
+		HIP
 		SPF
 		IPSECKEY
 
@@ -278,13 +280,11 @@ is recommended.
 
 =cut
 
-#' Stupid Emacs
 
 
 sub new {
 	return new_from_string(@_) if @_ == 2;
 	return new_from_string(@_) if @_ == 3;
-	
 	return new_from_hash(@_);
 }
 
@@ -316,12 +316,47 @@ sub new_from_string {
 	build_regex() unless $RR_REGEX;
 
 	# strip out comments
-	# Test for non escaped ";" by means of the look-behind assertion
-	# (the backslash is escaped)
-	$rrstring   =~ s/(?<!\\);.*//og;
+	# Comments start with a semi collon and run till end of line.
+	# However if the semi colon is escaped or inside a character string then we should keep it
+	# see e.g. rt.cpan 49035
+	my $loopdetection=length($rrstring);
+	my $cleanstring;
+	while ($rrstring) {
+
+		if ($rrstring=~s/^([^\\;'"]*)//o){       # Anything not special in this context.
+			$cleanstring.=$1;
+		}
+		if ($rrstring=~s/^(\\.)//o){             # Escaped special character
+			$cleanstring.=$1;
+		}
+		
+		if ($rrstring=~s/^((['"]).*(?<!\\)\2)//o){ # Anything within a matching string block. (non escaped terminator)
+			$cleanstring.=$1;
+
+			# Next: Anything within a non matched string upto
+			# the first encountered comment (but first we
+			# want to make sure we captured all the nested
+			# blocks hence elsif
+		}elsif ($rrstring=~s/^((['"]).*((?<!\\);)?)//o){
+			$cleanstring.=$1;
+		}
+		
+		$rrstring=~s/^(;.*\n)//o;  # comment till newline
+		$rrstring=~s/^(;.*$)//o;   # comment till end of string
+		#print STDERR ".";
+
+		confess "Failed stripping:loop will not terminate. Please report this info: ". $cleanstring ."---". $rrstring."\n" 
+		  if ($loopdetection==length($rrstring));
+		$loopdetection=length($rrstring);
+
+
+	}
+	  
 	
-	($rrstring =~ m/$RR_REGEX/xso) || 
-		confess qq|qInternal Error: "$rrstring" did not match RR pat.\nPlease report this to the author!\n|;
+	
+
+	($cleanstring =~ m/$RR_REGEX/xso) || 
+		confess qq|Internal Error: "$rrstring" did not match RR pat.\nPlease report this to the author!\n|;
 
 	my $name    = $1;
 	my $ttl     = $2 || 0;
@@ -332,6 +367,7 @@ sub new_from_string {
 	my $rdata   = $5 || '';
 
 	$rdata =~ s/\s+$//o if $rdata;
+
 	$name  = stripdot($name)  if $name;
 
 
@@ -452,6 +488,8 @@ sub new_from_hash {
 	my %keyval   = @_;
 	my $self     = {};
 
+
+
 	while ( my ($key, $val) = each %keyval ) {
 	        $self->{lc $key} = $val ;
 	}
@@ -467,7 +505,6 @@ sub new_from_hash {
 
 	if ($RR{$self->{'type'}}) {
 		my $subclass = $class->_get_subclass($self->{'type'});
-		
 	    if (uc $self->{'type'} ne 'OPT') {
 		        bless $self, $subclass;
 			$self->_normalize_dnames();
@@ -497,6 +534,8 @@ sub new_from_hash {
 
 sub _normalize_rdata {
 	my $self     = shift;
+
+
 
 	# There are a bunch of META RR types we do not want to mess with
 	return $self if ( ( uc $self ->{'type'} eq "TSIG" )||
@@ -590,8 +629,8 @@ sub DESTROY {}
 
     $rr->print;
 
-Prints the record to the standard output.  Calls the
-B<string> method to get the RR's string representation.
+Prints the record to the standard output.  Calls the B<string> method
+to get the RR's string representation.
 
 =cut
 #' someone said that emacs gets screwy here.  Who am I to claim otherwise...
@@ -602,7 +641,13 @@ sub print {	print &string, "\n"; }
 
     print $rr->string, "\n";
 
-Returns a string representation of the RR.  Calls the B<rdatastr> method to get the RR-specific data. Domain names are returned in RFC1035 format, i.e. all non letter, digit, hyphen characters are represented as \DDD.
+Returns a string representation of the RR.  Calls the B<rdatastr>
+method to get the RR-specific data. Domain names arereturned in
+RFC1035 format, i.e. all non letter, digit, hyphen characters are
+represented as \DDD. Besides, all domain names are expanded to fully
+qualified domain names, with trailing dot.  This is in contrast to
+accessor methods of individual data elements in RR objects, like
+B<name>, which will not return the trailing dot.
 
 =cut
 

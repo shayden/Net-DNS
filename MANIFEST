@@ -16,6 +16,7 @@ demo/README
 demo/trace_dns.pl
 DNS.xs
 lib/Net/DNS.pm
+lib/Net/DNS/Domain.pm
 lib/Net/DNS/FAQ.pod
 lib/Net/DNS/Header.pm
 lib/Net/DNS/Nameserver.pm
@@ -35,11 +36,14 @@ lib/Net/DNS/RR/APL/ApItem.pm
 lib/Net/DNS/RR/AFSDB.pm
 lib/Net/DNS/RR/CERT.pm
 lib/Net/DNS/RR/CNAME.pm
+lib/Net/DNS/RR/DHCID.pm
 lib/Net/DNS/RR/DNAME.pm
 lib/Net/DNS/RR/EID.pm
 lib/Net/DNS/RR/HINFO.pm
+lib/Net/DNS/RR/HIP.pm
 lib/Net/DNS/RR/IPSECKEY.pm
 lib/Net/DNS/RR/ISDN.pm
+lib/Net/DNS/RR/KX.pm
 lib/Net/DNS/RR/LOC.pm
 lib/Net/DNS/RR/MB.pm
 lib/Net/DNS/RR/MG.pm
@@ -82,6 +86,7 @@ t/01-resolver-file.t
 t/01-resolver-flags.t
 t/01-resolver-opt.t
 t/01-resolver.t
+t/02-domain.t
 t/02-header.t
 t/03-question.t
 t/04-packet-unique-push.t
@@ -102,6 +107,8 @@ t/10-recurse.t
 t/11-escapedchars.t
 t/11-inet6.t
 t/12-compression.t
+t/13-udp-trunc.t
 t/99-cleanup.t
+t/TestData.pm
 t/custom.txt
 TODO

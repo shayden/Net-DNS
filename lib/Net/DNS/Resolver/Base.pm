@@ -1,6 +1,6 @@
 package Net::DNS::Resolver::Base;
 #
-# $Id: Base.pm 750 2008-12-19 15:48:56Z olaf $
+# $Id: Base.pm 830 2009-12-23 16:31:13Z olaf $
 #
 
 use strict;
@@ -24,7 +24,7 @@ use IO::Select;
 use Net::DNS;
 use Net::DNS::Packet;
 
-$VERSION = (qw$LastChangedRevision: 750 $)[1];
+$VERSION = (qw$LastChangedRevision: 830 $)[1];
 
 
 #
@@ -996,11 +996,11 @@ sub bgsend {
 							  LocalPort => ($srcport || undef),
 					     );
 	} else {
-	    die ref($self)." bgsend:Unsoported Socket Family: $sockfamily";
+	    die ref($self)." bgsend: Unsupported Socket Family: $sockfamily";
 	}
 	
-	unless (scalar(@socket)) {
-		$self->errorstring("could not get socket");   #'
+	unless ($socket[$sockfamily]) {
+		$self->errorstring("could not get socket");   
 		return;
 	}
 
@@ -1084,7 +1084,7 @@ sub make_query_packet {
     	
     
 	$packet->header->cd($self->{'cdflag'});
-	$packet->header->cd($self->{'adflag'});
+	$packet->header->ad($self->{'adflag'});
 	my $optrr = Net::DNS::RR->new(
 						Type         => 'OPT',
 						Name         => '',

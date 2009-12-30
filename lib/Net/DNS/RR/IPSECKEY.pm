@@ -2,7 +2,7 @@ package Net::DNS::RR::IPSECKEY;
 
 
 #
-# $Id: IPSECKEY.pm 718 2008-02-26 21:49:20Z olaf $
+# $Id: IPSECKEY.pm 820 2009-11-30 12:13:45Z olaf $
 #
 use strict;
 BEGIN { 
@@ -13,7 +13,7 @@ use Socket;
 
 use MIME::Base64;
 
-$VERSION = (qw$LastChangedRevision: 718 $)[1];
+$VERSION = (qw$LastChangedRevision: 820 $)[1];
 
 @ISA = qw(Net::DNS::RR);
 
@@ -233,7 +233,7 @@ and/or modify it under the same terms as Perl itself.
 
 L<perl(1)>, L<Net::DNS>, L<Net::DNS::Resolver>, L<Net::DNS::Packet>,
 L<Net::DNS::Header>, L<Net::DNS::Question>, L<Net::DNS::RR>,
-draft-ietf-dnssext-delegation-signer
+RFC4025
 
 =cut
 

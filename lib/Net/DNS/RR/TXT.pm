@@ -1,6 +1,6 @@
 package Net::DNS::RR::TXT;
 #
-# $Id: TXT.pm 582 2006-04-25 07:12:19Z olaf $
+# $Id: TXT.pm 812 2009-11-26 15:04:14Z olaf $
 #
 use strict;
 BEGIN { 
@@ -11,7 +11,7 @@ use vars qw(@ISA $VERSION);
 use Text::ParseWords;
 
 @ISA     = qw(Net::DNS::RR);
-$VERSION = (qw$LastChangedRevision: 582 $)[1];
+$VERSION = (qw$LastChangedRevision: 812 $)[1];
 
 sub new {
 	my ($class, $self, $data, $offset) = @_;
@@ -54,6 +54,7 @@ sub rdatastr {
 		return join(' ', map { 
 			my $str = $_;  
 			$str =~ s/"/\\"/g;  
+			$str =~ s/;/\\;/g;  
 			qq("$str");
 		} @{$self->{'char_str_list'}});
 	} 
@@ -136,6 +137,8 @@ Use C<< $txt->rdatastr() >> or C<< $txt->char_str_list() >> instead.
 Returns a list of the individual <character-string> elements, 
 as unquoted strings.  Used by TXT->rdatastr and TXT->rr_rdata.
 
+NB: rdatastr will return quoted strings.
+
 
 =head1 FEATURES
 
@@ -158,6 +161,11 @@ would result in
 $TXTrr->char_str_list())[0] containing 'Test1 " ; more stuff'
 and
 $TXTrr->char_str_list())[1] containing 'Test2'
+
+Note that the rdatastr method (and therefore the print, and string
+method) returns the escaped format.
+
+
 
 
 =head1 COPYRIGHT

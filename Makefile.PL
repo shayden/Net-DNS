@@ -1,5 +1,5 @@
 
-# $Id: Makefile.PL 756 2008-12-22 21:32:51Z olaf $ -*-perl-*-
+# $Id: Makefile.PL 822 2009-11-30 17:37:30Z olaf $ -*-perl-*-
 
 use strict;
 $^W = 1;
@@ -77,6 +77,7 @@ my %Makefile = (
 		'IO::Socket'       => 0,
 		'MIME::Base64'     => 2.11,
 		'Digest::MD5'      => 2.12,
+		'Digest::SHA'      => 5.23,
 		'Net::IP'          => 1.2,
 		'Digest::HMAC_MD5' => 1.00,
 	},
@@ -89,21 +90,31 @@ my %Makefile = (
 
 
 
-if ($^O eq 'MSWin32') {
+if ($^O eq 'MSWin32' || $^O eq 'cygwin') {
     unless(    eval {require WIN32::API; }	   ){
 	warn <<AMEN; 
 I can not find WIN32::API version 0.55 or higher.
 
 I will add WIN32::API to the list of prerequisites.
+AMEN
 
+
+if ( $^O eq "MSWin32" ){ 
+    warn <<AMEN2;
 Note that, WIN32::API is included in recent versions
 of ActivePerl (5.10 since build 1003) and recent
 versions of Strawberry perl (at least in the October
 version of 5.10.0.3) and the module has not be 
 tested with other versions. In case of failure please
 consider upgrading.
-	
-AMEN
+AMEN2
+}else{
+    warn <<AMEN3;
+When using cygwin missing dependencies can be installed using CPAN.
+AMEN3
+
+}
+
 
     }
     $Makefile{'PREREQ_PM'}->{'enum'} = 1.0;  # Dependency for Win32::IPHelper
